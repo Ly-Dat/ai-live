@@ -1827,7 +1827,18 @@
         "metahuman_stream": true,
         "digital_human_video_player": true,
         "live2d_TTS_LLM_GPT_SoVITS_Vtuber": true
-      }
+      },
+      "modern": {
+      "tab_panel": "background: transparent; padding: 16px 8px;",
+      "card": "background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; box-shadow: 0 2px 10px rgba(15,23,42,.06); padding: 16px; width: 100%;",
+      "button_bottom": "border-radius: 10px; min-width: 96px; font-weight: 600;",
+      "button_bottom_color": "primary",
+      "button_internal": "border-radius: 8px;",
+      "button_internal_color": "primary",
+      "switch_internal": "",
+      "echart": "height: 420px; width: 100%;",
+      "login_card": "<giữ nguyên chuỗi cũ của bạn>"
+    }
     }
   }
 }
