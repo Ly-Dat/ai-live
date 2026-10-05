@@ -1,7 +1,4 @@
 requests==2.32.3
-git+https://gitee.com/ikaros-521/WenxinWorkshop-Python-SDK
-git+https://gitee.com/ikaros-521/blivedm
-git+https://gitee.com/ikaros-521/sparkdesk-api
 openai
 pygame
 edge-tts==6.1.6

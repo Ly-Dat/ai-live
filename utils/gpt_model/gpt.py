@@ -11,13 +11,13 @@ from utils.my_log import logger
 
 from utils.gpt_model.chatgpt import Chatgpt
 from utils.gpt_model.text_generation_webui import TEXT_GENERATION_WEBUI
-from utils.gpt_model.sparkdesk import SPARKDESK
+# from utils.gpt_model.sparkdesk import SPARKDESK
 from utils.gpt_model.langchain_chatchat import Langchain_ChatChat
 from utils.gpt_model.zhipu import Zhipu
 from utils.gpt_model.bard import Bard_api
 from utils.gpt_model.tongyi import TongYi
 from utils.gpt_model.tongyixingchen import TongYiXingChen
-from utils.gpt_model.my_wenxinworkshop import My_WenXinWorkShop
+# from utils.gpt_model.my_wenxinworkshop import My_WenXinWorkShop
 from utils.gpt_model.gemini import Gemini
 from utils.gpt_model.koboldcpp import Koboldcpp
 from utils.gpt_model.anythingllm import AnythingLLM
@@ -33,13 +33,13 @@ class GPT_Model:
     def set_model_config(self, model_name, config):
         model_classes = {
             "text_generation_webui": TEXT_GENERATION_WEBUI,
-            "sparkdesk": SPARKDESK,
+#             "sparkdesk": SPARKDESK,
             "langchain_chatchat": Langchain_ChatChat,
             "zhipu": Zhipu,
             "bard": Bard_api,
             "tongyi": TongYi,
             "tongyixingchen": TongYiXingChen,
-            "my_wenxinworkshop": My_WenXinWorkShop,
+#             "my_wenxinworkshop": My_WenXinWorkShop,
             "gemini": Gemini,
             "koboldcpp": Koboldcpp,
             "anythingllm": AnythingLLM,
