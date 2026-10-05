@@ -7,8 +7,8 @@
   },
   "api_ip": "127.0.0.1",
   "api_port": 8082,
-  "platform": "tiktok",
-  "room_display_id": "giayvesinhposy",
+  "platform": "talk",
+  "room_display_id": "new.world.019",
   "chat_type": "chatgpt",
   "need_lang": "none",
   "before_prompt": "请简要回复:",
@@ -257,7 +257,7 @@
     "https_proxy": ""
   },
   "live2d": {
-    "enable": false,
+    "enable": true,
     "port": 12345,
     "name": "Hiyori"
   },
