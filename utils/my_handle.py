@@ -19,7 +19,7 @@ from .db import SQLiteDB
 from .my_translate import My_Translate
 
 from .luoxi_project.live_comment_assistant import send_msg_to_live_comment_assistant
-from . import tiktok_safety, product_catalog, live_analytics, flash_sale
+from . import tiktok_safety, product_catalog, live_analytics, flash_sale, engage
 
 
 """
@@ -1436,6 +1436,58 @@ class My_handle(metaclass=SingletonMeta):
             self.reread_handle({"username": "Streamer", "content": text}, type="reread")
         except Exception:
             logger.error(traceback.format_exc())
+
+    _engage_lock = threading.Lock()
+
+    def _engage_path(self):
+        from utils import setup_wizard
+        return os.path.join(setup_wizard.ROOT, engage.DEFAULT_PATH)
+
+    def engage_consume(self, username, content):
+        """True when the comment was a giveaway entry or a poll vote (counted, nothing else to do with it)."""
+        try:
+            with My_handle._engage_lock:
+                path = self._engage_path()
+                st = engage.load_state(path)
+                if not any(st.get(k) and st[k].get("active") for k in ("giveaway", "poll")):
+                    return False
+                hit = engage.consume(st, username, content)
+                if hit:
+                    engage.save_state(st, path)
+                    self.get_analytics().record("comment", user=username, text=content, intent="engage")
+                return bool(hit)
+        except Exception:
+            logger.error(traceback.format_exc())
+            return False
+
+    def engage_tick(self):
+        """Every few seconds: speak the next giveaway / poll announcement when it is due."""
+        try:
+            with My_handle._engage_lock:
+                path = self._engage_path()
+                st = engage.load_state(path)
+                if not any(st.get(k) and st[k].get("active") for k in ("giveaway", "poll")):
+                    return
+                catalog = self.get_product_catalog()
+                text, st = engage.next_announcement(st, templates=catalog.templates if catalog is not None else None)
+                if not text:
+                    return
+                engage.save_state(st, path)
+            safe = self.prohibitions_handle(text, scope="output")
+            if safe is None:
+                logger.warning("Giveaway/poll announcement dropped by the safety filter (maybe a name or the prize text)")
+                if st.get("giveaway") and st["giveaway"].get("winners"):
+                    safe = "Quay số xong rồi, chúc mừng người may mắn, bạn xem tên trên màn hình live nha!"
+                else:
+                    return
+            self.reread_handle({"username": "Streamer", "content": safe}, type="reread")
+        except Exception:
+            logger.error(traceback.format_exc())
+
+    def engage_loop(self, interval=3):
+        while True:
+            self.engage_tick()
+            time.sleep(interval)
 
     def flash_sale_loop(self, interval=5):
         while True:
@@ -3172,6 +3224,10 @@ class My_handle(metaclass=SingletonMeta):
             # Blacklist filtering
             if self.blacklist_handle(data):
                 return None
+
+            # Giveaway entries and poll votes are counted silently (no AI reply to a bare "1")
+            if self.engage_consume(username, content):
+                return None
             
             # After basic initial filtering, danmaku data can be forwarded through the Luoxi live danmaku assistant.
             # Luoxi Live Danmaku Assistant
@@ -3339,7 +3395,16 @@ class My_handle(metaclass=SingletonMeta):
             if catalog is not None:
                 found = catalog.find_relevant(data["content"], 1)
                 matched_product = found[0] if found else None
-            if My_handle.config.get("products", "quick_answers") and catalog is not None:
+            # Answers the seller taught in the "Teach" tab win over everything else (they are the seller's own words)
+            taught_reply = None
+            try:
+                taught_reply = self._get_taught_book().answer(data["content"], matched_product["id"] if matched_product else None)
+            except Exception as e:
+                logger.debug(f"taught answers: {e}")
+            if taught_reply:
+                quick_reply = taught_reply
+                logger.info(f"Taught answer: {quick_reply}")
+            if not quick_reply and My_handle.config.get("products", "quick_answers") and catalog is not None:
                 quick_reply = catalog.quick_answer(data["content"])
                 if not quick_reply and intent == "buy" and matched_product:
                     quick_reply = catalog.buy_reply(matched_product)
@@ -3348,7 +3413,7 @@ class My_handle(metaclass=SingletonMeta):
             analytics = self.get_analytics()
             analytics.record("comment", user=username, text=data["content"], intent=intent,
                              product_id=matched_product["id"] if matched_product else None)
-            analytics.record("answer", source="quick" if quick_reply else "llm",
+            analytics.record("answer", source="taught" if taught_reply else ("quick" if quick_reply else "llm"),
                              product_id=matched_product["id"] if matched_product else None)
             if matched_product and intent in live_analytics.SALES_INTENTS:
                 self.spotlight_handle(matched_product)
@@ -3386,11 +3451,13 @@ class My_handle(metaclass=SingletonMeta):
                 if "stream" in self.config.get(chat_type) and self.config.get(chat_type, "stream"):
                     logger.warning("Use streaming inferenceLLM")
                     resp_content = self.llm_stream_handle_and_audio_synthesis(chat_type, data_json)
+                    self._note_unsure(data["content"], matched_product, resp_content)
                     return resp_content
                 else:
                     resp_content = self.llm_handle(chat_type, data_json)
                     if resp_content is not None:
                         logger.info(f"[AIReply to {username}]:{resp_content}")
+                        self._note_unsure(data["content"], matched_product, resp_content)
                     else:
                         resp_content = ""
                         logger.warning(f"Warning: {chat_type} has no return")
@@ -3587,6 +3654,21 @@ class My_handle(metaclass=SingletonMeta):
 
 
     # Entrance handling
+    def _get_taught_book(self):
+        from utils import setup_wizard, teach
+        if getattr(My_handle, "_taught_book", None) is None:
+            My_handle._taught_book = teach.TaughtBook(os.path.join(setup_wizard.ROOT, "data", "taught.json"))
+        return My_handle._taught_book
+
+    def _note_unsure(self, question, product, reply):
+        """When the AI admits it does not know, log the question so the seller can teach the answer afterwards."""
+        try:
+            from utils import teach
+            if isinstance(reply, str) and teach.is_unsure(reply):
+                self.get_analytics().record("unsure", text=question, product_id=product["id"] if product else None, reply=reply[:200])
+        except Exception as e:
+            logger.debug(f"note unsure: {e}")
+
     def _get_viewer_book(self):
         """The returning-viewer book, or None when the seller has not opted in."""
         from utils import returning, setup_wizard

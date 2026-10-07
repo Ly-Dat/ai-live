@@ -1665,6 +1665,7 @@ def start_server():
 
     # Flash-sale announcements (data/flash_sale.json is written by the web UI)
     threading.Thread(target=my_handle.flash_sale_loop, daemon=True).start()
+    threading.Thread(target=my_handle.engage_loop, daemon=True).start()
 
     if platform == "tiktok":
         from utils.platforms.tiktok import start_listen

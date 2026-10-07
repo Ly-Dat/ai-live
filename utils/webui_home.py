@@ -231,6 +231,13 @@ def build_home_tab(config, go):
         plan_path = os.path.join("data", "next_live.json")
         with ui.card().classes("lv-card w-full").style("padding:18px 20px"):
             ui.label("Before your next live").style("font-weight:700;font-size:16px")
+            try:
+                from .webui_teach import pending_for
+                n_teach = len(pending_for(config))
+            except Exception:
+                n_teach = 0
+            if n_teach:
+                ui.button(f"{n_teach} question(s) the host was not sure about", icon="school", on_click=lambda: go("Teach")).props("flat no-caps color=primary").style("margin:2px 0 4px")
             if not path:
                 ui.label("After your first live, the things worth fixing show up here as a checklist.").classes("lv-sub").style("margin:4px 0 0")
             else:

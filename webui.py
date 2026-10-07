@@ -3413,6 +3413,7 @@ def goto_func_page():
         voice_page = ui.tab('Voice')
         dashboard_page = ui.tab('Dashboard')
         tools_page = ui.tab('Live tools')
+        teach_page = ui.tab('Teach')
         talk_page = ui.tab('Chat')
         image_recognition_page = ui.tab('Image Recognition')
         integral_page = ui.tab('Points')
@@ -3436,7 +3437,7 @@ def goto_func_page():
 
     select_page = build_shell(tabs, [
         ("Studio", [("Home", "home", home_page), ("Setup", "rocket_launch", setup_page), ("Dashboard", "insights", dashboard_page),
-                    ("Live tools", "bolt", tools_page), ("Products", "shopping_bag", products_page)]),
+                    ("Teach", "school", teach_page), ("Live tools", "bolt", tools_page), ("Products", "shopping_bag", products_page)]),
         ("Host", [("Voice", "record_voice_over", voice_page), ("AI model", "psychology", llm_page),
                   ("Text-to-Speech", "graphic_eq", tts_page), ("Virtual body", "face", visual_body_page),
                   ("Copywriting", "edit_note", copywriting_page), ("Chat", "forum", talk_page),
@@ -6073,6 +6074,10 @@ def goto_func_page():
         with ui.tab_panel(setup_page).style(tab_panel_css):
             from utils.webui_setup import build_setup_tab
             build_setup_tab(config)
+
+        with ui.tab_panel(teach_page).style(tab_panel_css):
+            from utils.webui_teach import build_teach_tab
+            build_teach_tab(config)
 
         with ui.tab_panel(tools_page).style(tab_panel_css):
             from utils.webui_tools import build_tools_tab
