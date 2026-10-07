@@ -57,7 +57,10 @@ def recap(s: Dict, names: Optional[Dict[str, str]] = None) -> Dict:
         tips.append("Quiet session. Try a flash sale announcement to give viewers a reason to comment.")
     mins = s.get("duration_min", 0)
     headline = f"{comments} comments from {s.get('unique_viewers', 0)} viewers in {mins} min, {buy} buying signals."
-    return {"headline": headline, "tips": tips[:4]}
+    tips = tips[:4]
+    # "actions" are the tips a seller can act on; the filtered-comments note is information only.
+    actions = [t for t in tips if "Nothing to do" not in t]
+    return {"headline": headline, "tips": tips, "actions": actions}
 
 
 def session_dates(filenames: Iterable[str]) -> Set[datetime.date]:

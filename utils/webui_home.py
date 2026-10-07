@@ -8,7 +8,7 @@ import os
 
 from nicegui import ui
 
-from . import home_status, live_analytics, milestones, recap, recap_card, setup_wizard, starter, webui_mascot
+from . import habit, home_status, live_analytics, milestones, recap, recap_card, setup_wizard, starter, webui_mascot
 from .webui_theme import port_open
 
 
@@ -124,11 +124,7 @@ def build_home_tab(config, go):
                     ui.label(f"{run}-day streak").classes("lv-chip hot")
                 ui.label(f"{week} live{'s' if week != 1 else ''} this week").classes("lv-chip")
             ui.label(r["headline"]).style("margin:10px 0 6px;font-weight:600")
-            ui.label("Do this next live").classes("lv-stat-label").style("margin-top:6px")
-            for t in r["tips"]:
-                with ui.row().classes("no-wrap items-start").style("gap:8px;margin-top:6px"):
-                    ui.icon("tips_and_updates").style("color:var(--lv-accent);font-size:18px;margin-top:2px")
-                    ui.label(t).style("line-height:1.45;font-size:14px")
+            ui.label("Your checklist for the next live is below.").classes("lv-sub").style("margin:0 0 4px;font-size:13px")
             def save_card():
                 try:
                     st = recap_card.card_stats(s, names, setup_wizard.load_setup().get("shop_name") or pdata_shop(), run)
@@ -164,6 +160,59 @@ def build_home_tab(config, go):
                 ui.linear_progress(value=m["fraction"], show_value=False, size="8px").props("rounded")
                 ui.label(f"{m['left']} more {m['noun']} to reach {m['goal']}.").classes("lv-sub").style("margin:6px 0 0;font-size:13px")
 
+    @ui.refreshable
+    def plan_card():
+        path = live_analytics.latest_session_file(log_dir)
+        files = [f for f in (os.listdir(log_dir) if os.path.isdir(log_dir) else []) if f.startswith("session-")]
+        today = datetime.date.today()
+        dates = recap.session_dates(files)
+        goal_now = int(setup_wizard.load_setup().get("weekly_goal", 3) or 3)
+        prog = habit.weekly_progress(dates, today, goal_now)
+        plan_path = os.path.join("data", "next_live.json")
+        with ui.card().classes("lv-card w-full").style("padding:18px 20px"):
+            ui.label("Before your next live").style("font-weight:700;font-size:16px")
+            if not path:
+                ui.label("After your first live, the things worth fixing show up here as a checklist.").classes("lv-sub").style("margin:4px 0 0")
+            else:
+                s = live_analytics.summarize(live_analytics.load_events(path))
+                try:
+                    pdata = json.load(open(config.get("products", "path") or "data/products.json", encoding="utf-8"))
+                    names = {p["id"]: p["name"] for p in pdata.get("products", [])}
+                except Exception:
+                    names = {}
+                key = os.path.basename(path)
+                tasks = habit.next_live_tasks(recap.recap(s, names)["actions"], habit.load_plan(plan_path, key))
+
+                def toggle(tid, value):
+                    done = habit.load_plan(plan_path, key)
+                    (done.add if value else done.discard)(tid)
+                    habit.save_plan(plan_path, key, done)
+                    plan_card.refresh()
+                left = sum(1 for t in tasks if not t["done"])
+                ui.label(("Nothing needed this time. Go live whenever you're ready." if not tasks else "All done. You're ready.") if not left else f"{left} thing(s) to do, about a minute each.").classes("lv-sub").style("margin:2px 0 6px")
+                for t in tasks:
+                    ui.checkbox(t["text"], value=t["done"], on_change=lambda e, i=t["id"]: toggle(i, e.value)).style("line-height:1.35;font-size:14px")
+            ui.separator().style("margin:10px 0")
+            with ui.row().classes("items-center justify-between w-full no-wrap"):
+                ui.label("This week").classes("lv-stat-label")
+                ui.select({n: f"Goal: {n} live{'s' if n > 1 else ''}" for n in range(1, 8)}, value=prog["goal"],
+                          on_change=lambda e: (setup_wizard.save_setup(dict(setup_wizard.load_setup(), weekly_goal=int(e.value))), plan_card.refresh())
+                          ).props("dense borderless").style("font-size:13px")
+            with ui.row().style("gap:6px;margin:6px 0 2px"):
+                for i in range(prog["goal"]):
+                    ui.element("div").style("width:22px;height:22px;border-radius:50%;border:2px solid var(--lv-accent);"
+                                            + ("background:var(--lv-grad);" if i < prog["done"] else ""))
+            ui.label("Goal reached this week. Nice." if prog["hit"] else f"{prog['done']} of {prog['goal']} lives this week.").classes("lv-sub").style("margin:2px 0 0;font-size:13px")
+            sessions = []
+            for f in files:
+                try:
+                    sessions.append(live_analytics.summarize(live_analytics.load_events(os.path.join(log_dir, f))))
+                except Exception:
+                    pass
+            bh = habit.best_hour(sessions)
+            if bh:
+                ui.label(f"Your lives starting around {bh['hour']:02d}:00 drew {bh['rate']} comments/min vs {bh['overall']} on average ({bh['n']} lives).").classes("lv-sub").style("margin:8px 0 0;font-size:13px")
+
     with ui.row().classes("w-full").style("gap:18px;flex-wrap:wrap;align-items:flex-start"):
         with ui.column().style("flex:3;min-width:320px;gap:0;position:relative;padding-top:46px"):
             with ui.element("div").style("position:absolute;top:0;right:24px;z-index:2;line-height:0"):
@@ -172,6 +221,7 @@ def build_home_tab(config, go):
         with ui.column().style("flex:2;min-width:300px;gap:16px"):
             last_session()
             progress_card()
+            plan_card()
             with ui.card().classes("lv-card w-full").style("padding:18px 20px"):
                 ui.label("Tip").classes("lv-stat-label")
                 ui.label(home_status.tip(datetime.date.today().toordinal())).style("margin-top:6px;line-height:1.5")
@@ -197,4 +247,5 @@ def build_home_tab(config, go):
                 ui.label(title).style("font-weight:700")
                 ui.label(sub).classes("lv-sub").style("margin:0;font-size:13px")
 
+    ui.timer(30.0, plan_card.refresh)
     ui.timer(4.0, lambda: (hero_and_steps.refresh(), last_session.refresh(), progress_card.refresh()))

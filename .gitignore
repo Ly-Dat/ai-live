@@ -265,3 +265,4 @@ venv_voice/
 venv_tt/
 out/preview/
 data/viewers.json
+data/next_live.json
