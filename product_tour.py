@@ -38,6 +38,80 @@ from utils import product_catalog, tiktok_safety  # noqa: E402
 
 import datetime
 
+import mimetypes
+
+import ast
+
+from collections import deque
+
+PENDING = deque()            
+SAID = deque(maxlen=30)     
+META = {"reply_at": 0.0, "speech_free_at": 0.0, "cps": 13.0}
+BOX_LOCK = threading.Lock()
+HOLD = 12      
+PAIR_GAP = 6     
+PENDING_TTL = 40 
+
+CURRENT = {"name": "", "images": []}   # product being presented (overlay reads this)
+BOX = {"user": "", "comment": "", "reply": "", "start": 0.0, "cps": 13.0}   # chat box on the overlay
+
+IMG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "product_images")
+
+OVERLAY_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;height:100%;background:transparent;overflow:hidden;font-family:Segoe UI,Arial,sans-serif}
+#chat{position:absolute;top:2%;left:4%;right:4%;max-height:24%;padding:14px 18px;border-radius:16px;
+  background:rgba(0,0,0,.55);color:#fff;font-size:3.2vh;line-height:1.35;display:none;overflow:hidden}
+#chat .u{color:#ffd166;font-weight:600}
+#chat .a{color:#7ee0ff;font-weight:600}
+#chat div+div{margin-top:8px}
+#imgs{position:absolute;left:0;right:0;bottom:2%;height:40%}
+#imgs img{position:absolute;inset:0;margin:auto;max-width:100%;max-height:100%;border-radius:12px;
+  opacity:0;transition:opacity .6s}
+#imgs img.on{opacity:1}
+</style></head><body>
+<div id="chat"><div id="c"></div><div id="r"></div></div>
+<div id="imgs"><img id="a"></div>
+<script>
+const SECONDS = 5;
+let key = "", list = [], i = 0;
+const el = document.getElementById("a");
+const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+function show() {
+  if (!list.length) { el.classList.remove("on"); return; }
+  el.src = "/img/" + encodeURIComponent(list[i % list.length]);
+  el.classList.add("on");
+}
+let last = null, skew = 0;
+function render() {
+  if (!last) return;
+  const b = last.chat, c = document.getElementById("c"), r = document.getElementById("r");
+  // reveal the reply at speaking speed, starting when the voice is expected to start
+  const n = b.reply ? Math.floor(((Date.now() / 1000 + skew) - b.start) * b.cps) : 0;
+  let shown = "";
+  if (n > 0) {
+    shown = b.reply.slice(0, n);
+    if (n < b.reply.length) { const sp = shown.lastIndexOf(" "); if (sp > 0) shown = shown.slice(0, sp); }
+  }
+  c.innerHTML = b.comment ? '<span class="u">' + esc(b.user || "Viewer") + ':</span> ' + esc(b.comment) : "";
+  r.innerHTML = shown ? '<span class="a">AI:</span> ' + esc(shown) : "";
+  document.getElementById("chat").style.display = (b.comment || shown) ? "block" : "none";
+}
+async function poll() {
+  try {
+    const d = await (await fetch("/current", {cache: "no-store"})).json();
+    const k = d.name + "|" + d.images.join(",");
+    if (k !== key) { key = k; list = d.images; i = 0; show(); }
+    skew = d.now - Date.now() / 1000;
+    last = d;
+    render();
+  } catch (e) {}
+}
+setInterval(render, 100);
+setInterval(poll, 700);
+setInterval(() => { if (list.length) { i++; show(); } }, SECONDS * 1000);
+poll();
+</script></body></html>"""
+
 # ------------------------------------------------------------------ comment state
 class CommentState:
     """Thread-safe record of the last comment time."""
@@ -59,19 +133,73 @@ class CommentState:
 
 STATE = CommentState()
 
+def is_own(reply: str) -> bool:
+    r = reply.strip().lower()
+    return any(r in s or s in r for s in SAID)
+
+
+def show_answer(reply: str):
+    now = time.time()
+    with BOX_LOCK:
+        while PENDING and now - PENDING[0][0] > PENDING_TTL:
+            PENDING.popleft()
+        if now - META["reply_at"] > PAIR_GAP:         
+            if PENDING:
+                _, u, c = PENDING.popleft()
+                BOX.update(user=u, comment=c)
+            else:
+                BOX.update(user="", comment="")   
+        # The voice is queued behind whatever is already being spoken: reveal the text only when it will be heard.
+        start = max(now, META["speech_free_at"])
+        META["speech_free_at"] = start + len(reply) / META["cps"]
+        BOX.update(reply=reply, start=start, cps=META["cps"])
+        META["reply_at"] = META["speech_free_at"]
+
 
 def start_listener(port: int):
     class H(BaseHTTPRequestHandler):
         def do_POST(self):
-            # any POST (/comment) = "a viewer just commented"
             n = int(self.headers.get("Content-Length", 0) or 0)
-            if n:
-                self.rfile.read(n)
-            STATE.mark()
+            raw = self.rfile.read(n) if n else b""
+            try:
+                d = json.loads(raw.decode("utf-8")) if raw else {}
+            except Exception:
+                d = {}
+            if self.path.startswith("/reply"):
+                show_answer(str(d.get("content", "")))
+            else:
+                if d.get("content"):
+                    with BOX_LOCK:
+                        PENDING.append((time.time(), str(d.get("username", "")), str(d["content"])))
+                STATE.mark()
             self.send_response(200)
             self.end_headers()
             self.wfile.write(b'{"code":200}')
+            
+        def _send(self, code, ctype, body):
+            self.send_response(code)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-cache")
+            self.end_headers()
+            self.wfile.write(body)
 
+        def do_GET(self):
+            if self.path.startswith("/overlay"):
+                self._send(200, "text/html; charset=utf-8", OVERLAY_HTML.encode("utf-8"))
+            elif self.path.startswith("/current"):
+                self._send(200, "application/json", json.dumps({**CURRENT, "chat": BOX, "now": time.time()}).encode("utf-8"))
+            elif self.path.startswith("/img/"):
+                name = os.path.basename(self.path[5:].split("?")[0])
+                from urllib.parse import unquote
+                fp = os.path.join(IMG_DIR, unquote(name))
+                if os.path.isfile(fp):
+                    with open(fp, "rb") as fh:
+                        self._send(200, mimetypes.guess_type(fp)[0] or "image/jpeg", fh.read())
+                else:
+                    self._send(404, "text/plain", b"")
+            else:
+                self._send(404, "text/plain", b"")
         def log_message(self, *a):
             pass
 
@@ -81,18 +209,46 @@ def start_listener(port: int):
 
 def start_log_watcher(log_dir="log"):
     def loop():
-        last = {}
+        pos = {}
         while True:
             d = datetime.date.today()
-            path = os.path.join(log_dir, f"comment-{d.year}-{d.month}-{d.day}.txt")
-            try:
-                size = os.path.getsize(path)
-                if path in last and size > last[path]:
-                    print("[tour] new line in comment log", flush=True)
+            for kind in ("comment", "log"):
+                path = os.path.join(log_dir, f"{kind}-{d.year}-{d.month}-{d.day}.txt")
+                try:
+                    size = os.path.getsize(path)
+                except OSError:
+                    continue
+                if path not in pos:
+                    pos[path] = size          
+                    continue
+                if size <= pos[path]:
+                    continue
+                with open(path, "rb") as fh:
+                    fh.seek(pos[path])
+                    chunk = fh.read()
+                cut = chunk.rfind(b"\n") + 1  
+                pos[path] += cut
+                text = chunk[:cut].decode("utf-8", "ignore")
+                if kind == "comment":
                     STATE.mark()
-                last[path] = size
-            except OSError:
-                pass
+                    continue
+                for line in text.splitlines():
+                    if "received data:" not in line or "'content_type': 'answer'" not in line:
+                        continue
+                    try:
+                        obj = ast.literal_eval(line.split("received data:", 1)[1].strip())
+                        reply = str(obj["data"]["content"]).strip()
+                    except Exception:
+                        continue
+                    if reply:
+                        if is_own(reply):          
+                            continue
+                        show_answer(reply)
+                        STATE.mark()
+                        print(f"[tour] AI reply -> overlay: {reply[:60]}", flush=True)
+            with BOX_LOCK:
+                if (BOX["reply"] or BOX["comment"]) and time.time() - META["reply_at"] > HOLD:
+                    BOX.update(user="", comment="", reply="")
             time.sleep(0.3)
     threading.Thread(target=loop, daemon=True).start()
 
@@ -129,6 +285,9 @@ def wait_until_free(args) -> None:
 
 def say(args, text: str) -> None:
     """Send one sentence and wait for it to be spoken (interruptible only between sentences)."""
+    SAID.append(text.strip().lower())
+    META["cps"] = args.cps
+    META["speech_free_at"] = max(time.time(), META["speech_free_at"]) + len(text) / args.cps
     post_reread(args.api, args.name, text)
     end = time.time() + len(text) / args.cps
     while time.time() < end:
@@ -159,7 +318,9 @@ def present_product(args, catalog, safety, product, round_no: int) -> None:
     minutes = product.get("duration_min") or random.uniform(args.min_minutes, args.max_minutes)
     deadline = time.time() + float(minutes) * 60
     print(f"[tour] round {round_no} -> {product['name']} ({minutes:.1f} min)", flush=True)
-
+    
+    CURRENT.update(name=product.get("name", ""),
+        images=[os.path.basename(x) for x in (product.get("images") or [])])
     cycle = round_no
     pending = []                       # sentences left in the current cycle
     while time.time() < deadline:
@@ -203,7 +364,9 @@ def run(args) -> None:
 
         for product in products:
             present_product(args, catalog, safety, product, round_no)
-
+            
+        CURRENT.update(name="", images=[])
+        
         end_text = catalog.templates.get("tour_end")
         if end_text and not safety.check(end_text, "output"):
             wait_until_free(args)

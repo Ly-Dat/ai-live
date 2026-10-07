@@ -58,3 +58,12 @@ def test_comment_makes_the_host_wait_then_resume(monkeypatch):
     t0 = time.time()
     product_tour.wait_until_free(args)
     assert 0.4 < time.time() - t0 < 1.5            # held back reply_wait + quiet, then free
+
+
+def test_overlay_reply_waits_for_voice():
+    import time
+    import product_tour as pt
+    pt.META.update(reply_at=0.0, speech_free_at=time.time() + 10, cps=10.0)
+    pt.show_answer("0123456789")
+    assert pt.BOX["start"] >= time.time() + 9      # starts when the queued speech ends
+    assert pt.META["speech_free_at"] == pt.BOX["start"] + 1.0
