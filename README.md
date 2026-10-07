@@ -69,3 +69,13 @@ A seller-side route to the full cart would be the TikTok Shop Partner API (requi
 ## Tests
 
 `python -m py_compile` over the sources, and see `tests/` for per-backend API experiments inherited from upstream.
+
+## Catalog tools
+
+- **Products tab** (web UI): edit the catalog, import CSV/XLSX, say a pitch now, test comment replies.
+- `python sync_shop_products.py [--details] [--dry-run] [--status]`: pull products from the TikTok Shop Partner API. Put credentials in `tiktok_shop_credentials.json` (git-ignored) or `TTS_*` env vars. Not yet verified against a real shop.
+- Tests: `python -m pytest tests/unit`
+
+## Supported platforms
+
+Only `talk`, `tiktok`, `youtube` and `twitch` remain; the Chinese-platform listeners (Bilibili, Douyin, Kuaishou, WeChat, etc.) were removed. Their old config sections in `config.json` are unused.

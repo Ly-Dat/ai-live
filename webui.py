@@ -3379,22 +3379,10 @@ def goto_func_page():
     }
 
     platform_options = {
-        'talk': 'Chat Mode', 
-        'bilibili': 'Bilibili', 
-        'bilibili2': 'Bilibili 2', 
-        'dy': 'Douyin', 
-        'dy2': 'Douyin 2', 
-        'ks': 'Kuaishou',
-        'ks2': 'Kuaishou 2',
-        'pdd': 'Pinduoduo',
-        'wxlive': 'WeChat Channels',
-        'taobao': 'Taobao',
-        '1688': '1688',
-        'douyu': 'Douyu',
-        'ordinaryroad_barrage_fly': 'Danmaku Fly (ordinaryroad)',
-        'youtube': 'YouTube', 
-        'twitch': 'twitch', 
-        'tiktok': 'tiktok',
+        'talk': 'Chat Mode',
+        'tiktok': 'TikTok LIVE',
+        'youtube': 'YouTube',
+        'twitch': 'Twitch',
     }
 
     visual_body_options = {
@@ -3413,6 +3401,7 @@ def goto_func_page():
         svc_page = ui.tab('Voice Changer')
         visual_body_page = ui.tab('Virtual Body')
         copywriting_page = ui.tab('Copywriting')
+        products_page = ui.tab('Products')
         talk_page = ui.tab('Chat')
         image_recognition_page = ui.tab('Image Recognition')
         integral_page = ui.tab('Points')
@@ -6036,6 +6025,10 @@ def goto_func_page():
                 with copywriting_audio_card.style(card_css):
                     with ui.row():
                         ui.label("The generated Copywriting audio is shown here, only the most recently synthesized Copywriting audio is shown, and you can delete the synthesized audio here")
+        with ui.tab_panel(products_page).style(tab_panel_css):
+            from utils.webui_products import build_products_tab
+            build_products_tab(config)
+
         with ui.tab_panel(integral_page).style(tab_panel_css):
             with ui.card().style(card_css):
                 ui.label("General")

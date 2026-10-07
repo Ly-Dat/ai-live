@@ -1661,31 +1661,7 @@ def start_server():
     
     logger.info(f"Current platform: {platform}")
 
-    if platform == "bilibili":
-        from utils.platforms.bilibili import start_listen
-
-        start_listen(config, common, my_handle, platform)
-    elif platform == "bilibili2":
-        from utils.platforms.bilibili2 import start_listen
-
-        start_listen(config, common, my_handle, platform)   
-    elif platform == "dy":
-        from utils.platforms.dy import start_listen
-
-        start_listen(config, common, my_handle, platform, schedule_thread)    
-    elif platform == "dy2":
-        from utils.platforms.dy2 import start_listen
-
-        start_listen(config, common, my_handle, platform)
-    elif platform == "ks":
-        from utils.platforms.ks import start_listen
-
-        start_listen(config, common, my_handle, platform)
-    elif platform in ["ks2", "pdd", "douyu", "1688", "taobao"]:
-        from utils.platforms.lx_live_monitor_assistant import start_listen
-
-        start_listen(config, common, my_handle, platform)
-    elif platform == "tiktok":
+    if platform == "tiktok":
         from utils.platforms.tiktok import start_listen
 
         start_listen(config, common, my_handle, platform)
@@ -1693,25 +1669,15 @@ def start_server():
         from utils.platforms.twitch import start_listen
 
         start_listen(config, common, my_handle, platform)
-    elif platform == "wxlive":
-        from utils.platforms.wxlive import start_listen
-
-        start_listen(config, common, my_handle, platform)
     elif platform == "youtube":
         from utils.platforms.youtube import start_listen
 
         start_listen(config, common, my_handle, platform)
-    elif platform == "hntv":
-        from utils.platforms.hntv import start_listen
-
-        start_listen(config, common, my_handle, platform)
-    elif platform == "ordinaryroad_barrage_fly":
-        from utils.platforms.ordinaryroad_barrage_fly import start_listen
-
-        start_listen(config, common, my_handle, platform)
-            
-    elif platform == "talk":
+    elif platform in ("talk",):
         thread.join()
+    else:
+        logger.error(f"Unsupported platform: {platform}. Supported: talk, tiktok, youtube, twitch")
+
 
 
 # Exit the program

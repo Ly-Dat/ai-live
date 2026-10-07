@@ -245,6 +245,41 @@ def _scoring_tie(catalog: "ProductCatalog", text: str, found: List[Dict]) -> boo
     return a == b
 
 
+def merge_records(products: List[Dict], records: List[Dict]):
+    """Merge external product records (sheet / Shop API) into the catalog list in place.
+
+    Match by id, then by accent-folded name. Existing entries keep everything written by hand: only empty fields are
+    filled, plus price and active which follow the source. New records are appended in order.
+    Returns (added, updated).
+    """
+    by_id = {str(p.get("id")): p for p in products if p.get("id")}
+    by_name = {_fold(p.get("name")): p for p in products}
+    added = updated = 0
+    for rec in records:
+        name = (rec.get("name") or "").strip()
+        if not name:
+            continue
+        existing = by_id.get(str(rec.get("id"))) or by_name.get(_fold(name))
+        if existing:
+            for k, v in rec.items():
+                if k in ("price", "active") or not existing.get(k):
+                    if v not in ("", None, []):
+                        existing[k] = v
+            updated += 1
+        else:
+            new = {"id": str(rec.get("id") or f"IMP{len(products) + 1:03d}"), "order": len(products) + 1,
+                   "aliases": [], "price": "", "original_price": "", "description": "", "highlights": [],
+                   "sizes_colors": "", "how_to_use": "", "shipping": "", "return_policy": "", "stock_note": "",
+                   "faq": []}
+            new.update({k: v for k, v in rec.items() if v not in ("", None)})
+            new["name"] = name
+            products.append(new)
+            by_id[new["id"]] = new
+            by_name[_fold(name)] = new
+            added += 1
+    return added, updated
+
+
 _default: Optional[ProductCatalog] = None
 
 

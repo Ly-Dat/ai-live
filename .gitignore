@@ -253,3 +253,6 @@ static/
 
 add_dependencies.py
 
+
+tiktok_shop_credentials.json
+config.json.before_locale
