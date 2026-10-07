@@ -225,7 +225,8 @@
     "entrance_random": true,
     "username_max_len": 10,
     "entrance_copy": [
-      "Chào mừng {username} đã vào phòng live nha!"
+      "Chào mừng {username} đã vào phòng live nha!",
+      "Chào {username}, cả nhà đang xem {product} đó, bạn xem thử nha!"
     ],
     "entrance": {
       "periodic_trigger": {
@@ -236,10 +237,11 @@
         "trigger_num_max": 2
       }
     },
-    "gift_enable": false,
+    "gift_enable": true,
     "gift_random": true,
     "gift_copy": [
-      "Cảm ơn {username} đã tặng {gift_name} nha!"
+      "Cảm ơn {username} đã tặng {gift_name} nha!",
+      "Wow, cảm ơn {username} đã tặng {gift_name}! Cả nhà đang xem {product} nè."
     ],
     "gift": {
       "periodic_trigger": {
@@ -250,10 +252,11 @@
         "trigger_num_max": 2
       }
     },
-    "follow_enable": false,
+    "follow_enable": true,
     "follow_random": true,
     "follow_copy": [
-      "Cảm ơn {username} đã theo dõi nha!"
+      "Cảm ơn {username} đã theo dõi nha!",
+      "Cảm ơn {username} đã theo dõi kênh! Cùng xem tiếp {product} nhé."
     ],
     "follow": {
       "periodic_trigger": {

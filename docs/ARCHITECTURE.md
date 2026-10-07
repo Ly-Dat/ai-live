@@ -71,6 +71,11 @@ Key design rules:
 | `utils/webui_products.py`, `utils/webui_dashboard.py` | Web UI tabs | NiceGUI |
 | `product_tour.py` | Loops the cart and pitches each product | disclosure line, reminders, safety-checked |
 | `import_products.py`, `sync_shop_products.py`, `report_session.py` | CLIs | spreadsheet import, API sync, post-live report |
+| `utils/flash_sale.py` | Flash-sale scheduler | pure `next_announcement()`; state in `data/flash_sale.json`, ticked by a background thread in the app |
+| `utils/catalog_enrich.py` | LLM catalog drafting | injected `llm_fn`, safety-filtered, never auto-saved |
+| `utils/personas.py`, `data/personas.json` | Voice + style presets | compliance rules are always appended |
+| `utils/setup_wizard.py`, `utils/webui_setup.py`, `launcher.py`, `start.bat` | Onboarding | wizard answers to `data/setup.json` + `config.json`; `ProcessManager` runs the bridge and tour |
+| `utils/simulator.py`, `simulate_live.py`, `data/sim_scenario.json` | Demo / regression | offline verdicts (blocked / quick / buy_cta / llm) per comment, with `expect` checks used by tests |
 
 ## 4. Data
 
@@ -88,6 +93,7 @@ logic is deliberately kept free of NiceGUI / network imports so it stays testabl
 
 - TikTok does not push the full cart over the websocket: only pinned products. Use the Partner API, a spreadsheet, or pin products.
 - The Partner API client has not been run against a real shop yet.
+- The wizard, flash-sale and draft UI were only smoke-tested (pages render); click-through in a browser is still to do.
 - `product_tour.py` runs as its own process, so its pitches are not in the analytics log yet (route it through `/send` with a `source` field).
 - The safety term list is a conservative starting point; TikTok's real enforcement is private and changes.
 - Auto-spotlight (`My_handle.spotlight_handle`) re-pitches a product after N shopping questions in a window; tune `products.spotlight`.

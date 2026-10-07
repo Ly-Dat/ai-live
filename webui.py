@@ -3395,6 +3395,7 @@ def goto_func_page():
     }
 
     with ui.tabs().classes('w-full').props('align=left outside-arrows mobile-arrows active-color=primary indicator-color=primary') as tabs:
+        setup_page = ui.tab('Setup')
         common_config_page = ui.tab('Common Config')
         llm_page = ui.tab('Large Language Model')
         tts_page = ui.tab('Text-to-Speech')
@@ -3403,6 +3404,7 @@ def goto_func_page():
         copywriting_page = ui.tab('Copywriting')
         products_page = ui.tab('Products')
         dashboard_page = ui.tab('Dashboard')
+        tools_page = ui.tab('Live tools')
         talk_page = ui.tab('Chat')
         image_recognition_page = ui.tab('Image Recognition')
         integral_page = ui.tab('Points')
@@ -3414,7 +3416,7 @@ def goto_func_page():
         docs_page = ui.tab('Docs & Tutorials')
         about_page = ui.tab('About')
 
-    with ui.tab_panels(tabs, value=common_config_page).classes('w-full'):
+    with ui.tab_panels(tabs, value=setup_page).classes('w-full'):
         with ui.tab_panel(common_config_page).style(tab_panel_css):
             with ui.row():
                 
@@ -6026,6 +6028,14 @@ def goto_func_page():
                 with copywriting_audio_card.style(card_css):
                     with ui.row():
                         ui.label("The generated Copywriting audio is shown here, only the most recently synthesized Copywriting audio is shown, and you can delete the synthesized audio here")
+        with ui.tab_panel(setup_page).style(tab_panel_css):
+            from utils.webui_setup import build_setup_tab
+            build_setup_tab(config)
+
+        with ui.tab_panel(tools_page).style(tab_panel_css):
+            from utils.webui_tools import build_tools_tab
+            build_tools_tab(config)
+
         with ui.tab_panel(dashboard_page).style(tab_panel_css):
             from utils.webui_dashboard import build_dashboard_tab
             build_dashboard_tab(config)

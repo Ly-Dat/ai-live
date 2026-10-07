@@ -212,6 +212,8 @@ def start_server():
                         my_handle.entrance_handle(data_json)
                     elif data_json["type"] == "product":
                         my_handle.product_handle(data_json)
+                    elif data_json["type"] == "follow":
+                        my_handle.follow_handle(data_json)
 
                     return CommonResult(code=200, message="Success")
                 except Exception as e:
@@ -1660,6 +1662,9 @@ def start_server():
         run_metahuman_stream_is_speaking_schedule_thread.start()
     
     logger.info(f"Current platform: {platform}")
+
+    # Flash-sale announcements (data/flash_sale.json is written by the web UI)
+    threading.Thread(target=my_handle.flash_sale_loop, daemon=True).start()
 
     if platform == "tiktok":
         from utils.platforms.tiktok import start_listen

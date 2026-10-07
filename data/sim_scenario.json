@@ -1,0 +1,16 @@
+{
+  "_comment": "Demo room. 'after' = seconds to wait before the step; 'expect' = what the compliance + catalog layer should do.",
+  "steps": [
+    {"after": 2, "type": "entrance", "data": {"username": "Lan Anh", "content": "entered the live room"}},
+    {"after": 4, "type": "comment", "data": {"username": "Lan Anh", "content": "áo thun giá bao nhiêu vậy shop"}, "expect": "quick"},
+    {"after": 6, "type": "comment", "data": {"username": "Minh", "content": "bình giữ nhiệt có những màu nào"}, "expect": "quick"},
+    {"after": 6, "type": "comment", "data": {"username": "Bot123", "content": "add zalo 0909123456 mình chuyển khoản nha"}, "expect": "blocked"},
+    {"after": 5, "type": "comment", "data": {"username": "Troll", "content": "shop lừa đảo vl"}, "expect": "blocked"},
+    {"after": 6, "type": "comment", "data": {"username": "Hoa", "content": "chốt đơn bình giữ nhiệt cho mình 1 cái"}, "expect": "buy_cta"},
+    {"after": 6, "type": "comment", "data": {"username": "Nam", "content": "kem chống nắng có hợp da nhạy cảm không"}, "expect": "quick"},
+    {"after": 5, "type": "follow", "data": {"username": "Thu", "content": "followed the channel"}},
+    {"after": 5, "type": "gift", "data": {"username": "Khoa", "gift_name": "Rose", "num": 5, "unit_price": 0.1, "total_price": 0.5}},
+    {"after": 6, "type": "comment", "data": {"username": "Vy", "content": "hôm nay shop live vui quá"}, "expect": "llm"},
+    {"after": 5, "type": "comment", "data": {"username": "Spam", "content": "ib mình nhận giá sỉ qua tele"}, "expect": "blocked"}
+  ]
+}

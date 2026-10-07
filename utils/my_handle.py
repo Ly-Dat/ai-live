@@ -19,7 +19,7 @@ from .db import SQLiteDB
 from .my_translate import My_Translate
 
 from .luoxi_project.live_comment_assistant import send_msg_to_live_comment_assistant
-from . import tiktok_safety, product_catalog, live_analytics
+from . import tiktok_safety, product_catalog, live_analytics, flash_sale
 
 
 """
@@ -1373,6 +1373,7 @@ class My_handle(metaclass=SingletonMeta):
             if is_new:
                 logger.info(f"Added new product from the live room to the catalog: {product['name']}")
             self.get_analytics().record("product_pop", product_id=product["id"], new=bool(is_new))
+            self.set_current_product(product)
 
             if not My_handle.config.get("products", "pitch_on_pop"):
                 return
@@ -1392,6 +1393,54 @@ class My_handle(metaclass=SingletonMeta):
             self.reread_handle({"username": "Streamer", "content": pitch}, type="reread")
         except Exception:
             logger.error(traceback.format_exc())
+
+    def current_product_name(self):
+        """Name of the product being shown right now (last pinned / pitched), for thank-you lines."""
+        name = getattr(self, "_current_product", None)
+        if name and time.time() - getattr(self, "_current_product_ts", 0) < 900:
+            return name
+        return "các sản phẩm trong giỏ hàng"
+
+    def set_current_product(self, product):
+        if product and product.get("name"):
+            self._current_product = product["name"]
+            self._current_product_ts = time.time()
+
+    def thanks_fill(self, template, data):
+        """Fill {username} / {product} in a thank-you template without failing on unknown placeholders."""
+        return My_handle.common.dynamic_variable_replacement(
+            template, {"username": data.get("username", ""), "product": self.current_product_name()})
+
+    def flash_sale_tick(self):
+        """Called every few seconds by a background thread: announce the flash sale when it is due."""
+        try:
+            path = My_handle.config.get("products", "flash_sale_path") or flash_sale.DEFAULT_PATH
+            state = flash_sale.load_state(path)
+            if not state or not state.get("active"):
+                return
+            catalog = self.get_product_catalog()
+            if catalog is None:
+                return
+            product = next((p for p in catalog.products if p.get("id") == state.get("product_id")), None)
+            text, new_state = flash_sale.next_announcement(state, product, catalog.templates)
+            if new_state is not None and new_state != state:
+                flash_sale.save_state(new_state, path)
+            if not text:
+                return
+            self.set_current_product(product)
+            text = self.prohibitions_handle(text, scope="output")
+            if text is None:
+                logger.warning("Flash-sale announcement dropped by the safety filter; edit the flash_* templates")
+                return
+            self.get_analytics().record("pitch", product_id=product["id"], source="flash_sale")
+            self.reread_handle({"username": "Streamer", "content": text}, type="reread")
+        except Exception:
+            logger.error(traceback.format_exc())
+
+    def flash_sale_loop(self, interval=5):
+        while True:
+            self.flash_sale_tick()
+            time.sleep(interval)
 
     def spotlight_handle(self, product):
         """Auto-spotlight: when several viewers ask about the same product in a short window, pitch it again.
@@ -1419,6 +1468,7 @@ class My_handle(metaclass=SingletonMeta):
                 return
             logger.info(f"Spotlight: {asked} questions about {product['name']} in {window}s, pitching it again")
             self.get_analytics().record("pitch", product_id=product["id"], source="spotlight")
+            self.set_current_product(product)
             self.reread_handle({"username": "Streamer", "content": pitch}, type="reread")
         except Exception:
             logger.error(traceback.format_exc())
@@ -3502,6 +3552,7 @@ class My_handle(metaclass=SingletonMeta):
                 'unit_price': data["unit_price"],
                 'total_price': data["total_price"],
                 'cur_time': My_handle.common.get_bj_time(5),
+                'product': self.current_product_name(),
             } 
             resp_content = My_handle.common.dynamic_variable_replacement(resp_content, data_json)
 
@@ -3575,7 +3626,7 @@ class My_handle(metaclass=SingletonMeta):
                 return None
 
             if My_handle.config.get("thanks", "entrance_random"):
-                resp_content = random.choice(My_handle.config.get("thanks", "entrance_copy")).format(username=data["username"])
+                resp_content = self.thanks_fill(random.choice(My_handle.config.get("thanks", "entrance_copy")), data)
             else:
                 # Check whether the class variable list has data; if not, copy the data and then take the first item in order
                 if len(My_handle.thanks_entrance_copy) == 0:
@@ -3583,7 +3634,7 @@ class My_handle(metaclass=SingletonMeta):
                         logger.warning("You deleted the entrance copywriting, so why trigger the entrance thanks at all? Just do not enable it, why delete it")
                         return None
                     My_handle.thanks_entrance_copy = copy.copy(My_handle.config.get("thanks", "entrance_copy"))
-                resp_content = My_handle.thanks_entrance_copy.pop(0).format(username=data["username"])
+                resp_content = self.thanks_fill(My_handle.thanks_entrance_copy.pop(0), data)
 
             # Bracket syntax replacement
             resp_content = My_handle.common.brackets_text_randomize(resp_content)
@@ -3640,7 +3691,7 @@ class My_handle(metaclass=SingletonMeta):
                 return None
 
             if My_handle.config.get("thanks", "follow_random"):
-                resp_content = random.choice(My_handle.config.get("thanks", "follow_copy")).format(username=data["username"])
+                resp_content = self.thanks_fill(random.choice(My_handle.config.get("thanks", "follow_copy")), data)
             else:
                 # Check whether the class variable list has data; if not, copy the data and then take the first item in order
                 if len(My_handle.thanks_follow_copy) == 0:
@@ -3648,7 +3699,7 @@ class My_handle(metaclass=SingletonMeta):
                         logger.warning("You deleted the follow copywriting, so why trigger the follow thanks at all? Just do not enable it, why delete it")
                         return None
                     My_handle.thanks_follow_copy = copy.copy(My_handle.config.get("thanks", "follow_copy"))
-                resp_content = My_handle.thanks_follow_copy.pop(0).format(username=data["username"])
+                resp_content = self.thanks_fill(My_handle.thanks_follow_copy.pop(0), data)
             
             # Bracket syntax replacement
             resp_content = My_handle.common.brackets_text_randomize(resp_content)

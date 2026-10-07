@@ -19,7 +19,7 @@ import tempfile
 
 from nicegui import ui
 
-from . import product_catalog, tiktok_safety
+from . import catalog_enrich, product_catalog, tiktok_safety
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -128,6 +128,7 @@ def build_products_tab(config):
             with ui.row():
                 ui.button('Save product', on_click=lambda: save_product())
                 ui.button('Say pitch now', on_click=lambda: pitch_now()).props('color=secondary')
+                ui.button('Draft with AI', on_click=lambda: draft_ai()).props('color=secondary outline')
                 ui.button('Delete', on_click=lambda: delete_product()).props('color=negative')
 
     def selected_product():
@@ -234,6 +235,59 @@ def build_products_tab(config):
             ui.notify('Pitch sent to the streamer', type='positive')
         except Exception as e:
             ui.notify(f'Cannot reach the app at {api_url}: {e}', type='negative')
+
+    llm_url = api_url.replace("/send", "/llm")
+
+    def _ask_llm(prompt: str) -> str:
+        import urllib.request
+        body = json.dumps({"type": config.get("chat_type"), "username": "catalog", "content": prompt}).encode()
+        req = urllib.request.Request(llm_url, data=body, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=120) as r:
+            resp = json.loads(r.read().decode("utf-8"))
+        if resp.get("code") != 200 or not (resp.get("data") or {}).get("content"):
+            raise RuntimeError(resp.get("message") or "empty LLM reply (is an LLM configured in Settings?)")
+        return resp["data"]["content"]
+
+    async def draft_ai():
+        """Ask the configured LLM for aliases / description / highlights / likely questions; the seller approves."""
+        name = (f["name"].value or "").strip()
+        if not name:
+            ui.notify("Enter the product name first", type="warning")
+            return
+        ui.notify("Asking the AI for a draft ...", type="info")
+        try:
+            safety = tiktok_safety.TikTokSafety(terms_path)
+            draft = await asyncio.to_thread(
+                catalog_enrich.enrich, name, f["price"].value or "", _ask_llm, safety)
+        except Exception as e:
+            ui.notify(f"Draft failed: {e}", type="negative")
+            return
+        with ui.dialog() as dlg, ui.card().classes("w-[36rem]"):
+            ui.label("AI draft (review before applying)").classes("text-bold")
+            ui.label("Aliases: " + ", ".join(draft["aliases"]))
+            ui.label("Description: " + draft["description"])
+            ui.label("Highlights: " + " | ".join(draft["highlights"]))
+            if draft["suggested_questions"]:
+                ui.label("Questions viewers may ask - add answers in the FAQ box:").classes("text-bold")
+                for q in draft["suggested_questions"]:
+                    ui.label("- " + q)
+
+            def apply():
+                tmp = {"aliases": [a.strip() for a in (f["aliases"].value or "").split(",") if a.strip()],
+                       "description": f["description"].value or "",
+                       "highlights": _lines(f["highlights"].value)}
+                catalog_enrich.apply_draft(tmp, draft)
+                f["aliases"].value = ", ".join(tmp["aliases"])
+                f["description"].value = tmp["description"]
+                f["highlights"].value = "\n".join(tmp["highlights"])
+                existing = f["faq"].value or ""
+                f["faq"].value = existing
+                dlg.close()
+                ui.notify("Applied to the form. Press Save product to keep it.", type="positive")
+            with ui.row():
+                ui.button("Apply to form", on_click=apply)
+                ui.button("Cancel", on_click=dlg.close).props("flat")
+        dlg.open()
 
     ui.separator()
     ui.label('Test a viewer comment: quick answer + TikTok safety check').classes('text-bold')

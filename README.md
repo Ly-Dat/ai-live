@@ -18,6 +18,7 @@ automatic TikTok LIVE seller:
 - **Turns buying signals into action**: "chốt đơn", "lấy 1 cái" and similar comments get a call-to-action that points to the cart item.
 - **Stays inside TikTok's rules**: two-way compliance filter, AI-disclosure line, no off-platform contact or payment talk.
 - **Auto-spotlight**: when 3+ viewers ask about the same product within 5 minutes, the AI pitches it again (`products.spotlight` in `config.json`, 10 min cooldown).
+- **Starts in minutes**: one launcher, a setup wizard, and a simulator so you can try it before going live.
 - **Shows what worked**: Dashboard tab and `python report_session.py` list what viewers asked, which products drew interest and what the filter caught.
 - **Cheap to run**: quick answers skip the LLM entirely.
 
@@ -34,13 +35,26 @@ flowchart LR
 
 Full write-up with the message pipeline, module table and roadmap: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Quick start
+## Quick start (sellers)
 
-1. Install the main app: `pip install -r requirements.txt` (Python 3.10+), then `python main.py` (web UI: http://127.0.0.1:7000).
-2. In the web UI choose your LLM (`chat_type`), TTS (edge-tts, voice `vi-VN-HoaiMyNeural`) and Live2D output.
-3. Edit **`data/products.json`** with the items in your cart (same order as the cart; fill `order`, `price`, `highlights`, `faq`).
-4. Start the TikTok bridge in its own venv: `python tiktok_bridge.py YOUR_TIKTOK_USERNAME --joins --gifts`
-5. Start the product tour: `python product_tour.py` (flags: `--gap`, `--pause`, `--rounds`, `--once`, `--cps`).
+1. Install Python 3.10+ and run `pip install -r requirements.txt` once.
+2. Double-click **`start.bat`** (or `python launcher.py`). It starts the app and opens the control panel.
+3. Follow the **Setup** tab: shop and TikTok username, upload your products (CSV/XLSX), pick a voice and persona, run the dry run, press **Start**.
+   The first Start creates the TikTok bridge environment (`venv_tt`) automatically.
+4. Go LIVE on TikTok. The AI introduces your cart in a loop and answers viewers.
+
+No TikTok account handy? `python simulate_live.py --offline` shows what the bot does with demo viewers (spam, contact requests,
+price questions, buying signals), and `python simulate_live.py` replays them into the running app so the avatar speaks.
+
+Manual route for developers: `python main.py`, then `python webui.py`, then in the bridge venv
+`python tiktok_bridge.py YOUR_TIKTOK_USERNAME --gifts --joins`, then `python product_tour.py` (flags: `--gap`, `--pause`, `--rounds`, `--once`, `--cps`).
+
+## More seller tools
+
+- **Flash sale** (Live tools tab): pick a product, minutes, optional sale price and stock. The AI announces the time left on a schedule and in the last minute. It only says what you entered and passes the safety filter.
+- **Shoutouts**: thank-you lines for gifts, follows and joins mention the viewer and the product on screen (`{username}`, `{product}` in `config.json -> thanks`).
+- **Draft with AI** (Products tab): the LLM drafts aliases, a description, highlights and the questions viewers will ask. You review and apply; nothing is saved automatically, and drafts are safety-filtered.
+- **Personas** (`data/personas.json`): friendly girl, cheerful host, calm expert. Each sets voice, speed, speaking style and avatar while keeping the compliance rules.
 
 ## Getting the cart into the catalog
 

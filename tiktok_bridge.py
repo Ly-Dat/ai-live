@@ -29,6 +29,7 @@ from TikTokLive.events import (
     CommentEvent,
     ConnectEvent,
     DisconnectEvent,
+    FollowEvent,
     GiftEvent,
     JoinEvent,
 )
@@ -136,6 +137,14 @@ def make_client(user: str, gifts: bool, joins: bool, state: dict) -> TikTokLiveC
             await send("entrance", {"username": nick, "content": "entered the live room"})
 
     if gifts:
+        @client.on(FollowEvent)
+        async def on_follow(event: FollowEvent):
+            nick = event.user.nickname if event.user else "?"
+            if nick in IGNORE:
+                return
+            log(f"[follow] {nick}")
+            await send("follow", {"username": nick, "content": "followed the channel"})
+
         @client.on(GiftEvent)
         async def on_gift(event: GiftEvent):
             # streakable gifts: only report when the streak has ended

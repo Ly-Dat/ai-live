@@ -32,6 +32,11 @@
   "answer_return": "{value}",
   "answer_usage": "Cách dùng {name}: {value}",
   "answer_buy": "Bạn muốn lấy {name} thì bấm vào giỏ hàng, chọn sản phẩm số {number} rồi đặt hàng ngay trong TikTok nhé.",
+  "flash_start": "Ưu đãi {name} đang diễn ra trong {minutes} phút, giá {price} nha cả nhà.",
+  "flash_remaining": "Ưu đãi {name} còn khoảng {minutes} phút nữa nhé, giá hiện tại {price}.",
+  "flash_stock": " Shop còn {stock} sản phẩm cho phiên live này.",
+  "flash_final": "Ưu đãi {name} sắp kết thúc, bạn nào quan tâm xem trong giỏ hàng giúp mình nhé.",
+  "flash_end": "Ưu đãi {name} đã kết thúc, cảm ơn cả nhà đã xem nhé.",
   "answer_stock": "{value}",
   "disclosure": "Mình là trợ lý AI của shop, nội dung livestream này được tạo bằng trí tuệ nhân tạo nhé cả nhà.",
   "interstitial": [

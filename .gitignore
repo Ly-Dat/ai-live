@@ -257,3 +257,6 @@ add_dependencies.py
 tiktok_shop_credentials.json
 config.json.before_locale
 log/analytics/
+data/setup.json
+data/flash_sale.json
+log/*.log
