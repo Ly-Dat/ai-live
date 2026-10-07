@@ -23,7 +23,9 @@ DEFAULT_SETUP = {
     "gifts": True,
     "joins": False,
     "auto_tour": True,
-    "tour_gap": 8,
+    "tour_min_minutes": 5,
+    "tour_max_minutes": 10,
+    "tour_quiet": 2,
 }
 
 
@@ -141,7 +143,10 @@ def bridge_command(setup: Dict, python: str) -> List[str]:
 
 
 def tour_command(setup: Dict, python: str = sys.executable) -> List[str]:
-    return [python, "product_tour.py", "--gap", str(setup.get("tour_gap", 8))]
+    lo = float(setup.get("tour_min_minutes", 5) or 5)
+    hi = max(lo, float(setup.get("tour_max_minutes", 10) or 10))
+    return [python, "product_tour.py", "--min-minutes", f"{lo:g}", "--max-minutes", f"{hi:g}",
+            "--quiet", f"{float(setup.get('tour_quiet', 2) or 2):g}"]
 
 
 class ProcessManager:

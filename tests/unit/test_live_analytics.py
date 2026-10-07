@@ -41,7 +41,7 @@ def test_report_and_buy_reply(tmp_path):
     a.record("comment", user="u", text="giá", intent="price", product_id="P001")
     md = report_markdown(a.summary(), {"P001": "Áo thun"}, "Shop")
     assert "Áo thun" in md and "Live session report" in md
-    c = ProductCatalog(os.path.join(ROOT, "data", "products.json"), os.path.join(ROOT, "data", "pitch_templates.json"))
+    c = ProductCatalog(os.path.join(ROOT, "tests", "fixtures", "products.json"), os.path.join(ROOT, "data", "pitch_templates.json"))
     r = c.buy_reply(c.products[0])
     assert c.products[0]["name"] in r and "giỏ hàng" in r
 

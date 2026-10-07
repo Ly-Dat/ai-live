@@ -134,6 +134,12 @@ def build_setup_tab(config):
             status = ui.label("")
             logbox = ui.log().classes("w-full h-40")
             auto_tour = ui.switch("Also start the product tour (introduces every product in a loop)", value=setup["auto_tour"])
+            with ui.row().classes("items-center"):
+                tour_min = ui.number("Min minutes per product", value=setup.get("tour_min_minutes", 5), min=1, max=60, format="%.0f").classes("w-48")
+                tour_max = ui.number("Max minutes per product", value=setup.get("tour_max_minutes", 10), min=1, max=60, format="%.0f").classes("w-48")
+                tour_quiet = ui.number("Resume after quiet (s)", value=setup.get("tour_quiet", 2), min=1, max=30, format="%.0f").classes("w-48")
+            ui.label("The host presents each product for a random time in that range, repeating its script until time is up. "
+                     "Viewer comments always go first; after the answer, it resumes where it stopped once chat is quiet.").classes("lv-sub")
 
             def refresh():
                 status.text = f"Bridge: {'RUNNING' if PM.running('bridge') else 'stopped'}   |   Tour: {'RUNNING' if PM.running('tour') else 'stopped'}"
@@ -152,6 +158,9 @@ def build_setup_tab(config):
                     ui.notify(f"Could not prepare the TikTok bridge environment: {e}", type="negative")
                     return
                 PM.start("bridge", setup_wizard.bridge_command(answers, py))
+                answers.update({"tour_min_minutes": tour_min.value or 5, "tour_max_minutes": tour_max.value or 10,
+                                "tour_quiet": tour_quiet.value or 2})
+                setup_wizard.save_setup(answers)
                 if auto_tour.value:
                     PM.start("tour", setup_wizard.tour_command(answers))
                 ui.notify("Started. Watch the log below.", type="positive")

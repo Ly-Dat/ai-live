@@ -77,6 +77,13 @@ Run the bridge with `--debug-cart cart.jsonl` once in a real live to capture the
 `OecLiveShoppingMessageV2` may carry more product detail, and that file shows what is available.
 3. **TikTok Shop Partner API (seller account).** `python sync_shop_products.py [--details] [--dry-run]` pulls the real catalog; put credentials in `tiktok_shop_credentials.json` or `TTS_*` env vars. Needs an approved app; not yet verified against a live shop.
 
+## How the host presents products
+
+Top to bottom, each product for 5-10 minutes (set in Setup, step 5, or per product with `duration_min`). The script is the
+template intro, **your own intro line** (the `intro` field in the Products tab), price, facts and highlights; it repeats
+with variations until the time is up, then moves on. A viewer comment always goes first: the host answers from your
+product data, and once chat has been quiet for 2 seconds it continues the product where it stopped.
+
 ## Control panel
 
 The web UI opens on **Home**: a readiness checklist with one-click fixes, a LIVE badge in the header when the TikTok bridge runs, last-session stats, and sidebar search across all settings. After a live, Home shows a recap with concrete "do this next live" tips, a streak and lives-this-week count. Dark and light themes.

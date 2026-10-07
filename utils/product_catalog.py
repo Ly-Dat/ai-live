@@ -132,6 +132,8 @@ class ProductCatalog:
         parts = []
         intro = t.get("intro", ["Next up: {name}."])
         parts.append(intro[round_no % len(intro)].format(name=product["name"], number=product.get("order", "")))
+        if str(product.get("intro") or "").strip():
+            parts.append(str(product["intro"]).strip())  # the seller's own intro line, spoken every cycle
         if product.get("price"):
             if product.get("original_price"):
                 parts.append(random.choice(t.get("price_with_original", ["Price {price}, was {original_price}."]))

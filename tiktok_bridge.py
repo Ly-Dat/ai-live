@@ -77,8 +77,19 @@ def post_json(kind: str, data: dict) -> None:
         log(f"[app] rejected: {out}")
 
 
+def ping_tour() -> None:
+    """Tell product_tour.py (if running) that a viewer just commented, so it yields to the reply. Best effort."""
+    try:
+        req = urllib.request.Request("http://127.0.0.1:8091/comment", data=b"{}", method="POST")
+        urllib.request.urlopen(req, timeout=1).read()
+    except Exception:
+        pass
+
+
 async def send(kind: str, data: dict) -> None:
     try:
+        if kind == "comment":
+            await asyncio.to_thread(ping_tour)
         await asyncio.to_thread(post_json, kind, data)
     except Exception as e:  # app not running / wrong port
         log(f"[app] cannot reach {API_URL}: {type(e).__name__}: {e}")

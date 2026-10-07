@@ -34,7 +34,7 @@ def test_apply_setup_roundtrip(tmp_path):
     cfg = tmp_path / "config.json"
     cfg.write_text(open(os.path.join(ROOT, "config.json"), encoding="utf-8").read(), encoding="utf-8")
     prods = tmp_path / "products.json"
-    shutil.copy(os.path.join(ROOT, "data", "products.json"), prods)
+    shutil.copy(os.path.join(ROOT, "tests", "fixtures", "products.json"), prods)
     changes = setup_wizard.apply_setup(str(cfg), str(prods), PERSONAS,
                                        {"tiktok_username": "@myshop", "persona_id": "calm_expert", "shop_name": "My Shop"})
     out = json.load(open(cfg, encoding="utf-8"))
@@ -44,15 +44,15 @@ def test_apply_setup_roundtrip(tmp_path):
 
 
 def test_commands():
-    s = {"tiktok_username": "@shop", "gifts": True, "joins": False, "tour_gap": 6}
+    s = {"tiktok_username": "@shop", "gifts": True, "joins": False, "tour_min_minutes": 3, "tour_max_minutes": 6, "tour_quiet": 2}
     assert setup_wizard.bridge_command(s, "py") == ["py", "tiktok_bridge.py", "shop", "--gifts"]
-    assert setup_wizard.tour_command(s, "py") == ["py", "product_tour.py", "--gap", "6"]
+    assert setup_wizard.tour_command(s, "py") == ["py", "product_tour.py", "--min-minutes", "3", "--max-minutes", "6", "--quiet", "2"]
 
 
 def test_demo_scenario_expectations():
     steps = json.load(open(os.path.join(ROOT, "data", "sim_scenario.json"), encoding="utf-8"))["steps"]
     safety = TikTokSafety(os.path.join(ROOT, "data", "tiktok_policy_terms.json"))
-    cat = product_catalog.ProductCatalog(os.path.join(ROOT, "data", "products.json"), os.path.join(ROOT, "data", "pitch_templates.json"))
+    cat = product_catalog.ProductCatalog(os.path.join(ROOT, "tests", "fixtures", "products.json"), os.path.join(ROOT, "data", "pitch_templates.json"))
     checked = 0
     for s in steps:
         if s["type"] == "comment" and s.get("expect"):

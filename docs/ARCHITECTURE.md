@@ -69,7 +69,7 @@ Key design rules:
 | `utils/tiktok_shop_api.py` | TikTok Shop Partner API client | HMAC-SHA256 signing, token refresh; unverified on a live shop |
 | `utils/live_analytics.py` | Event log, intent detection, session summary, report | pure `summarize()` shared by app, dashboard and CLI |
 | `utils/webui_products.py`, `utils/webui_dashboard.py` | Web UI tabs | NiceGUI |
-| `product_tour.py` | Loops the cart and pitches each product | disclosure line, reminders, safety-checked |
+| `product_tour.py` | Timed tour: 5-10 min per product, script repeats until time is up | comment priority (bridge pings :8091 + log watcher), resumes after `--quiet` seconds, every sentence safety-checked |
 | `import_products.py`, `sync_shop_products.py`, `report_session.py` | CLIs | spreadsheet import, API sync, post-live report |
 | `utils/flash_sale.py` | Flash-sale scheduler | pure `next_announcement()`; state in `data/flash_sale.json`, ticked by a background thread in the app |
 | `utils/catalog_enrich.py` | LLM catalog drafting | injected `llm_fn`, safety-filtered, never auto-saved |

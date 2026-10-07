@@ -6,7 +6,7 @@ from utils.product_catalog import ProductCatalog, merge_records  # noqa: E402
 
 
 def make(tmp_path):
-    src = os.path.join(ROOT, "data", "products.json")
+    src = os.path.join(ROOT, "tests", "fixtures", "products.json")
     dst = tmp_path / "products.json"
     dst.write_text(open(src, encoding="utf-8").read(), encoding="utf-8")
     return ProductCatalog(str(dst), os.path.join(ROOT, "data", "pitch_templates.json"))
