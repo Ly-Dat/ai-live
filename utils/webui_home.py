@@ -8,7 +8,7 @@ import os
 
 from nicegui import ui
 
-from . import home_status, live_analytics, recap, setup_wizard
+from . import home_status, live_analytics, milestones, recap, setup_wizard, starter
 from .webui_theme import port_open
 
 
