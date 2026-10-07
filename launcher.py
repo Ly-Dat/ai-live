@@ -52,7 +52,7 @@ def main():
             time.sleep(2)
         if wait_for(web_port, 90):
             url = f"http://127.0.0.1:{web_port}/"
-            print(f"\nControl panel: {url}  (open the Setup tab)\nAPI: http://127.0.0.1:{api_port}/send\nPress Ctrl+C to stop.\n")
+            print(f"\nControl panel: {url}  (opens on Home)\nAPI: http://127.0.0.1:{api_port}/send\nPress Ctrl+C to stop.\n")
             if not a.no_browser:
                 webbrowser.open(url)
         else:
