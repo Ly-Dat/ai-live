@@ -8,19 +8,19 @@ def Configure_logger(log_file):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    # 创建一个处理程序
+    # Create a handler
     handler = logging.FileHandler(log_file, encoding='utf-8', mode='a+')
 
     handlers = [handler]
 
-    # 创建控制台处理程序并设置颜色
+    # Create a console handler and set colors
     console = colorlog.StreamHandler()
     console.setFormatter(colorlog.ColoredFormatter(
         color_format,
         datefmt='%Y-%m-%d %H:%M:%S',
         log_colors={
             'DEBUG':    'cyan',
-            'INFO':     'white', # 将INFO的颜色设置为白色
+            'INFO':     'white', # Set the INFO color to white
             'WARNING':  'yellow',
             'ERROR':    'red',
             'CRITICAL': 'red,bg_white',
@@ -35,5 +35,5 @@ def Configure_logger(log_file):
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-    # 将处理程序添加到记录器，并设置格式化器
+    # Add the handler to the logger and set the formatter
     handler.setFormatter(formatter)

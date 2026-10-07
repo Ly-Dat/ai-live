@@ -11,27 +11,43 @@ from utils.common import Common
 from utils.my_log import logger
 from utils.config import Config
 
+
+# Language names accepted for the vits / bert_vits2 `lang` option -> API language code.
+# Chinese names are kept as aliases so configs saved by older versions keep working.
+_VITS_LANG_ALIASES = {
+    "chinese": "zh", "zh": "zh", "中文": "zh", "汉语": "zh",
+    "english": "en", "en": "en", "英文": "en", "英语": "en",
+    "korean": "ko", "ko": "ko", "韩文": "ko", "韩语": "ko",
+    "japanese": "ja", "ja": "ja", "jp": "ja", "日文": "ja", "日语": "ja",
+    "auto": "auto", "自动": "auto",
+}
+
+
+def normalize_vits_lang(lang):
+    """Map a language name (English or legacy Chinese) to the API code; unknown values mean auto-detect."""
+    return _VITS_LANG_ALIASES.get(str(lang).strip().lower(), "auto")
+
 class MY_TTS:
     def __init__(self, config_path):
         self.common = Common()
         self.config = Config(config_path)
 
-        # 创建一个不执行证书验证的 SSLContext 对象
+        # Create an SSLContext object that does not verify certificates
         self.ssl_context = ssl.create_default_context()
         self.ssl_context.check_hostname = False
         self.ssl_context.verify_mode = ssl.CERT_NONE
 
-        # 获取 werkzeug 库的日志记录器
+        # Get the logger of the werkzeug library
         # werkzeug_logger = logger.getLogger("werkzeug")
-        # # 设置 httpx 日志记录器的级别为 WARNING
+        # # Set the httpx logger level to WARNING
         # werkzeug_logger.setLevel(logger.WARNING)
 
-        # 请求超时
+        # Request timed out
         self.timeout = 60
 
-        # 使用内部成员做配置
+        # Use internal members for config
         self.use_class_config = False
-        # 备份一下配置
+        # Back up the config
         self.class_config = copy.copy(self.config)
 
         try:
@@ -42,21 +58,21 @@ class MY_TTS:
                     self.audio_out_path = './' + self.audio_out_path
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error("请检查播放音频的音频输出路径配置！！！这将影响程序使用！")
+            logger.error("Please check the audio output path config for audio playback!!! This will affect program usage!")
 
 
-    # 获取随机数，单数据就是原数值，有-则判断为范围性数据，随机一个数值，返回float数据
+    # Get a random number: a single value stays as is, a - means range data so a random value is picked, returning float data
     def get_random_float(self, data):
-        # 将非字符串的情况统一处理为长度相同的最小值和最大值
+        # Handle non-string cases uniformly as min and max values of the same length
         if isinstance(data, str) and "-" in data:
             min, max = map(float, data.split("-"))
         else:
             min = max = float(data)
         
-        # 返回指定范围内的随机浮点数
+        # Return a random float within the specified range
         return random.uniform(min, max)
 
-    # 音频文件base64编码 传入文件路径
+    # Base64 encoding of the audio file, pass in the file path
     def encode_audio_to_base64(self, file_path):
         import base64
 
@@ -81,7 +97,7 @@ class MY_TTS:
                                 file.write(content)
                             return voice_tmp_path
                         else:
-                            logger.error(f'{type} 下载音频失败: {response.status}')
+                            logger.error(f'{type} Failed to download audio: {response.status}')
                             return None
                 else:
                     async with session.post(file_url, data=data, json=json_data, timeout=timeout) as response:
@@ -93,18 +109,18 @@ class MY_TTS:
                                 file.write(content)
                             return voice_tmp_path
                         else:
-                            logger.error(f'{type} 下载音频失败: {response.status}')
+                            logger.error(f'{type} Failed to download audio: {response.status}')
                             return None
             except asyncio.TimeoutError:
-                logger.error("{type} 下载音频超时")
+                logger.error("{type} Audio download timed out")
                 return None
 
-    # 请求vits的api
+    # Request vits APIapi
     async def vits_api(self, data):
         try:
             logger.debug(f"data={data}")
             if data["type"] == "vits":
-                # API地址 "http://127.0.0.1:23456/voice/vits"
+                # APIAddress "http://127.0.0.1:23456/voice/vits"
                 API_URL = urljoin(data["api_ip_port"], '/voice/vits')
                 data_json = {
                     "text": data["content"],
@@ -117,20 +133,9 @@ class MY_TTS:
                     "max": data["max"]
                 }
                 
-                if data["lang"] == "中文" or data["lang"] == "汉语":
-                    data_json["lang"] = "zh"
-                elif data["lang"] == "英文" or data["lang"] == "英语":
-                    data_json["lang"] = "en"
-                elif data["lang"] == "韩文" or data["lang"] == "韩语":
-                    data_json["lang"] = "ko"
-                elif data["lang"] == "日文" or data["lang"] == "日语":
-                    data_json["lang"] = "ja"
-                elif data["lang"] == "自动":
-                    data_json["lang"] = "auto"
-                else:
-                    data_json["lang"] = "auto"
+                data_json["lang"] = normalize_vits_lang(data["lang"])
             elif data["type"] == "bert_vits2":
-                # API地址 "http://127.0.0.1:23456/voice/bert-vits2"
+                # APIAddress "http://127.0.0.1:23456/voice/bert-vits2"
                 API_URL = urljoin(data["api_ip_port"], '/voice/bert-vits2')
 
                 data_json = {
@@ -145,20 +150,9 @@ class MY_TTS:
                     "sdp_radio": self.get_random_float(data["sdp_radio"])
                 }
                 
-                if data["lang"] == "中文" or data["lang"] == "汉语":
-                    data_json["lang"] = "zh"
-                elif data["lang"] == "英文" or data["lang"] == "英语":
-                    data_json["lang"] = "en"
-                elif data["lang"] == "韩文" or data["lang"] == "韩语":
-                    data_json["lang"] = "ko"
-                elif data["lang"] == "日文" or data["lang"] == "日语":
-                    data_json["lang"] = "ja"
-                elif data["lang"] == "自动":
-                    data_json["lang"] = "auto"
-                else:
-                    data_json["lang"] = "auto"
+                data_json["lang"] = normalize_vits_lang(data["lang"])
             elif data["type"] == "gpt_sovits":
-                # 请求vits_simple_api的api gpt_sovits
+                # Request vits_simple_api APIapi gpt_sovits
                 async def vits_simple_api_gpt_sovits_api(data):
                     try:
                         from aiohttp import FormData
@@ -181,17 +175,17 @@ class MY_TTS:
                             "temperature": data["gpt_sovits"]["temperature"]
                         }
 
-                        # 创建 FormData 对象
+                        # Create a FormData object
                         form_data = FormData()
-                        # 添加文本字段
+                        # Add the text field
                         for key, value in data_json.items():
                             form_data.add_field(key, str(value))
 
-                        # 以二进制读取模式打开音频文件，并添加到表单数据中
-                        # 'reference_audio' 是字段名称，应与服务器端接收的名称一致
+                        # Open the audio file in binary read mode and add it to the form data
+                        # 'reference_audio' Is the field name, which should match the name the server receives
                         form_data.add_field('reference_audio',
                                     open(data["gpt_sovits"]["reference_audio"], 'rb'),
-                                    content_type='audio/mpeg')  # 内容类型根据文件类型修改
+                                    content_type='audio/mpeg')  # The content type is modified according to the file type
                             
                         logger.debug(f"data_json={data_json}")
 
@@ -200,10 +194,10 @@ class MY_TTS:
                         return await self.download_audio("vits_simple_api", url, self.timeout, "post", form_data)
                     except aiohttp.ClientError as e:
                         logger.error(traceback.format_exc())
-                        logger.error(f'vits_simple_api gpt_sovits请求失败，请检查您的vits_simple_api是否启动/配置是否正确，报错内容: {e}')
+                        logger.error(f'vits_simple_api gpt_sovitsRequest failed, please check whether your vits_simple_api is started/configured correctly, error details: {e}')
                     except Exception as e:
                         logger.error(traceback.format_exc())
-                        logger.error(f'vits_simple_api gpt_sovits未知错误，请检查您的vits_simple_api是否启动/配置是否正确，报错内容: {e}')
+                        logger.error(f'vits_simple_api gpt_sovitsUnknown error, please check whether your vits_simple_api is started/configured correctly, error details: {e}')
                     
                     return None
                 
@@ -220,19 +214,19 @@ class MY_TTS:
             return await self.download_audio("vits", url, self.timeout)
         except aiohttp.ClientError as e:
             logger.error(traceback.format_exc())
-            logger.error(f'vits请求失败，请检查您的vits-simple-api是否启动/配置是否正确，报错内容: {e}')
+            logger.error(f'vitsRequest failed, please check whether your vits-simple-api is started/configured correctly, error details: {e}')
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f'vits未知错误，请检查您的vits-simple-api是否启动/配置是否正确，报错内容: {e}')
+            logger.error(f'vitsUnknown error, please check whether your vits-simple-api is started/configured correctly, error details: {e}')
         
         return None
 
-    # 请求bert_vits2的api
+    # Request bert_vits2 APIapi
     async def bert_vits2_api(self, data):
         try:
             logger.debug(f"data={data}")
             if data["type"] == "hiyori":
-                # API地址 "http://127.0.0.1:5000/voice"
+                # APIAddress "http://127.0.0.1:5000/voice"
                 API_URL = urljoin(data["api_ip_port"], '/voice')
 
                 data_json = {
@@ -264,7 +258,7 @@ class MY_TTS:
                 return await self.download_audio("bert_vits2", url, self.timeout)
             elif data["type"] == "刘悦-中文特化API":
                 type = data["type"]
-                # API地址 "http://127.0.0.1:5000/run/predict/"
+                # APIAddress "http://127.0.0.1:5000/run/predict/"
                 API_URL = urljoin(data[type]["api_ip_port"], '/tts_to_audio/')
 
                 data_json = {
@@ -292,17 +286,17 @@ class MY_TTS:
                 return await self.download_audio("bert_vits2", API_URL, self.timeout, "post", json_data=data_json)
         except aiohttp.ClientError as e:
             logger.error(traceback.format_exc())
-            logger.error(f'bert_vits2请求失败，请检查您的bert_vits2 api是否启动/配置是否正确，报错内容: {e}')
+            logger.error(f'bert_vits2Request failed, please check whether your bert_vits2 api is started/configured correctly, error details: {e}')
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f'bert_vits2未知错误，请检查您的bert_vits2 api是否启动/配置是否正确，报错内容: {e}')
+            logger.error(f'bert_vits2Unknown error, please check whether your bert_vits2 api is started/configured correctly, error details: {e}')
         
         return None
     
-    # 请求VITS fast接口获取合成后的音频路径
+    # Request the VITS fast API to get the path of the synthesized audio
     def vits_fast_api(self, data):
         try:
-            # API地址
+            # APIAddress
             API_URL = urljoin(data["api_ip_port"], '/run/predict/')
 
             data_json = {
@@ -321,7 +315,7 @@ class MY_TTS:
             logger.debug(f'data_json={data_json}')
 
             response = requests.post(url=API_URL, json=data_json, timeout=self.timeout)
-            response.raise_for_status()  # 检查响应的状态码
+            response.raise_for_status()  # Check the response status code
 
             result = response.content
             ret = json.loads(result)
@@ -333,22 +327,22 @@ class MY_TTS:
             return new_file_path
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f'vits-fast错误，请检查您的vits-fast推理程序是否启动/配置是否正确，报错内容: {e}')
+            logger.error(f'vits-fastError, please check whether your vits-fast inference program is started/configured correctly, error details: {e}')
             return None
     
 
-    # 请求Edge-TTS接口获取合成后的音频路径
+    # Request the Edge-TTS API to get the path of the synthesized audio
     async def edge_tts_api(self, data):
         try:
             file_name = 'edge_tts_' + self.common.get_bj_time(4) + '.mp3'
             voice_tmp_path = self.common.get_new_audio_path(self.audio_out_path, file_name)
             # voice_tmp_path = './out/' + self.common.get_bj_time(4) + '.mp3'
-            # 过滤" '字符
+            # Filter" 'Character
             data["content"] = data["content"].replace('"', '').replace("'", '')
 
             proxy = data["edge-tts"]["proxy"] if data["edge-tts"]["proxy"] != "" else None
 
-            # 使用 Edge TTS 生成回复消息的语音文件
+            # Use Edge TTS to generate the voice file for the reply message
             communicate = edge_tts.Communicate(
                 text=data["content"], 
                 voice=data["edge-tts"]["voice"], 
@@ -365,7 +359,7 @@ class MY_TTS:
             return None
     
 
-    # 请求OpenAI_TTS的api
+    # Request OpenAI_TTS APIapi
     def openai_tts_api(self, data):
         try:
             if data["type"] == "huggingface":
@@ -400,53 +394,53 @@ class MY_TTS:
                 return voice_tmp_path
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f'OpenAI_TTS请求失败: {e}')
+            logger.error(f'OpenAI_TTSRequest failed: {e}')
             return None
 
-    # 请求gradio的api
+    # Request gradio APIapi
     def gradio_tts_api(self, data):
         def get_value_by_index(response, index):
             try:
-                # 确保响应是元组或列表，并且索引在范围内
+                # Make sure the response is a tuple or list and the index is in range
                 if isinstance(response, (tuple, list)) and index < len(response):
                     return response[index]
                 else:
                     return None
             except IndexError:
                 logger.error(traceback.format_exc())
-                # 索引超出范围
+                # Index out of range
                 return None
 
         def get_file_path(data):
             try:
-                url = data.pop('url')  # 获取并移除URL
-                fn_index = data.pop('fn_index')  # 获取并移除函数索引
+                url = data.pop('url')  # Get and removeURL
+                fn_index = data.pop('fn_index')  # Get and remove the function index
                 data_analysis = data.pop('data_analysis')
 
                 client = Client(url)
 
-                # data是一个字典，包含了所有需要的参数
+                # dataA dict containing all required parameters
                 data_values = list(data.values())
                 result = client.predict(fn_index=fn_index, *data_values)
 
                 logger.debug(result)
 
                 if isinstance(result, (tuple, list)):
-                    # 获取索引为1的元素
+                    # Get the element at index 1
                     file_path = get_value_by_index(result, int(data_analysis))
 
                     if file_path:
-                        logger.debug(f"文件路径:{file_path}")
+                        logger.debug(f"File path:{file_path}")
                         return file_path
                 elif isinstance(result, str):
-                    logger.debug(f"文件路径:{result}")
+                    logger.debug(f"File path:{result}")
                     return result
                 else:
-                    logger.error("数据解析失败！Invalid index or response format.")
+                    logger.error("Data parsing failed!Invalid index or response format.")
                     return None
             except Exception as e:
                 logger.error(traceback.format_exc())
-                # 索引超出范围
+                # Index out of range
                 return None
 
         logger.debug(f"data={data}")
@@ -468,17 +462,17 @@ class MY_TTS:
         import asyncio
 
         def file_to_data_url(file_path):
-            # 根据文件扩展名确定 MIME 类型
+            # Determine the MIME type from the file extension
             mime_type, _ = mimetypes.guess_type(file_path)
 
-            # 读取文件内容
+            # Read the file content
             with open(file_path, "rb") as file:
                 file_content = file.read()
 
-            # 转换为 Base64 编码
+            # Convert to Base64 encoding
             base64_encoded_data = base64.b64encode(file_content).decode('utf-8')
 
-            # 构造完整的 Data URL
+            # Construct the full Data URL
             return f"data:{mime_type};base64,{base64_encoded_data}"
 
                
@@ -488,20 +482,20 @@ class MY_TTS:
             if data["type"] == "gradio_0322":
                 client = Client(data["gradio_ip_port"])
                 voice_tmp_path = client.predict(
-                    data["content"],	# str  in '需要合成的文本' Textbox component
-                    data["api_0322"]["text_lang"],	# Literal['中文', '英文', '日文', '中英混合', '日英混合', '多语种混合']  in '需要合成的语种' Dropdown component
-                    data["api_0322"]["ref_audio_path"],	# filepath  in '请上传3~10秒内参考音频，超过会报错！' Audio component
-                    data["api_0322"]["prompt_text"],	# str  in '参考音频的文本' Textbox component
-                    data["api_0322"]["prompt_lang"],	# Literal['中文', '英文', '日文', '中英混合', '日英混合', '多语种混合']  in '参考音频的语种' Dropdown component
+                    data["content"],	# str  in 'Text to synthesize' Textbox component
+                    data["api_0322"]["text_lang"],	# Literal['Chinese', 'English', 'Japanese', 'Chinese-English mix', 'Japanese-English mix', 'Multilingual mix']  in 'Language to synthesize' Dropdown component
+                    data["api_0322"]["ref_audio_path"],	# filepath  in 'Please upload a reference audio of 3-10 seconds, longer will cause an error!' Audio component
+                    data["api_0322"]["prompt_text"],	# str  in 'Text of the reference audio' Textbox component
+                    data["api_0322"]["prompt_lang"],	# Literal['Chinese', 'English', 'Japanese', 'Chinese-English mix', 'Japanese-English mix', 'Multilingual mix']  in 'Language of the reference audio' Dropdown component
                     data["api_0322"]["top_k"],	# float (numeric value between 1 and 100) in 'top_k' Slider component
                     data["api_0322"]["top_p"],	# float (numeric value between 0 and 1) in 'top_p' Slider component
                     data["api_0322"]["temperature"],	# float (numeric value between 0 and 1) in 'temperature' Slider component
-                    data["api_0322"]["text_split_method"],	# Literal['不切', '凑四句一切', '凑50字一切', '按中文句号。切', '按英文句号.切', '按标点符号切']  in '怎么切' Radio component
+                    data["api_0322"]["text_split_method"],	# Literal['No split', 'Split when reaching four sentences', 'Split when reaching 50 characters', 'Split at Chinese full stop', 'Split at English period', 'Split by punctuation']  in 'How to split' Radio component
                     int(data["api_0322"]["batch_size"]),	# float (numeric value between 1 and 200) in 'batch_size' Slider component
                     float(data["api_0322"]["speed_factor"]),	# float (numeric value between 0.25 and 4) in 'speed_factor' Slider component
-                    data["api_0322"]["split_bucket"],	# bool  in '开启无参考文本模式。不填参考文本亦相当于开启。' Checkbox component
-                    data["api_0322"]["return_fragment"],	# bool  in '数据分桶(可能会降低一点计算量,选就对了)' Checkbox component
-                    data["api_0322"]["fragment_interval"],	# float (numeric value between 0.01 and 1) in '分段间隔(秒)' Slider component
+                    data["api_0322"]["split_bucket"],	# bool  in 'Enable no-reference-text mode. Leaving the reference text empty also enables it.' Checkbox component
+                    data["api_0322"]["return_fragment"],	# bool  in 'Data bucketing (may reduce computation slightly, just pick it)' Checkbox component
+                    data["api_0322"]["fragment_interval"],	# float (numeric value between 0.01 and 1) in 'Segment interval (seconds)' Slider component
                     api_name="/inference"
                 )
                 if voice_tmp_path:
@@ -521,10 +515,10 @@ class MY_TTS:
                     return await self.download_audio("gpt_sovits", data["api_ip_port"], self.timeout, "post", None, data_json)
                 except aiohttp.ClientError as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f'gpt_sovits请求失败: {e}')
+                    logger.error(f'gpt_sovitsRequest failed: {e}')
                 except Exception as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f'gpt_sovits未知错误: {e}')
+                    logger.error(f'gpt_sovitsUnknown error: {e}')
             elif data["type"] == "api_0322":
                 try:
 
@@ -548,10 +542,10 @@ class MY_TTS:
                     return await self.download_audio("gpt_sovits", data["api_ip_port"], self.timeout, "post", None, data_json)
                 except aiohttp.ClientError as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f'gpt_sovits请求失败: {e}')
+                    logger.error(f'gpt_sovitsRequest failed: {e}')
                 except Exception as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f'gpt_sovits未知错误: {e}')
+                    logger.error(f'gpt_sovitsUnknown error: {e}')
             elif data["type"] == "api_0706":
                 try:
 
@@ -567,10 +561,10 @@ class MY_TTS:
                     return await self.download_audio("gpt_sovits", data["api_ip_port"], self.timeout, "post", None, data_json)
                 except aiohttp.ClientError as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f'gpt_sovits请求失败: {e}')
+                    logger.error(f'gpt_sovitsRequest failed: {e}')
                 except Exception as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f'gpt_sovits未知错误: {e}')
+                    logger.error(f'gpt_sovitsUnknown error: {e}')
             elif data["type"] == "v2_api_0821":
                 try:
                     data_json = {
@@ -600,14 +594,14 @@ class MY_TTS:
                     return await self.download_audio("gpt_sovits", API_URL, self.timeout, "post", None, data_json)
                 except aiohttp.ClientError as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f'gpt_sovits请求失败: {e}')
+                    logger.error(f'gpt_sovitsRequest failed: {e}')
                 except Exception as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f'gpt_sovits未知错误: {e}')
+                    logger.error(f'gpt_sovitsUnknown error: {e}')
             
             elif data["type"] == "webtts":
                 try:
-                    # 使用字典推导式构建 params 字典，只包含非空字符串的值
+                    # Use a dict comprehension to build the params dict, containing only non-empty string values
                     params = {
                         key: value
                         for key, value in data["webtts"].items()
@@ -630,25 +624,25 @@ class MY_TTS:
                                 return await self.download_audio("gpt_sovits", url, self.timeout, "get", params)
                 except aiohttp.ClientError as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f'gpt_sovits请求失败: {e}')
+                    logger.error(f'gpt_sovitsRequest failed: {e}')
                 except Exception as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f'gpt_sovits未知错误: {e}')
+                    logger.error(f'gpt_sovitsUnknown error: {e}')
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f'gpt_sovits未知错误，请检查您的gpt_sovits推理是否启动/配置是否正确，报错内容: {e}')
+            logger.error(f'gpt_sovitsUnknown error, please check whether your gpt_sovits inference is started/configured correctly, error details: {e}')
         
         return None
 
 
     def azure_tts_api(self, data):
-        """调用Azure TTS API合成音频返回音频路径
+        """Call the Azure TTS API to synthesize audio and return the audio path
 
         Args:
-            data (dict): JSON数据
+            data (dict): JSONData
 
         Returns:
-            str: 音频路径
+            str: Audio path
         """
         try:
             import azure.cognitiveservices.speech as speechsdk
@@ -656,47 +650,47 @@ class MY_TTS:
             file_name = 'azure_tts_' + self.common.get_bj_time(4) + '.wav'
             voice_tmp_path = self.common.get_new_audio_path(self.audio_out_path, file_name)
             
-            # 创建语音配置对象，使用Azure订阅密钥和服务区域
+            # Create the speech config object using the Azure subscription key and service region
             speech_config = speechsdk.SpeechConfig(subscription=self.config.get("azure_tts", "subscription_key"), region=self.config.get("azure_tts", "region"))
             speech_config.speech_synthesis_voice_name = self.config.get("azure_tts", "voice_name")
 
-            # 创建音频配置对象，指定输出音频文件路径
+            # Create the audio config object, specifying the output audio file path
             audio_config = speechsdk.audio.AudioOutputConfig(filename=voice_tmp_path)
 
-            # 创建语音合成器对象
+            # Create the speech synthesizer object
             speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
 
-            # 执行文本到语音的转换
+            # Perform text-to-speech conversion
             result = speech_synthesizer.speak_text_async(data["content"]).get()
 
-            # 检查结果
+            # Check the result
             if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-                logger.debug(f"音频已成功保存到: {voice_tmp_path}")
+                logger.debug(f"Audio successfully saved to: {voice_tmp_path}")
                 return voice_tmp_path
             elif result.reason == speechsdk.ResultReason.Canceled:
                 cancellation_details = result.cancellation_details
-                logger.error(f"文本转语音取消: {str(cancellation_details.reason)}")
+                logger.error(f"Text-to-speech canceled: {str(cancellation_details.reason)}")
                 if cancellation_details.reason == speechsdk.CancellationReason.Error:
                     if cancellation_details.error_details:
-                        logger.error(f"错误详情: {str(cancellation_details.error_details)}")
+                        logger.error(f"Error details: {str(cancellation_details.error_details)}")
 
                 return None
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f'azure_tts未知错误: {e}')
+            logger.error(f'azure_ttsUnknown error: {e}')
 
             return None
         
 
-    # CosyVoice （gradio_client-0.16.4，版本太低没法用喵）
+    # CosyVoice (gradio_client-0.16.4, version too old to use meow)
     async def cosyvoice_api(self, data):
-        """CosyVoice Gradio的API对接喵
+        """CosyVoice GradioAPI integration meow
 
         Args:
-            data (dict): 传参数据喵
+            data (dict): Parameter data meow
 
         Returns:
-            str: 音频路径
+            str: Audio path
         """
         try:
             if data["type"] == "gradio_0707":
@@ -745,24 +739,24 @@ class MY_TTS:
                     return await self.download_audio("cosyvoice", url, self.timeout, request_type="post", json_data=params)
                 except Exception as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f'cosyvoice未知错误，请检查您的CosyVoice API是否启动/配置是否正确，报错内容: {e}')
+                    logger.error(f'cosyvoiceUnknown error, please check whether your CosyVoice API is started/configured correctly, error details: {e}')
                 
                 return None
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f'CosyVoice未知错误，请检查您的CosyVoice WebUI是否启动/配置是否正确，报错内容: {e}')
+            logger.error(f'CosyVoiceUnknown error, please check whether your CosyVoice WebUI is started/configured correctly, error details: {e}')
         
         return None
 
-    # F5-TTS （gradio_client-1.4.2，版本太低没法用喵）
+    # F5-TTS (gradio_client-1.4.2, version too old to use meow)
     async def f5_tts_api(self, data):
-        """F5-TTS Gradio的API对接喵
+        """F5-TTS GradioAPI integration meow
 
         Args:
-            data (dict): 传参数据喵
+            data (dict): Parameter data meow
 
         Returns:
-            str: 音频路径
+            str: Audio path
         """
         try:
             if data["type"] == "gradio_1023":
@@ -791,7 +785,7 @@ class MY_TTS:
             
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f'F5-TTS未知错误，请检查您的F5-TTS WebUI是否启动/配置是否正确，报错内容: {e}')
+            logger.error(f'F5-TTSUnknown error, please check whether your F5-TTS WebUI is started/configured correctly, error details: {e}')
         
         return None
 
@@ -816,7 +810,7 @@ class MY_TTS:
             return await self.download_audio("multitts", API_URL, self.timeout, "get", data_json)
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f'MultiTTS未知错误，请检查您的MultiTTS 接口服务是否启动/配置/网络是否正确，报错内容: {e}')
+            logger.error(f'MultiTTSUnknown error, please check whether your MultiTTS API service is started and the config/network is correct, error details: {e}')
         
         return None
 
@@ -840,34 +834,34 @@ class MY_TTS:
             return await self.download_audio("melotts", API_URL, self.timeout, "post", json_data=data_json)
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f'MeloTTS未知错误，请检查您的MeloTTS 接口服务是否启动/配置/网络是否正确，报错内容: {e}')
+            logger.error(f'MeloTTSUnknown error, please check whether your MeloTTS API service is started and the config/network is correct, error details: {e}')
         
         return None
 
     # Index-tts
     async def index_tts_api(self, data):
-        """Index-tts API对接喵
+        """Index-tts APIIntegration meow
 
         Args:
-            data (dict): 传参数据喵
+            data (dict): Parameter data meow
 
         Returns:
-            str: 音频路径
+            str: Audio path
         """
         try:
             url = f"{data['index_tts']['api_ip_port']}/tts"
             
-            # 创建FormData对象用于multipart/form-data请求
+            # Create a FormData object for the multipart/form-data request
             from aiohttp import FormData
             form_data = FormData()
             
-            # 添加文本参数
+            # Add the text parameter
             form_data.add_field('text', data["content"])
             
-            # 添加温度参数
+            # Add the temperature parameter
             form_data.add_field('temperature', str(data['index_tts']["temperature"]))
             
-            # 添加音频文件
+            # Add the audio file
             form_data.add_field(
                 'prompt_audio',
                 open(data['index_tts']["prompt_audio"], 'rb'),
@@ -875,18 +869,18 @@ class MY_TTS:
                 content_type='audio/wav'
             )
             
-            logger.debug(f"Index-tts 请求参数: text={data['content']}, temperature={data['index_tts']['temperature']}")
+            logger.debug(f"Index-tts Request parameters: text={data['content']}, temperature={data['index_tts']['temperature']}")
             
             try:
                 return await self.download_audio("index_tts", url, self.timeout, request_type="post", data=form_data)
             except Exception as e:
                 logger.error(traceback.format_exc())
-                logger.error(f'Index-tts API 错误，请检查您的 Index-tts API 是否启动/配置是否正确，报错内容: {e}')
+                logger.error(f'Index-tts API Error, please check whether your Index-tts API is started/configured correctly, error details: {e}')
 
             return None
             
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f'Index-tts未知错误，请检查您的Index-tts API是否启动/配置是否正确，报错内容: {e}')
+            logger.error(f'Index-ttsUnknown error, please check whether your Index-tts API is started/configured correctly, error details: {e}')
         
         return None

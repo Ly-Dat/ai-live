@@ -11,7 +11,7 @@ from functools import partial
 
 from typing import *
 
-# 按键监听语音聊天板块
+# Key listener voice chat section
 import keyboard
 import pyaudio
 import wave
@@ -44,17 +44,17 @@ common = None
 my_handle = None
 
 
-# 配置文件路径
+# Config file path
 config_path = "config.json"
 
 
-# web服务线程
+# webServer thread
 async def web_server_thread(web_server_port):
     Handler = http.server.SimpleHTTPRequestHandler
     with socketserver.TCPServer(("", web_server_port), Handler) as httpd:
-        logger.info(f"Web运行在端口：{web_server_port}")
+        logger.info(f"WebRunning on port: {web_server_port}")
         logger.info(
-            f"可以直接访问Live2D页， http://127.0.0.1:{web_server_port}/Live2D/"
+            f"You can directly visit the Live2D page, http://127.0.0.1:{web_server_port}/Live2D/"
         )
         httpd.serve_forever()
 
@@ -82,11 +82,11 @@ async def web_server_thread(web_server_port):
 
      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-         佛祖保佑       永不宕机     永无BUG
+         Buddha bless       never crash     neverBUG
 """
 
 
-# 点火起飞
+# Ignition, takeoff
 def start_server():
     global \
         config, \
@@ -96,27 +96,27 @@ def start_server():
     global do_listen_and_comment_thread, stop_do_listen_and_comment_thread_event
     global faster_whisper_model, sense_voice_model, is_recording, is_talk_awake
 
-    # 按键监听相关
+    # Key listener related
     do_listen_and_comment_thread = None
     stop_do_listen_and_comment_thread_event = threading.Event()
-    # 冷却时间 0.5 秒
+    # Cooldown time 0.5 seconds
     cooldown = 0.5
     last_pressed = 0
-    # 正在录音中 标志位
+    # Recording in progress flag
     is_recording = False
-    # 聊天是否唤醒
+    # Whether chat is awake
     is_talk_awake = False
 
-    # 待播放音频数量（在使用 音频播放器 或者 metahuman-stream等不通过AI Vtuber播放音频的对接项目时，使用此变量记录是是否还有音频没有播放完）
+    # Number of audio clips waiting to play (when using an audio player or projects like metahuman-stream that do not play audio through AI Vtuber, this variable records whether any audio is still unplayed)
     my_global.wait_play_audio_num = 0
     my_global.wait_synthesis_msg_num = 0
 
-    # 获取 httpx 库的日志记录器
+    # Get the httpx library logger
     # httpx_logger = logging.getLogger("httpx")
-    # 设置 httpx 日志记录器的级别为 WARNING
+    # Set the httpx logger level to WARNING
     # httpx_logger.setLevel(logging.WARNING)
 
-    # 最新的直播间数据
+    # Latest live room data
     my_global.last_liveroom_data = {
         "OnlineUserCount": 0,
         "TotalUserCount": 0,
@@ -124,18 +124,18 @@ def start_server():
         "OnlineUserCountStr": "0",
         "MsgId": 0,
         "User": None,
-        "Content": "当前直播间人数 0，累计直播间人数 0",
+        "Content": "Current viewers 0, total viewers 0",
         "RoomId": 0,
     }
-    # 最新入场的用户名列表
+    # List of the latest users who entered
     my_global.last_username_list = [""]
 
     my_handle = My_handle(config_path)
     if my_handle is None:
-        logger.error("程序初始化失败！")
+        logger.error("Program initialization failed!")
         os._exit(0)
 
-    # Live2D线程
+    # Live2DThread
     try:
         if config.get("live2d", "enable"):
             web_server_port = int(config.get("live2d", "port"))
@@ -164,7 +164,7 @@ def start_server():
 
         """
         
-        # HTTP API线程
+        # HTTP APIThread
         def http_api_thread():
             import uvicorn
             from fastapi import FastAPI
@@ -176,10 +176,10 @@ def start_server():
                 CommonResult,
             )
 
-            # 定义FastAPI应用
+            # Define the FastAPI app
             app = FastAPI()
 
-            # 允许跨域
+            # Allow cross-origin requests
             app.add_middleware(
                 CORSMiddleware,
                 allow_origins=["*"],
@@ -188,14 +188,14 @@ def start_server():
                 allow_headers=["*"],
             )
 
-            # 定义POST请求路径和处理函数
+            # Define the POST request path and handler function
             @app.post("/send")
             async def send(msg: SendMessage):
                 global my_handle, config
 
                 try:
                     tmp_json = msg.dict()
-                    logger.info(f"内部HTTP API send接口收到数据：{tmp_json}")
+                    logger.info(f"Internal HTTP API send endpoint received data: {tmp_json}")
                     data_json = tmp_json["data"]
                     if "type" not in data_json:
                         data_json["type"] = tmp_json["type"]
@@ -211,10 +211,10 @@ def start_server():
                     elif data_json["type"] == "entrance":
                         my_handle.entrance_handle(data_json)
 
-                    return CommonResult(code=200, message="成功")
+                    return CommonResult(code=200, message="Success")
                 except Exception as e:
-                    logger.error(f"发送数据失败！{e}")
-                    return CommonResult(code=-1, message=f"发送数据失败！{e}")
+                    logger.error(f"Failed to send data!{e}")
+                    return CommonResult(code=-1, message=f"Failed to send data!{e}")
 
             @app.post("/llm")
             async def llm(msg: LLMMessage):
@@ -222,18 +222,18 @@ def start_server():
 
                 try:
                     data_json = msg.dict()
-                    logger.info(f"API收到数据：{data_json}")
+                    logger.info(f"APIData received: {data_json}")
 
                     resp_content = my_handle.llm_handle(
                         data_json["type"], data_json, webui_show=False
                     )
 
                     return CommonResult(
-                        code=200, message="成功", data={"content": resp_content}
+                        code=200, message="Success", data={"content": resp_content}
                     )
                 except Exception as e:
-                    logger.error(f"调用LLM失败！{e}")
-                    return CommonResult(code=-1, message=f"调用LLM失败！{e}")
+                    logger.error(f"LLM call failed!{e}")
+                    return CommonResult(code=-1, message=f"LLM call failed!{e}")
 
             from starlette.requests import Request
 
@@ -241,14 +241,14 @@ def start_server():
             async def tts(request: Request):
                 try:
                     data_json = await request.json()
-                    logger.info(f"API收到数据：{data_json}")
+                    logger.info(f"APIData received: {data_json}")
 
                     resp_json = await My_handle.audio.tts_handle(data_json)
 
-                    return {"code": 200, "message": "成功", "data": resp_json}
+                    return {"code": 200, "message": "Success", "data": resp_json}
                 except Exception as e:
                     logger.error(traceback.format_exc())
-                    return CommonResult(code=-1, message=f"失败！{e}")
+                    return CommonResult(code=-1, message=f"Failed!{e}")
                 
             @app.post("/callback")
             async def callback(msg: CallbackMessage):
@@ -257,38 +257,38 @@ def start_server():
                 try:
                     data_json = msg.dict()
 
-                    # 特殊回调特殊处理
+                    # Special callback handling
                     if data_json["type"] == "audio_playback_completed":
                         my_global.wait_play_audio_num = int(data_json["data"]["wait_play_audio_num"])
                         my_global.wait_synthesis_msg_num = int(data_json["data"]["wait_synthesis_msg_num"])
-                        logger.info(f"内部HTTP API callback接口 音频播放完成回调，待播放音频数量：{my_global.wait_play_audio_num}，待合成消息数量：{my_global.wait_synthesis_msg_num}")
+                        logger.info(f"Internal HTTP API callback endpoint, audio playback finished callback, number of audio clips waiting to play: {my_global.wait_play_audio_num}, number of messages waiting to be synthesized: {my_global.wait_synthesis_msg_num}")
                     else:
-                        logger.info(f"内部HTTP API callback接口收到数据：{data_json}")
+                        logger.info(f"Internal HTTP API callback endpoint received data: {data_json}")
 
-                    # 音频播放完成
+                    # Audio playback finished
                     if data_json["type"] in ["audio_playback_completed"]:
                         my_global.wait_play_audio_num = int(data_json["data"]["wait_play_audio_num"])
 
-                        # 如果等待播放的音频数量大于10
+                        # If the number of audio clips waiting to play is greater than10
                         if data_json["data"]["wait_play_audio_num"] > int(
                             config.get(
                                 "idle_time_task", "wait_play_audio_num_threshold"
                             )
                         ):
                             logger.info(
-                                f'等待播放的音频数量大于限定值，闲时任务的闲时计时由 {my_global.global_idle_time} -> {int(config.get("idle_time_task", "idle_time_reduce_to"))}秒'
+                                f'The number of audio clips waiting to play is greater than the limit; the idle timing of the idle task is handled by {my_global.global_idle_time} -> {int(config.get("idle_time_task", "idle_time_reduce_to"))}seconds'
                             )
-                            # 闲时任务的闲时计时 清零
+                            # Reset the idle timer of the idle task
                             my_global.global_idle_time = int(
                                 config.get("idle_time_task", "idle_time_reduce_to")
                             )
 
-                    return CommonResult(code=200, message="callback处理成功！")
+                    return CommonResult(code=200, message="callbackProcessing succeeded!")
                 except Exception as e:
-                    logger.error(f"callback处理失败！{e}")
-                    return CommonResult(code=-1, message=f"callback处理失败！{e}")
+                    logger.error(f"callbackProcessing failed!{e}")
+                    return CommonResult(code=-1, message=f"callbackProcessing failed!{e}")
 
-            # 获取系统信息接口
+            # Get system info endpoint
             @app.get("/get_sys_info")
             async def get_sys_info():
                 global my_handle, config
@@ -302,16 +302,16 @@ def start_server():
                         }
                     }
 
-                    return CommonResult(code=200, data=data, message="get_sys_info处理成功！")
+                    return CommonResult(code=200, data=data, message="get_sys_infoProcessing succeeded!")
                 except Exception as e:
-                    logger.error(f"get_sys_info处理失败！{e}")
-                    return CommonResult(code=-1, message=f"get_sys_info处理失败！{e}")
+                    logger.error(f"get_sys_infoProcessing failed!{e}")
+                    return CommonResult(code=-1, message=f"get_sys_infoProcessing failed!{e}")
 
             
 
-            logger.info("HTTP API线程已启动！")
+            logger.info("HTTP APIThread started!")
 
-            # 将本地目录中的静态文件（如 CSS、JavaScript、图片等）暴露给 web 服务器，以便用户可以通过特定的 URL 访问这些文件。
+            # Expose static files in the local directory (such as CSS, JavaScript, images) to the web server so users can access them via specific URLs.
             if config.get("webui", "local_dir_to_endpoint", "enable"):
                 for tmp in config.get("webui", "local_dir_to_endpoint", "config"):
                     from fastapi.staticfiles import StaticFiles
@@ -320,17 +320,17 @@ def start_server():
             uvicorn.run(app, host="0.0.0.0", port=config.get("api_port"))
             #uvicorn.run(app, host="0.0.0.0", port=config.get("api_port"), ssl_certfile="F:\\FunASR_WS\\cert.pem", ssl_keyfile="F:\\FunASR_WS\\key.pem")
 
-        # HTTP API线程并启动
+        # HTTP APIThread and start it
         inside_http_api_thread = threading.Thread(target=http_api_thread)
         inside_http_api_thread.start()
 
     
 
     """
-    按键监听板块
+    Key listener section
     """
 
-    # 录音功能(录音时间过短进入openai的语音转文字会报错，请一定注意)
+    # Recording feature (recordings that are too short will cause errors when sent to OpenAI speech-to-text, so pay attention)
     def record_audio():
         pressdown_num = 0
         CHUNK = 1024
@@ -367,17 +367,17 @@ def start_server():
         wf.setframerate(RATE)
         wf.writeframes(b"".join(frames))
         wf.close()
-        if pressdown_num >= 5:  # 粗糙的处理手段
+        if pressdown_num >= 5:  # Crude handling approach
             return 1
         else:
-            logger.info("杂鱼杂鱼，好短好短(录音时间过短,按右shift重新录制)")
+            logger.info("Silly fish, silly fish, so short so short (recording too short, press right shift to record again)")
             return 0
 
-    # THRESHOLD 设置音量阈值,默认值800.0,根据实际情况调整  silence_threshold 设置沉默阈值，根据实际情况调整
+    # THRESHOLD Set the volume threshold, default 800.0, adjust as needed; silence_threshold sets the silence threshold, adjust as needed
     def audio_listen(volume_threshold=800.0, silence_threshold=15):
         audio = pyaudio.PyAudio()
 
-        # 设置音频参数
+        # Set audio parameters
         FORMAT = pyaudio.paInt16
         CHANNELS = config.get("talk", "CHANNELS")
         RATE = config.get("talk", "RATE")
@@ -392,18 +392,18 @@ def start_server():
             input_device_index=int(config.get("talk", "device_index")),
         )
 
-        frames = []  # 存储录制的音频帧
+        frames = []  # Store the recorded audio frames
 
-        is_speaking = False  # 是否在说话
-        silent_count = 0  # 沉默计数
-        speaking_flag = False  # 录入标志位 不重要
+        is_speaking = False  # Whether speaking
+        silent_count = 0  # Silence count
+        speaking_flag = False  # Recording flag, not important
 
-        logger.info("[即将开始录音……]")
+        logger.info("[About to start recording……]")
 
         while True:
-            # 播放中不录音
+            # Do not record while playing
             if config.get("talk", "no_recording_during_playback"):
-                # 存在待合成音频 或 已合成音频还未播放 或 播放中 或 在数据处理中
+                # There is audio waiting to be synthesized, or synthesized audio not yet played, or playing, or data being processed
                 if (
                     my_handle.is_audio_queue_empty() != 15
                     or my_handle.is_handle_empty() == 1
@@ -418,7 +418,7 @@ def start_server():
                     )
                     continue
 
-            # 读取音频数据
+            # Read audio data
             data = stream.read(CHUNK)
             audio_data = np.frombuffer(data, dtype=np.short)
             max_dB = np.max(audio_data)
@@ -432,15 +432,15 @@ def start_server():
             if is_speaking is True:
                 frames.append(data)
                 if speaking_flag is False:
-                    logger.info("[录入中……]")
+                    logger.info("[Recording in progress……]")
                     speaking_flag = True
 
             if silent_count >= silence_threshold:
                 break
 
-        logger.info("[语音录入完成]")
+        logger.info("[Voice input finished]")
 
-        # 将音频保存为WAV文件
+        # Save the audio as a WAV file
         """with wave.open(WAVE_OUTPUT_FILENAME, 'wb') as wf:
             wf.setnchannels(CHANNELS)
             wf.setsampwidth(pyaudio.get_sample_size(FORMAT))
@@ -448,57 +448,57 @@ def start_server():
             wf.writeframes(b''.join(frames))"""
         return frames
 
-    # 处理聊天逻辑 传入ASR后的文本内容
+    # Handle chat logic; takes the text content after ASR
     def talk_handle(content: str):
         global is_talk_awake
 
         def clear_queue_and_stop_audio_play(message_queue: bool=True, voice_tmp_path_queue: bool=True, stop_audio_play: bool=True):
             """
-            清空队列 或 停止播放音频
+            Clear the queue or stop audio playback
             """
             if message_queue:
                 ret = my_handle.clear_queue("message_queue")
                 if ret:
-                    logger.info("清空待合成消息队列成功！")
+                    logger.info("Successfully cleared the queue of messages waiting to be synthesized!")
                 else:
-                    logger.error("清空待合成消息队列失败！")
+                    logger.error("Failed to clear the queue of messages waiting to be synthesized!")
             if voice_tmp_path_queue:
                 ret = my_handle.clear_queue("voice_tmp_path_queue")
                 if ret:
-                    logger.info("清空待播放音频队列成功！")
+                    logger.info("Successfully cleared the queue of audio waiting to play!")
                 else:
-                    logger.error("清空待播放音频队列失败！")
+                    logger.error("Failed to clear the queue of audio waiting to play!")
             if stop_audio_play:
                 ret = my_handle.stop_audio("pygame", True, True)
 
         try:
-            # 检查并切换聊天唤醒状态
+            # Check and switch the chat wake state
             def check_talk_awake(content: str):
-                """检查并切换聊天唤醒状态
+                """Check and switch the chat wake state
 
                 Args:
-                    content (str): 聊天内容
+                    content (str): Chat content
 
                 Returns:
                     dict:
-                        ret 是否需要触发
-                        is_talk_awake 当前唤醒状态
-                        first 是否是第一次触发 唤醒or睡眠，用于触发首次切换时的特殊提示语
+                        ret Whether trigger is needed
+                        is_talk_awake Current wake state
+                        first Whether this is the first wake or sleep trigger, used for the special prompt on the first switch
                 """
                 global is_talk_awake
 
-                # 判断是否启动了 唤醒词功能
+                # Determine whether the wake word feature is enabled
                 if config.get("talk", "wakeup_sleep", "enable"):
-                    if config.get("talk", "wakeup_sleep", "mode") == "长期唤醒":
-                        # 判断现在是否是唤醒状态
+                    if config.get("talk", "wakeup_sleep", "mode") == "Persistent wake-up":
+                        # Determine whether it is currently in the awake state
                         if is_talk_awake is False:
-                            # 判断文本内容是否包含唤醒词
+                            # Determine whether the text contains a wake word
                             trigger_word = common.find_substring_in_list(
                                 content, config.get("talk", "wakeup_sleep", "wakeup_word")
                             )
                             if trigger_word:
                                 is_talk_awake = True
-                                logger.info("[聊天唤醒成功]")
+                                logger.info("[Chat wake succeeded]")
                                 return {
                                     "ret": 0,
                                     "is_talk_awake": is_talk_awake,
@@ -511,13 +511,13 @@ def start_server():
                                 "first": False,
                             }
                         else:
-                            # 判断文本内容是否包含睡眠词
+                            # Determine whether the text contains a sleep word
                             trigger_word = common.find_substring_in_list(
                                 content, config.get("talk", "wakeup_sleep", "sleep_word")
                             )
                             if trigger_word:
                                 is_talk_awake = False
-                                logger.info("[聊天睡眠成功]")
+                                logger.info("[Chat sleep succeeded]")
                                 return {
                                     "ret": 0,
                                     "is_talk_awake": is_talk_awake,
@@ -529,19 +529,19 @@ def start_server():
                                 "is_talk_awake": is_talk_awake,
                                 "first": False,
                             }
-                    elif config.get("talk", "wakeup_sleep", "mode") == "单次唤醒":
-                        # 无需判断当前是否是唤醒状态，因为默认都是状态清除
-                        # 判断文本内容是否包含唤醒词
+                    elif config.get("talk", "wakeup_sleep", "mode") == "Single wake-up":
+                        # No need to check whether currently awake, since the state is cleared by default
+                        # Determine whether the text contains a wake word
                         trigger_word = common.find_substring_in_list(
                             content, config.get("talk", "wakeup_sleep", "wakeup_word")
                         )
                         if trigger_word:
                             is_talk_awake = True
-                            logger.info("[聊天唤醒成功]")
+                            logger.info("[Chat wake succeeded]")
                             return {
                                 "ret": 0,
                                 "is_talk_awake": is_talk_awake,
-                                # 单次唤醒下 没有首次唤醒提示
+                                # No first-wake prompt in single wake mode
                                 "first": False,
                                 "trigger_word": trigger_word,
                             }
@@ -554,39 +554,39 @@ def start_server():
 
                 return {"ret": 0, "is_talk_awake": True, "trigger_word": "", "first": False}
 
-            # 输出识别结果
-            logger.info("识别结果：" + content)
+            # Output the recognition result
+            logger.info("Recognition result: " + content)
 
-            # 空内容过滤
+            # Empty content filter
             if content == "":
                 return
 
             username = config.get("talk", "username")
 
-            data = {"platform": "本地聊天", "username": username, "content": content}
+            data = {"platform": "Local chat", "username": username, "content": content}
             
-            # 检查并切换聊天唤醒状态
+            # Check and switch the chat wake state
             check_resp = check_talk_awake(content)
             if check_resp["ret"] == 0:
-                # 唤醒情况下
+                # In the awake state
                 if check_resp["is_talk_awake"]:
-                    # 长期唤醒、且不是首次触发的情况下，后面的内容不会携带触发词，即使携带了也不应该进行替换操作
-                    if config.get("talk", "wakeup_sleep", "mode") == "长期唤醒" and not check_resp["first"]:
+                    # With long-term wake and not the first trigger, the following content will not carry the trigger word, and even if it does it should not be replaced
+                    if config.get("talk", "wakeup_sleep", "mode") == "Persistent wake-up" and not check_resp["first"]:
                         pass
                     else:
-                        # 替换触发词为空
+                        # Replace the trigger word with empty
                         content = content.replace(check_resp["trigger_word"], "").strip()
 
-                    # 因为唤醒可能会有仅唤醒词的情况，所以可能出现首次唤醒，唤醒词被过滤，content为空清空，导致不播放唤醒提示语，需要处理
+                    # A wake word may be spoken alone, so on first wake the wake word gets filtered out and content becomes empty, so the wake prompt would not play; this needs handling
                     if content == "" and not check_resp["first"]:
                         return
                     
-                    # 赋值给data
+                    # Assign todata
                     data["content"] = content
                     
-                    # 首次触发切换模式 播放唤醒文案
+                    # First trigger mode switch, play the wake copywriting
                     if check_resp["first"]:
-                        # 随机获取文案 TODO: 如果此功能测试成功，所有的类似功能都将使用此函数简化代码
+                        # Get copywriting randomly TODO: if this feature tests successfully, all similar features will use this function to simplify code
                         resp_json = common.get_random_str_in_list_and_format(
                             ori_list=config.get(
                                 "talk", "wakeup_sleep", "wakeup_copywriting"
@@ -597,17 +597,17 @@ def start_server():
                             data["insert_index"] = -1
                             my_handle.reread_handle(data)
                     else:
-                        # 如果启用了"打断对话"功能
+                        # If enabled"Interrupt the conversation"Feature
                         if config.get("talk", "interrupt_talk", "enable"):
-                            # 判断文本内容是否包含中断词
+                            # Determine whether the text contains an interrupt word
                             interrupt_word = common.find_substring_in_list(
                                 data["content"], config.get("talk", "interrupt_talk", "keywords")
                             )
                             if interrupt_word:
-                                logger.info(f"[聊天中断] 命中中断词：{interrupt_word}")
-                                # 从配置中获取需要清除的数据类型
+                                logger.info(f"[Chat interrupt] Interrupt word hit: {interrupt_word}")
+                                # Get the data types to clear from the config
                                 clean_type = config.get("talk", "interrupt_talk", "clean_type")
-                                # 各类型数据是否清除
+                                # Whether each data type is cleared
                                 message_queue = "message_queue" in clean_type
                                 voice_tmp_path_queue = "voice_tmp_path_queue" in clean_type
                                 stop_audio_play = "stop_audio_play" in clean_type
@@ -615,15 +615,15 @@ def start_server():
                                 clear_queue_and_stop_audio_play(message_queue, voice_tmp_path_queue, stop_audio_play)
                                 return False
 
-                        # 传递给my_handle进行进行后续一系列的处理
+                        # Pass to my_handle for subsequent processing
                         my_handle.process_data(data, "talk")
 
-                        # 单次唤醒情况下，唤醒后关闭
-                        if config.get("talk", "wakeup_sleep", "mode") == "单次唤醒":
+                        # In single wake mode, close after waking
+                        if config.get("talk", "wakeup_sleep", "mode") == "Single wake-up":
                             is_talk_awake = False
-                # 睡眠情况下
+                # In the sleep state
                 else:
-                    # 首次进入睡眠 播放睡眠文案
+                    # First time entering sleep, play the sleep copywriting
                     if check_resp["first"]:
                         resp_json = common.get_random_str_in_list_and_format(
                             ori_list=config.get(
@@ -637,7 +637,7 @@ def start_server():
         except Exception as e:
             logger.error(traceback.format_exc())
 
-    # 执行录音、识别&提交
+    # Perform recording, recognition and submission
     def do_listen_and_comment(status=True):
         global \
             stop_do_listen_and_comment_thread_event, \
@@ -650,17 +650,17 @@ def start_server():
             is_recording = True
 
             config = Config(config_path)
-            # 是否启用按键监听和直接对话，没启用的话就不用执行了
+            # Whether key listener and direct conversation are enabled; if not, no need to run
             if not config.get("talk", "key_listener_enable") and not config.get("talk", "direct_run_talk"):
                 is_recording = False
                 return
 
-            # 针对faster_whisper情况，模型加载一次共用，减少开销
+            # For faster_whisper, load the model once and share it to reduce overhead
             if "faster_whisper" == config.get("talk", "type"):
                 from faster_whisper import WhisperModel
 
                 if faster_whisper_model is None:
-                    logger.info("faster_whisper 模型加载中，请稍后...")
+                    logger.info("faster_whisper Model loading, please wait...")
                     # Run on GPU with FP16
                     faster_whisper_model = WhisperModel(
                         model_size_or_path=config.get(
@@ -674,11 +674,11 @@ def start_server():
                             "talk", "faster_whisper", "download_root"
                         ),
                     )
-                    logger.info("faster_whisper 模型加载完毕，可以开始说话了喵~")
+                    logger.info("faster_whisper Model loaded, you can start speaking now meow~")
             elif "sensevoice" == config.get("talk", "type"):
                 from funasr import AutoModel
 
-                logger.info("sensevoice 模型加载中，请稍后...")
+                logger.info("sensevoice Model loading, please wait...")
                 asr_model_path = config.get("talk", "sensevoice", "asr_model_path")
                 vad_model_path = config.get("talk", "sensevoice", "vad_model_path")
                 if sense_voice_model is None:
@@ -697,25 +697,25 @@ def start_server():
                         remote_code="./sensevoice/model.py",
                     )
 
-                    logger.info("sensevoice 模型加载完毕，可以开始说话了喵~")
+                    logger.info("sensevoice Model loaded, you can start speaking now meow~")
 
             while True:
                 try:
-                    # 检查是否收到停止事件
+                    # Check whether a stop event was received
                     if stop_do_listen_and_comment_thread_event.is_set():
-                        logger.info("停止录音~")
+                        logger.info("Stop recording~")
                         is_recording = False
                         break
 
                     config = Config(config_path)
 
-                    # 根据接入的语音识别类型执行
+                    # Execute according to the connected speech recognition type
                     if config.get("talk", "type") in [
                         "baidu",
                         "faster_whisper",
                         "sensevoice",
                     ]:
-                        # 设置音频参数
+                        # Set audio parameters
                         FORMAT = pyaudio.paInt16
                         CHANNELS = config.get("talk", "CHANNELS")
                         RATE = config.get("talk", "RATE")
@@ -736,7 +736,7 @@ def start_server():
                             config.get("talk", "silence_threshold"),
                         )
 
-                        # 将音频保存为WAV文件
+                        # Save the audio as a WAV file
                         with wave.open(WAVE_OUTPUT_FILENAME, "wb") as wf:
                             wf.setnchannels(CHANNELS)
                             wf.setsampwidth(pyaudio.get_sample_size(FORMAT))
@@ -744,18 +744,18 @@ def start_server():
                             wf.writeframes(b"".join(frames))
 
                         if config.get("talk", "type") == "baidu":
-                            # 读取音频文件
+                            # Read the audio file
                             with open(WAVE_OUTPUT_FILENAME, "rb") as fp:
                                 audio = fp.read()
 
-                            # 初始化 AipSpeech 对象
+                            # Initialize the AipSpeech object
                             baidu_client = AipSpeech(
                                 config.get("talk", "baidu", "app_id"),
                                 config.get("talk", "baidu", "api_key"),
                                 config.get("talk", "baidu", "secret_key"),
                             )
 
-                            # 识别音频文件
+                            # Recognize the audio file
                             res = baidu_client.asr(
                                 audio,
                                 "wav",
@@ -769,12 +769,12 @@ def start_server():
 
                                 talk_handle(content)
                             else:
-                                logger.error(f"百度接口报错：{res}")
+                                logger.error(f"Baidu API error: {res}")
                         elif config.get("talk", "type") == "faster_whisper":
-                            logger.debug("faster_whisper模型加载中...")
+                            logger.debug("faster_whisperModel loading...")
 
                             language = config.get("talk", "faster_whisper", "language")
-                            if language == "自动识别":
+                            if language == "Auto detect":
                                 language = None
 
                             segments, info = faster_whisper_model.transcribe(
@@ -786,7 +786,7 @@ def start_server():
                             )
 
                             logger.debug(
-                                "识别语言为：'%s'，概率：%f"
+                                "Recognition language: '%s', probability: %f"
                                 % (info.language, info.language_probability)
                             )
 
@@ -799,7 +799,7 @@ def start_server():
                                 content += segment.text + "。"
 
                             if content == "":
-                                # 恢复录音标志位
+                                # Restore the recording flag
                                 is_recording = False
                                 return
 
@@ -819,25 +819,25 @@ def start_server():
                             )
 
                             def remove_angle_brackets_content(input_string: str):
-                                # 使用正则表达式来匹配并删除 <> 之间的内容
+                                # Use a regular expression to match and delete content between <>
                                 return re.sub(r"<.*?>", "", input_string)
 
                             content = remove_angle_brackets_content(res[0]["text"])
 
                             talk_handle(content)
                     elif "google" == config.get("talk", "type"):
-                        # 创建Recognizer对象
+                        # Create a Recognizer object
                         r = sr.Recognizer()
 
                         try:
-                            # 打开麦克风进行录音
+                            # Open the microphone to record
                             with sr.Microphone() as source:
-                                logger.info("录音中...")
-                                # 从麦克风获取音频数据
+                                logger.info("Recording...")
+                                # Get audio data from the microphone
                                 audio = r.listen(source)
-                                logger.info("成功录制")
+                                logger.info("Recorded successfully")
 
-                                # 进行谷歌实时语音识别 en-US zh-CN ja-JP
+                                # Perform Google real-time speech recognition en-US zh-CN ja-JP
                                 content = r.recognize_google(
                                     audio,
                                     language=config.get("talk", "google", "tgt_lang"),
@@ -845,9 +845,9 @@ def start_server():
 
                                 talk_handle(content)
                         except sr.UnknownValueError:
-                            logger.warning("无法识别输入的语音")
+                            logger.warning("Unable to recognize the input speech")
                         except sr.RequestError as e:
-                            logger.error("请求出错：" + str(e))
+                            logger.error("Request error: " + str(e))
 
                     is_recording = False
 
@@ -868,55 +868,55 @@ def start_server():
             stop_do_listen_and_comment_thread_event, \
             is_recording
 
-        # 是否启用按键监听，不启用的话就不用执行了
+        # Whether key listener is enabled; if not, no need to run
         if not config.get("talk", "key_listener_enable"):
             return
 
         # if event.name in ['z', 'Z', 'c', 'C'] and keyboard.is_pressed('ctrl'):
-        # logger.info("退出程序")
+        # logger.info("Exit the program")
 
         # os._exit(0)
 
-        # 按键CD
+        # KeyCD
         current_time = time.time()
         if current_time - last_pressed < cooldown:
             return
 
         """
-        触发按键部分的判断
+        Judgment for the trigger key section
         """
         trigger_key_lower = None
         stop_trigger_key_lower = None
 
-        # trigger_key是字母, 整个小写
+        # trigger_keyIt is a letter, all lowercase
         if trigger_key.isalpha():
             trigger_key_lower = trigger_key.lower()
 
-        # stop_trigger_key是字母, 整个小写
+        # stop_trigger_keyIt is a letter, all lowercase
         if stop_trigger_key.isalpha():
             stop_trigger_key_lower = stop_trigger_key.lower()
 
         if trigger_key_lower:
             if event.name == trigger_key or event.name == trigger_key_lower:
-                logger.info(f"检测到单击键盘 {event.name}，即将开始录音~")
+                logger.info(f"Detected key press {event.name}, recording is about to start~")
             elif event.name == stop_trigger_key or event.name == stop_trigger_key_lower:
-                logger.info(f"检测到单击键盘 {event.name}，即将停止录音~")
+                logger.info(f"Detected key press {event.name}, recording is about to stop~")
                 stop_do_listen_and_comment_thread_event.set()
                 return
             else:
                 return
         else:
             if event.name == trigger_key:
-                logger.info(f"检测到单击键盘 {event.name}，即将开始录音~")
+                logger.info(f"Detected key press {event.name}, recording is about to start~")
             elif event.name == stop_trigger_key:
-                logger.info(f"检测到单击键盘 {event.name}，即将停止录音~")
+                logger.info(f"Detected key press {event.name}, recording is about to stop~")
                 stop_do_listen_and_comment_thread_event.set()
                 return
             else:
                 return
 
         if not is_recording:
-            # 是否启用连续对话模式
+            # Whether continuous conversation mode is enabled
             if config.get("talk", "continuous_talk"):
                 stop_do_listen_and_comment_thread_event.clear()
                 do_listen_and_comment_thread = threading.Thread(
@@ -930,20 +930,20 @@ def start_server():
                 )
                 do_listen_and_comment_thread.start()
         else:
-            logger.warning("正在录音中...请勿重复点击录音捏！")
+            logger.warning("Recording in progress... please do not click record repeatedly")
 
-    # 按键监听
+    # Key listener
     def key_listener():
-        # 注册按键按下事件的回调函数
+        # Register the callback function for the key press event
         keyboard.on_press(on_key_press)
 
         try:
-            # 进入监听状态，等待按键按下
+            # Enter listening state, waiting for a key press
             keyboard.wait()
         except KeyboardInterrupt:
             os._exit(0)
 
-    # 直接运行语音对话
+    # Run voice conversation directly
     def direct_run_talk():
         global \
             do_listen_and_comment_thread, \
@@ -951,7 +951,7 @@ def start_server():
             is_recording
 
         if not is_recording:
-            # 是否启用连续对话模式
+            # Whether continuous conversation mode is enabled
             if config.get("talk", "continuous_talk"):
                 stop_do_listen_and_comment_thread_event.clear()
                 do_listen_and_comment_thread = threading.Thread(
@@ -965,65 +965,65 @@ def start_server():
                 )
                 do_listen_and_comment_thread.start()
 
-    # 从配置文件中读取触发键的字符串配置
+    # Read the trigger key string config from the config file
     trigger_key = config.get("talk", "trigger_key")
     stop_trigger_key = config.get("talk", "stop_trigger_key")
 
-    # 是否启用了 按键监听
+    # Whether key listener is enabled
     if config.get("talk", "key_listener_enable"):
         logger.info(
-            f"单击键盘 {trigger_key} 按键进行录音喵~ 由于其他任务还要启动，如果按键没有反应，请等待一段时间（如果使用本地ASR，请等待模型加载完成后使用）"
+            f"Press the {trigger_key} key on the keyboard to record, meow~ Since other tasks still need to start, if the key does not respond please wait a while (if using local ASR, wait for the model to finish loading before using)"
         )
 
-    # 是否启用了直接运行对话，如果启用了，将在首次运行时直接进行语音识别，而不需手动点击开始按键。针对有些系统按键无法触发的情况下，配合连续对话和唤醒词使用
+    # Whether direct conversation is enabled; if so, speech recognition starts directly on first run without manually clicking the start key. Use together with continuous conversation and wake words on systems where keys cannot trigger
     if config.get("talk", "direct_run_talk"):
-        logger.info("直接运行对话模式，首次运行时将直接进行语音识别，而不需手动点击开始按键（如果使用本地ASR，请等待模型加载完成后使用）")
+        logger.info("Direct conversation mode: on first run speech recognition starts directly without manually clicking the start key (if using local ASR, wait for the model to finish loading before using)")
         direct_run_talk()
 
-    # 创建并启动按键监听线程，放着也是在聊天模式下，让程序一直阻塞用的
+    # Create and start the key listener thread; in chat mode it is kept just to keep the program blocking
     thread = threading.Thread(target=key_listener)
     thread.start()
 
-    # 定时任务
+    # Scheduled task
     def schedule_task(index):
         global config, common, my_handle
 
-        logger.debug("定时任务执行中...")
+        logger.debug("Scheduled task running...")
         hour, min = common.get_bj_time(6)
 
         if 0 <= hour and hour < 6:
-            time = f"凌晨{hour}点{min}分"
+            time = f"Early morning, {hour}:{min:02d}"
         elif 6 <= hour and hour < 9:
-            time = f"早晨{hour}点{min}分"
+            time = f"Morning, {hour}:{min:02d}"
         elif 9 <= hour and hour < 12:
-            time = f"上午{hour}点{min}分"
+            time = f"Morning, {hour}:{min:02d}"
         elif hour == 12:
-            time = f"中午{hour}点{min}分"
+            time = f"Noon, {hour}:{min:02d}"
         elif 13 <= hour and hour < 18:
-            time = f"下午{hour - 12}点{min}分"
+            time = f"Afternoon, {hour}:{min:02d}"
         elif 18 <= hour and hour < 20:
-            time = f"傍晚{hour - 12}点{min}分"
+            time = f"Evening, {hour}:{min:02d}"
         elif 20 <= hour and hour < 24:
-            time = f"晚上{hour - 12}点{min}分"
+            time = f"Night, {hour}:{min:02d}"
 
-        # 根据对应索引从列表中随机获取一个值
+        # Randomly get a value from the list by the corresponding index
         if len(config.get("schedule")[index]["copy"]) <= 0:
             return None
 
         random_copy = random.choice(config.get("schedule")[index]["copy"])
 
-        # 假设有多个未知变量，用户可以在此处定义动态变量
+        # Assume there are multiple unknown variables; users can define dynamic variables here
         variables = {
             "time": time,
             "user_num": "N",
             "last_username": my_global.last_username_list[-1],
         }
 
-        # 有用户数据情况的平台特殊处理
+        # Special handling for platforms with user data
         if platform in ["dy", "tiktok"]:
             variables["user_num"] = my_global.last_liveroom_data["OnlineUserCount"]
 
-        # 使用字典进行字符串替换
+        # Use a dictionary for string replacement
         if any(var in random_copy for var in variables):
             content = random_copy.format(
                 **{var: value for var, value in variables.items() if var in random_copy}
@@ -1033,15 +1033,15 @@ def start_server():
 
         content = common.brackets_text_randomize(content)
 
-        data = {"platform": platform, "username": "定时任务", "content": content}
+        data = {"platform": platform, "username": "Scheduled task", "content": content}
 
-        logger.info(f"定时任务：{content}")
+        logger.info(f"Scheduled task: {content}")
 
         my_handle.process_data(data, "schedule")
 
         # schedule.clear(index)
 
-    # 启动定时任务
+    # Start scheduled task
     def run_schedule():
         global config
 
@@ -1054,7 +1054,7 @@ def start_server():
 
                     def schedule_random_task(index, min_seconds, max_seconds):
                         schedule.clear(index)
-                        # 在min_seconds和max_seconds之间随机选择下一次任务执行的时间
+                        # Randomly pick the next task run time between min_seconds and max_seconds
                         next_time = random.randint(min_seconds, max_seconds)
                         # logger.info(f"Next task {index} scheduled in {next_time} seconds at {time.ctime()}")
 
@@ -1070,15 +1070,15 @@ def start_server():
 
         while True:
             schedule.run_pending()
-            # time.sleep(1)  # 控制每次循环的间隔时间，避免过多占用 CPU 资源
+            # time.sleep(1)  # Control the interval of each loop to avoid using too much CPU
 
-    # 创建定时任务子线程并启动 在平台是 dy的情况下，默认启动定时任务用于阻塞
+    # Create the scheduled task sub-thread and start it; when the platform is dy, the scheduled task is started by default just to block
     if any(item["enable"] for item in config.get("schedule")) or platform == "dy":
-        # 创建定时任务子线程并启动
+        # Create the scheduled task sub-thread and start it
         schedule_thread = threading.Thread(target=run_schedule)
         schedule_thread.start()
 
-    # 启动动态文案
+    # Start dynamic copywriting
     async def run_trends_copywriting():
         global config
 
@@ -1086,19 +1086,19 @@ def start_server():
             if not config.get("trends_copywriting", "enable"):
                 return
 
-            logger.info("动态文案任务线程运行中...")
+            logger.info("Dynamic copywriting task thread is running...")
 
             while True:
-                # 文案文件路径列表
+                # Copywriting file path list
                 copywriting_file_path_list = []
 
-                # 获取动态文案列表
+                # Get the dynamic copywriting list
                 for copywriting in config.get("trends_copywriting", "copywriting"):
-                    # 获取文件夹内所有文件的文件绝对路径，包括文件扩展名
+                    # Get the absolute paths of all files in the folder, including file extensions
                     for tmp in common.get_all_file_paths(copywriting["folder_path"]):
                         copywriting_file_path_list.append(tmp)
 
-                    # 是否开启随机播放
+                    # Whether random playback is enabled
                     if config.get("trends_copywriting", "random_play"):
                         random.shuffle(copywriting_file_path_list)
 
@@ -1106,13 +1106,13 @@ def start_server():
                         f"copywriting_file_path_list={copywriting_file_path_list}"
                     )
 
-                    # 遍历文案文件路径列表
+                    # Iterate over the copywriting file path list
                     for copywriting_file_path in copywriting_file_path_list:
-                        # 获取文案文件内容
+                        # Get the copywriting file content
                         copywriting_file_content = common.read_file_return_content(
                             copywriting_file_path
                         )
-                        # 是否启用提示词对文案内容进行转换
+                        # Whether to use a prompt to convert the copywriting content
                         if copywriting["prompt_change_enable"]:
                             data_json = {
                                 "username": "trends_copywriting",
@@ -1120,7 +1120,7 @@ def start_server():
                                 + copywriting_file_content,
                             }
 
-                            # 调用函数进行LLM处理，以及生成回复内容，进行音频合成，需要好好考虑考虑实现
+                            # Call the function to do LLM processing, generate the reply and synthesize audio; needs careful thought to implement
                             data_json["content"] = my_handle.llm_handle(
                                 config.get("trends_copywriting", "llm_type"), data_json
                             )
@@ -1138,12 +1138,12 @@ def start_server():
                             f'copywriting_file_content={copywriting_file_content},content={data_json["content"]}'
                         )
 
-                        # 空数据判断
+                        # Empty data check
                         if (
                             data_json["content"] is not None
                             and data_json["content"] != ""
                         ):
-                            # 发给直接复读进行处理
+                            # Send to direct repeat for processing
                             my_handle.reread_handle(
                                 data_json, filter=True, type="trends_copywriting"
                             )
@@ -1155,10 +1155,10 @@ def start_server():
             logger.error(traceback.format_exc())
 
     if config.get("trends_copywriting", "enable"):
-        # 创建动态文案子线程并启动
+        # Create the dynamic copywriting sub-thread and start it
         threading.Thread(target=lambda: asyncio.run(run_trends_copywriting())).start()
 
-    # 闲时任务
+    # Idle task
     async def idle_time_task():
         global config, common
 
@@ -1166,9 +1166,9 @@ def start_server():
             if not config.get("idle_time_task", "enable"):
                 return
 
-            logger.info("闲时任务线程运行中...")
+            logger.info("Idle task thread is running...")
 
-            # 记录上一次触发的任务类型
+            # Record the last triggered task type
             last_mode = 0
             copywriting_copy_list = None
             comment_copy_list = None
@@ -1178,7 +1178,7 @@ def start_server():
             overflow_time_max = int(config.get("idle_time_task", "idle_time_max"))
             overflow_time = random.randint(overflow_time_min, overflow_time_max)
 
-            logger.info(f"下一个闲时任务将在{overflow_time}秒后执行")
+            logger.info(f"The next idle task will run in {overflow_time} seconds")
 
             def load_data_list(type):
                 if type == "copywriting":
@@ -1192,7 +1192,7 @@ def start_server():
                 tmp2 = copy.copy(tmp)
                 return tmp2
 
-            # 加载数据到list
+            # Load data intolist
             copywriting_copy_list = load_data_list("copywriting")
             comment_copy_list = load_data_list("comment")
             local_audio_path_list = load_data_list("local_audio")
@@ -1207,23 +1207,23 @@ def start_server():
                 comment_copy_list,
                 local_audio_path_list,
             ):
-                # 闲时计数清零
+                # Reset the idle count
                 my_global.global_idle_time = 0
 
-                # 闲时任务处理
+                # Idle task processing
                 if config.get("idle_time_task", "copywriting", "enable"):
                     if last_mode == 0:
-                        # 是否开启了随机触发
+                        # Whether random trigger is enabled
                         if config.get("idle_time_task", "copywriting", "random"):
-                            logger.debug("切换到文案触发模式")
+                            logger.debug("Switch to copywriting trigger mode")
                             if copywriting_copy_list != []:
-                                # 随机打乱列表中的元素
+                                # Randomly shuffle the elements in the list
                                 random.shuffle(copywriting_copy_list)
                                 copywriting_copy = copywriting_copy_list.pop(0)
                             else:
-                                # 刷新list数据
+                                # Refresh the list data
                                 copywriting_copy_list = load_data_list("copywriting")
-                                # 随机打乱列表中的元素
+                                # Randomly shuffle the elements in the list
                                 random.shuffle(copywriting_copy_list)
                                 if copywriting_copy_list != []:
                                     copywriting_copy = copywriting_copy_list.pop(0)
@@ -1239,7 +1239,7 @@ def start_server():
                             if copywriting_copy_list != []:
                                 copywriting_copy = copywriting_copy_list.pop(0)
                             else:
-                                # 刷新list数据
+                                # Refresh the list data
                                 copywriting_copy_list = load_data_list("copywriting")
                                 if copywriting_copy_list != []:
                                     copywriting_copy = copywriting_copy_list.pop(0)
@@ -1254,35 +1254,35 @@ def start_server():
                         hour, min = common.get_bj_time(6)
 
                         if 0 <= hour and hour < 6:
-                            time = f"凌晨{hour}点{min}分"
+                            time = f"Early morning, {hour}:{min:02d}"
                         elif 6 <= hour and hour < 9:
-                            time = f"早晨{hour}点{min}分"
+                            time = f"Morning, {hour}:{min:02d}"
                         elif 9 <= hour and hour < 12:
-                            time = f"上午{hour}点{min}分"
+                            time = f"Morning, {hour}:{min:02d}"
                         elif hour == 12:
-                            time = f"中午{hour}点{min}分"
+                            time = f"Noon, {hour}:{min:02d}"
                         elif 13 <= hour and hour < 18:
-                            time = f"下午{hour - 12}点{min}分"
+                            time = f"Afternoon, {hour}:{min:02d}"
                         elif 18 <= hour and hour < 20:
-                            time = f"傍晚{hour - 12}点{min}分"
+                            time = f"Evening, {hour}:{min:02d}"
                         elif 20 <= hour and hour < 24:
-                            time = f"晚上{hour - 12}点{min}分"
+                            time = f"Night, {hour}:{min:02d}"
 
-                        # 动态变量替换
-                        # 假设有多个未知变量，用户可以在此处定义动态变量
+                        # Dynamic variable replacement
+                        # Assume there are multiple unknown variables; users can define dynamic variables here
                         variables = {
                             "time": time,
                             "user_num": "N",
                             "last_username": my_global.last_username_list[-1],
                         }
 
-                        # 有用户数据情况的平台特殊处理
+                        # Special handling for platforms with user data
                         if platform in ["dy", "tiktok"]:
                             variables["user_num"] = my_global.last_liveroom_data[
                                 "OnlineUserCount"
                             ]
 
-                        # 使用字典进行字符串替换
+                        # Use a dictionary for string replacement
                         if any(var in copywriting_copy for var in variables):
                             copywriting_copy = copywriting_copy.format(
                                 **{
@@ -1292,28 +1292,28 @@ def start_server():
                                 }
                             )
 
-                        # [1|2]括号语法随机获取一个值，返回取值完成后的字符串
+                        # [1|2]Bracket syntax randomly picks a value and returns the string after the value is substituted
                         copywriting_copy = common.brackets_text_randomize(
                             copywriting_copy
                         )
 
-                        # 发送给处理函数
+                        # Send to the handler function
                         data = {
                             "platform": platform,
-                            "username": "闲时任务-文案模式",
+                            "username": "Idle task - script mode",
                             "type": "reread",
                             "content": copywriting_copy,
                         }
 
                         my_handle.process_data(data, "idle_time_task")
 
-                        # 模式切换
+                        # Mode switch
                         last_mode = 1
 
                         overflow_time = random.randint(
                             overflow_time_min, overflow_time_max
                         )
-                        logger.info(f"下一个闲时任务将在{overflow_time}秒后执行")
+                        logger.info(f"The next idle task will run in {overflow_time} seconds")
 
                         return (
                             last_mode,
@@ -1326,59 +1326,59 @@ def start_server():
 
                 if config.get("idle_time_task", "comment", "enable"):
                     if last_mode == 1:
-                        # 是否开启了随机触发
+                        # Whether random trigger is enabled
                         if config.get("idle_time_task", "comment", "random"):
-                            logger.debug("切换到弹幕触发LLM模式")
+                            logger.debug("Switch to danmaku-triggered LLM mode")
                             if comment_copy_list != []:
-                                # 随机打乱列表中的元素
+                                # Randomly shuffle the elements in the list
                                 random.shuffle(comment_copy_list)
                                 comment_copy = comment_copy_list.pop(0)
                             else:
-                                # 刷新list数据
+                                # Refresh the list data
                                 comment_copy_list = load_data_list("comment")
-                                # 随机打乱列表中的元素
+                                # Randomly shuffle the elements in the list
                                 random.shuffle(comment_copy_list)
                                 comment_copy = comment_copy_list.pop(0)
                         else:
                             if comment_copy_list != []:
                                 comment_copy = comment_copy_list.pop(0)
                             else:
-                                # 刷新list数据
+                                # Refresh the list data
                                 comment_copy_list = load_data_list("comment")
                                 comment_copy = comment_copy_list.pop(0)
 
                         hour, min = common.get_bj_time(6)
 
                         if 0 <= hour and hour < 6:
-                            time = f"凌晨{hour}点{min}分"
+                            time = f"Early morning, {hour}:{min:02d}"
                         elif 6 <= hour and hour < 9:
-                            time = f"早晨{hour}点{min}分"
+                            time = f"Morning, {hour}:{min:02d}"
                         elif 9 <= hour and hour < 12:
-                            time = f"上午{hour}点{min}分"
+                            time = f"Morning, {hour}:{min:02d}"
                         elif hour == 12:
-                            time = f"中午{hour}点{min}分"
+                            time = f"Noon, {hour}:{min:02d}"
                         elif 13 <= hour and hour < 18:
-                            time = f"下午{hour - 12}点{min}分"
+                            time = f"Afternoon, {hour}:{min:02d}"
                         elif 18 <= hour and hour < 20:
-                            time = f"傍晚{hour - 12}点{min}分"
+                            time = f"Evening, {hour}:{min:02d}"
                         elif 20 <= hour and hour < 24:
-                            time = f"晚上{hour - 12}点{min}分"
+                            time = f"Night, {hour}:{min:02d}"
 
-                        # 动态变量替换
-                        # 假设有多个未知变量，用户可以在此处定义动态变量
+                        # Dynamic variable replacement
+                        # Assume there are multiple unknown variables; users can define dynamic variables here
                         variables = {
                             "time": time,
                             "user_num": "N",
                             "last_username": my_global.last_username_list[-1],
                         }
 
-                        # 有用户数据情况的平台特殊处理
+                        # Special handling for platforms with user data
                         if platform in ["dy", "tiktok"]:
                             variables["user_num"] = my_global.last_liveroom_data[
                                 "OnlineUserCount"
                             ]
 
-                        # 使用字典进行字符串替换
+                        # Use a dictionary for string replacement
                         if any(var in comment_copy for var in variables):
                             comment_copy = comment_copy.format(
                                 **{
@@ -1388,26 +1388,26 @@ def start_server():
                                 }
                             )
 
-                        # [1|2]括号语法随机获取一个值，返回取值完成后的字符串
+                        # [1|2]Bracket syntax randomly picks a value and returns the string after the value is substituted
                         comment_copy = common.brackets_text_randomize(comment_copy)
 
-                        # 发送给处理函数
+                        # Send to the handler function
                         data = {
                             "platform": platform,
-                            "username": "闲时任务-弹幕触发LLM模式",
+                            "username": "Idle task - comment-triggered LLM mode",
                             "type": "comment",
                             "content": comment_copy,
                         }
 
                         my_handle.process_data(data, "idle_time_task")
 
-                        # 模式切换
+                        # Mode switch
                         last_mode = 2
 
                         overflow_time = random.randint(
                             overflow_time_min, overflow_time_max
                         )
-                        logger.info(f"下一个闲时任务将在{overflow_time}秒后执行")
+                        logger.info(f"The next idle task will run in {overflow_time} seconds")
 
                         return (
                             last_mode,
@@ -1420,39 +1420,39 @@ def start_server():
 
                 if config.get("idle_time_task", "local_audio", "enable"):
                     if last_mode == 2:
-                        logger.debug("切换到本地音频模式")
+                        logger.debug("Switch to local audio mode")
 
-                        # 是否开启了随机触发
+                        # Whether random trigger is enabled
                         if config.get("idle_time_task", "local_audio", "random"):
                             if local_audio_path_list != []:
-                                # 随机打乱列表中的元素
+                                # Randomly shuffle the elements in the list
                                 random.shuffle(local_audio_path_list)
                                 local_audio_path = local_audio_path_list.pop(0)
                             else:
-                                # 刷新list数据
+                                # Refresh the list data
                                 local_audio_path_list = load_data_list("local_audio")
-                                # 随机打乱列表中的元素
+                                # Randomly shuffle the elements in the list
                                 random.shuffle(local_audio_path_list)
                                 local_audio_path = local_audio_path_list.pop(0)
                         else:
                             if local_audio_path_list != []:
                                 local_audio_path = local_audio_path_list.pop(0)
                             else:
-                                # 刷新list数据
+                                # Refresh the list data
                                 local_audio_path_list = load_data_list("local_audio")
                                 local_audio_path = local_audio_path_list.pop(0)
 
-                        # [1|2]括号语法随机获取一个值，返回取值完成后的字符串
+                        # [1|2]Bracket syntax randomly picks a value and returns the string after the value is substituted
                         local_audio_path = common.brackets_text_randomize(
                             local_audio_path
                         )
 
                         logger.debug(f"local_audio_path={local_audio_path}")
 
-                        # 发送给处理函数
+                        # Send to the handler function
                         data = {
                             "platform": platform,
-                            "username": "闲时任务-本地音频模式",
+                            "username": "Idle task - local audio mode",
                             "type": "local_audio",
                             "content": common.extract_filename(local_audio_path, False),
                             "file_path": local_audio_path,
@@ -1460,13 +1460,13 @@ def start_server():
 
                         my_handle.process_data(data, "idle_time_task")
 
-                        # 模式切换
+                        # Mode switch
                         last_mode = 0
 
                         overflow_time = random.randint(
                             overflow_time_min, overflow_time_max
                         )
-                        logger.info(f"下一个闲时任务将在{overflow_time}秒后执行")
+                        logger.info(f"The next idle task will run in {overflow_time} seconds")
 
                         return (
                             last_mode,
@@ -1485,16 +1485,16 @@ def start_server():
                 )
 
             while True:
-                # 如果闲时时间范围为0，就睡眠100ms 意思意思
+                # If the idle time range is 0, sleep 100ms just for show
                 if overflow_time_min > 0 and overflow_time_max > 0:
-                    # 每隔一秒的睡眠进行闲时计数
+                    # Count idle time with a sleep every second
                     await asyncio.sleep(1)
                 else:
                     await asyncio.sleep(0.1)
                 my_global.global_idle_time = my_global.global_idle_time + 1
 
-                if config.get("idle_time_task", "type") == "直播间无消息更新闲时":
-                    # 闲时计数达到指定值，进行闲时任务处理
+                if config.get("idle_time_task", "type") == "Idle: no room messages":
+                    # The idle count reached the specified value, process the idle task
                     if my_global.global_idle_time >= overflow_time:
                         (
                             last_mode,
@@ -1507,7 +1507,7 @@ def start_server():
                             comment_copy_list,
                             local_audio_path_list,
                         )
-                elif config.get("idle_time_task", "type") == "待合成消息队列更新闲时":
+                elif config.get("idle_time_task", "type") == "Idle: message queue":
                     if my_handle.is_queue_less_or_greater_than(
                         type="message_queue",
                         less=int(
@@ -1525,9 +1525,9 @@ def start_server():
                             comment_copy_list,
                             local_audio_path_list,
                         )
-                elif config.get("idle_time_task", "type") == "待播放音频队列更新闲时":
-                    logger.debug(f"待播放音频数：{my_global.wait_play_audio_num}")
-                    # 特殊处理：metahuman_stream平台，判断wait_play_audio_num
+                elif config.get("idle_time_task", "type") == "Idle: audio queue":
+                    logger.debug(f"Number of audio clips waiting to play: {my_global.wait_play_audio_num}")
+                    # Special handling: metahuman_stream platform, determinewait_play_audio_num
                     if config.get("visual_body") == "metahuman_stream":
                         if my_global.wait_play_audio_num < config.get("idle_time_task", "min_audio_queue_len_to_trigger"):
                             (
@@ -1566,24 +1566,24 @@ def start_server():
             logger.error(traceback.format_exc())
 
     if config.get("idle_time_task", "enable"):
-        # 创建闲时任务子线程并启动
+        # Create the idle task sub-thread and start it
         threading.Thread(target=lambda: asyncio.run(idle_time_task())).start()
 
     
 
-    # 图像识别 定时任务
+    # Image recognition scheduled task
     def image_recognition_schedule_task(type: str):
         global config, common, my_handle
 
-        logger.debug(f"图像识别-{type} 定时任务执行中...")
+        logger.debug(f"Image recognition-{type} scheduled task running...")
 
         data = {"platform": platform, "username": None, "content": "", "type": type}
 
-        logger.info(f"图像识别-{type} 定时任务触发")
+        logger.info(f"Image recognition-{type} scheduled task triggered")
 
         my_handle.process_data(data, "image_recognition_schedule")
 
-    # 启动图像识别 定时任务
+    # Start image recognition scheduled task
     def run_image_recognition_schedule(interval: int, type: str):
         global config
 
@@ -1596,28 +1596,28 @@ def start_server():
 
         while True:
             schedule.run_pending()
-            # time.sleep(1)  # 控制每次循环的间隔时间，避免过多占用 CPU 资源
+            # time.sleep(1)  # Control the interval of each loop to avoid using too much CPU
 
     if config.get("image_recognition", "loop_screenshot_enable"):
-        # 创建定时任务子线程并启动
+        # Create the scheduled task sub-thread and start it
         image_recognition_schedule_thread = threading.Thread(
             target=lambda: run_image_recognition_schedule(
-                config.get("image_recognition", "loop_screenshot_delay"), "窗口截图"
+                config.get("image_recognition", "loop_screenshot_delay"), "Window screenshot"
             )
         )
         image_recognition_schedule_thread.start()
 
     if config.get("image_recognition", "loop_cam_screenshot_enable"):
-        # 创建定时任务子线程并启动
+        # Create the scheduled task sub-thread and start it
         image_recognition_cam_schedule_thread = threading.Thread(
             target=lambda: run_image_recognition_schedule(
                 config.get("image_recognition", "loop_cam_screenshot_delay"),
-                "摄像头截图",
+                "Camera screenshot",
             )
         )
         image_recognition_cam_schedule_thread.start()
 
-    # 针对对接LiveTalking(metahuman-stream)特殊处理
+    # Special handling for the LiveTalking (metahuman-stream) integration
     if config.get("visual_body") == "metahuman_stream":
         def metahuman_stream_is_speaking():
 
@@ -1629,17 +1629,17 @@ def start_server():
                 resp_json = common.send_request(url, 'POST', {"sessionid": 0}, timeout=5)
                 if resp_json and resp_json["code"] == 0:
                     if resp_json["data"]:
-                        logger.debug("LiveTalking有音频在播放")
+                        logger.debug("LiveTalkingAudio is playing")
                         my_global.wait_play_audio_num = 1
                     else:
-                        logger.debug("LiveTalking没有音频在播放")
+                        logger.debug("LiveTalkingNo audio is playing")
                         my_global.wait_play_audio_num = 0
                         
             except Exception as e:
                 logger.error(traceback.format_exc())
-                logger.error("请求LiveTalking is_speaking接口失败")
+                logger.error("Request to the LiveTalking is_speaking endpoint failed")
 
-        # 创建线程定时请求LiveTalking的is_speaking接口，判断是否有音频在播放
+        # Create a thread that periodically requests the LiveTalking is_speaking endpoint to determine whether audio is playing
         def run_metahuman_stream_is_speaking_schedule():
             interval = 3
             try:
@@ -1657,7 +1657,7 @@ def start_server():
         )
         run_metahuman_stream_is_speaking_schedule_thread.start()
     
-    logger.info(f"当前平台：{platform}")
+    logger.info(f"Current platform: {platform}")
 
     if platform == "bilibili":
         from utils.platforms.bilibili import start_listen
@@ -1712,34 +1712,34 @@ def start_server():
         thread.join()
 
 
-# 退出程序
+# Exit the program
 def exit_handler(signum, frame):
-    logger.info("收到信号:", signum)
+    logger.info("Signal received:", signum)
 
 
 if __name__ == "__main__":
     common = Common()
     config = Config(config_path)
-    # 日志文件路径
+    # Log file path
     log_path = "./log/log-" + common.get_bj_time(1) + ".txt"
     # Configure_logger(log_path)
 
     platform = config.get("platform")
 
 
-    # 按键监听相关
+    # Key listener related
     do_listen_and_comment_thread = None
     stop_do_listen_and_comment_thread_event = None
-    # 存储加载的模型对象
+    # Store the loaded model object
     faster_whisper_model = None
     sense_voice_model = None
-    # 正在录音中 标志位
+    # Recording in progress flag
     is_recording = False
-    # 聊天是否唤醒
+    # Whether chat is awake
     is_talk_awake = False
 
 
-    # 信号特殊处理
+    # Special signal handling
     signal.signal(signal.SIGINT, exit_handler)
     signal.signal(signal.SIGTERM, exit_handler)
 

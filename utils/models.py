@@ -32,7 +32,7 @@ class CallbackMessage(BaseModel):
     data: Dict[str, Any]
 
 """
-通用
+General
 """ 
 class CommonResult(BaseModel):
     code: int

@@ -13,7 +13,7 @@ proxys = {
 
 proxys = None
 
-# 代理软件开启TUN模式进行代理，由于库的ws不走传入的代理参数，只能靠代理软件全代理了
+# Enable TUN mode in the proxy software; the library's ws ignores the proxy argument, so system-wide proxying is the only option
 client: TikTokLiveClient = TikTokLiveClient(unique_id=f"@{room_id}", web_proxy=proxys, ws_proxy=proxys)
 
 

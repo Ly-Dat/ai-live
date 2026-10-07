@@ -14,7 +14,7 @@ class GPT4Free:
         self.config_data = data
         self.api_key = None if self.config_data["api_key"] == "" else self.config_data["api_key"]
 
-        # 创建映射字典
+        # Create a mapping dict
         provider_mapping = {
             "none": None,
             "g4f.Provider.Bing": g4f.Provider.Bing,
@@ -42,13 +42,13 @@ class GPT4Free:
 
 
     def get_resp(self, data):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            data (dict): json数据
+            data (dict): jsonData
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             messages = [
@@ -80,9 +80,9 @@ class GPT4Free:
                 if len(self.history) > self.config_data["history_max_len"]:
                     self.history.pop(0)
                 while True:
-                    # 获取嵌套列表中所有字符串的字符数
+                    # Get the character count of all strings in a nested list
                     total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                    # 如果大于限定最大历史数，就剔除第一个元素
+                    # If it exceeds the maximum history limit, remove the first element
                     if total_chars > self.config_data["history_max_len"]:
                         self.history.pop(0)
                     else:
@@ -97,9 +97,9 @@ class GPT4Free:
 
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logger.basicConfig(
-        level=logger.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logger.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -110,13 +110,13 @@ if __name__ == '__main__':
         "model": "gpt-3.5-turbo",
         "max_tokens": 2048,
         "proxy": "http://127.0.0.1:10809",
-        "preset": "你是一个虚拟主播",
+        "preset": "You are a virtual streamer",
         "history_enable": True,
         "history_max_len": 300
     }
     gpt4free = GPT4Free(data)
 
 
-    logger.info(gpt4free.get_resp({"prompt": "你可以扮演猫娘吗，每句话后面加个喵"}))
-    logger.info(gpt4free.get_resp({"prompt": "早上好"}))
+    logger.info(gpt4free.get_resp({"prompt": "Can you play a catgirl and add meow after every sentence"}))
+    logger.info(gpt4free.get_resp({"prompt": "Good morning"}))
     

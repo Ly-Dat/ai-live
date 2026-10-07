@@ -3,7 +3,7 @@ from random import random
 from db import SQLiteDB
 
 db = SQLiteDB("E:\GitHub_pro\AI-Vtuber\data\data.db")
-# 查询数据
+# Query data
 select_data_sql = '''
 SELECT * FROM integral
 ORDER BY integral DESC
@@ -13,7 +13,7 @@ data_list = db.fetch_all(select_data_sql)
 
 print(data_list)
 
-# 使用列表推导式将每个元组转换为列表
+# Use a list comprehension to convert each tuple to a list
 list_list = [list(t) for t in data_list]
 username_list = [t[1] for t in data_list]
 

@@ -9,7 +9,7 @@ class TEXT_GENERATION_WEBUI:
     def __init__(self, data):
         self.common = Common()
 
-        # 配置过多，点到为止，需要的请自行修改
+        # Too many settings, stopping here; modify them yourself if needed
         # http://127.0.0.1:5000
         self.config_data = data
 
@@ -28,7 +28,7 @@ class TEXT_GENERATION_WEBUI:
         else:
             self.history = []
 
-    # 合并函数
+    # Merge function
     def merge_jsons(self, json_list):
         merged_json = {"internal": [], "visible": []}
         
@@ -40,7 +40,7 @@ class TEXT_GENERATION_WEBUI:
     
     def remove_first_group(self, json_obj):
         """
-        删除 JSON 对象中 'internal' 和 'visible' 列表的第一组数据。
+        Delete from the JSON object 'internal' and 'visible' First group of data in the list.
         """
         if json_obj["internal"]:
             json_obj["internal"].pop(0)
@@ -107,14 +107,14 @@ class TEXT_GENERATION_WEBUI:
                     # print(result['visible'][-1][1])
                     resp_content = result['visible'][-1][1]
 
-                    # 启用历史就给我记住！
+                    # If history is enabled, remember it for me!
                     if self.history_enable:
                         while True:
-                            # 统计字符数
+                            # Count characters
                             total_chars = sum(len(item) for sublist in self.history['internal'] for item in sublist)
                             total_chars += sum(len(item) for sublist in self.history['visible'] for item in sublist)
                             logger.info(f"total_chars={total_chars}")
-                            # 如果大于限定最大历史数，就剔除第一个元素
+                            # If it exceeds the maximum history limit, remove the first element
                             if total_chars > self.history_max_len:
                                 self.history = self.remove_first_group(self.history)
                             else:
@@ -207,17 +207,17 @@ class TEXT_GENERATION_WEBUI:
                 logger.debug(resp_json)
 
                 resp_content = resp_json['choices'][0]['message']['content']
-                # 过滤多余的 \n
+                # Filter out extra \n
                 resp_content = re.sub(r'\n+', '\n', resp_content)
-                # 从字符串的两端或者一端删除指定的字符，默认是空格或者换行符
+                # Remove the specified characters from both ends or one end of a string; the default is spaces or newlines
                 resp_content = resp_content.rstrip('\n')
                 self.history.append({"role": "assistant", "content": resp_content})
 
-                # 启用历史就给我记住！
+                # If history is enabled, remember it for me!
                 if self.history_enable:
                     while True:
                         total_chars = sum(len(i['content']) for i in self.history)
-                        # 如果大于限定最大历史数，就剔除第1 个元素
+                        # If it exceeds the maximum history limit, remove the 1st element
                         if total_chars > self.history_max_len:
                             self.history.pop(0)
                             # self.history.pop(0)
@@ -230,7 +230,7 @@ class TEXT_GENERATION_WEBUI:
                 return None
 
 
-    # 源于官方 api-example.py
+    # From the official source api-example.py
     def get_resp2(self, prompt):
         request = {
             'prompt': prompt,

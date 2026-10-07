@@ -12,8 +12,8 @@ client = Ark(
 # completion = client.chat.completions.create(
 #     model="ep-20240904192312-r4rkc",
 #     messages = [
-#         {"role": "system", "content": "你是豆包，是由字节跳动开发的 AI 人工智能助手"},
-#         {"role": "user", "content": "常见的十字花科植物有哪些？"},
+#         {"role": "system", "content": "You are Doubao, an AI assistant developed by ByteDance"},
+#         {"role": "user", "content": "What are some common cruciferous plants?"},
 #     ],
 # )
 # print(completion.choices[0].message.content)

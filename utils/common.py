@@ -1,4 +1,4 @@
-# 导入所需的库
+# Import the required libraries
 import re, random, requests, json
 import time
 import os, glob
@@ -32,22 +32,22 @@ class Common:
         self.count = 1
 
     """
-    数据校验
+    Data validation
     """
-    # 检测是否为纯数字
+    # Check whether it is purely digits
     def is_pure_number(self, text):
-        """检测是否为纯数字
+        """Check whether it is purely digits
 
         Args:
-            text (str): 待检测的文本
+            text (str): Text to detect
 
         Returns:
-            bool: 是否为纯数字
+            bool: Whether it is purely digits
         """
         return text.isdigit()
 
 
-    # 是否是url
+    # Whether it isurl
     def is_url_check(self, url):
         try:
             result = urlparse(url)
@@ -55,7 +55,7 @@ class Common:
         except ValueError:
             return False
         
-    # 是否是IP地址
+    # Whether it is an IP address
     def is_valid_ip(self, ip):
         import ipaddress
 
@@ -65,7 +65,7 @@ class Common:
         except ValueError:
             return False
 
-    # 是否是端口
+    # Whether it is a port
     def is_valid_port(self, port):
         try:
             port_num = int(port)
@@ -73,16 +73,16 @@ class Common:
         except ValueError:
             return False
 
-    # 判断传入的字符串是否是文件夹路径或文件路径，且此文件夹路径或文件路径是否存在，返回bool
+    # Check whether the given string is a folder path or file path and whether that path exists, returnsbool
     def is_dir_or_file(self, path: str, type: str="all"):
-        """判断传入的字符串是否是文件夹路径或文件路径，且此文件夹路径或文件路径是否存在，返回bool
+        """Check whether the given string is a folder path or file path and whether that path exists, returnsbool
 
         Args:
-            path (str): 文件夹路径或文件路径
-            type (str, optional): 检测类型. Defaults to "all".
+            path (str): Folder path or file path
+            type (str, optional): Detection type. Defaults to "all".
 
         Returns:
-            bool: 结果
+            bool: Result
         """
         if type == "dir":
             if os.path.isdir(path):
@@ -97,10 +97,10 @@ class Common:
                 return True
             return False
         
-    # 识别操作系统
+    # Identify the operating system
     def detect_os(self):
         """
-        识别操作系统
+        Identify the operating system
         """
         import platform
 
@@ -112,65 +112,65 @@ class Common:
         elif system == 'Darwin':
             return 'MacOS'
         
-        # 如果platform模块无法识别，则尝试使用os模块
+        # If the platform module cannot identify it, try using the os module
         # system = os.name
         # if system == 'posix':
-        #     return '可能是Linux或MacOS'
+        #     return 'May be Linux orMacOS'
         # elif system == 'nt':
         #     return 'Windows'
 
-        return '未知系统'
+        return 'Unknown system'
 
     """
-    数字操作
+    Number operations
     """
 
-    # 获取北京时间
+    # Get Beijing time
     def get_bj_time(self, type=0):
-        """获取北京时间
+        """Get Beijing time
 
         Args:
-            type (int, str): 返回时间类型. 默认为 0.
-                0 返回数据：年-月-日 时:分:秒
-                1 返回数据：年-月-日
-                2 返回数据：当前时间的秒
-                3 返回数据：自1970年1月1日以来的秒数
-                4 返回数据：根据调用次数计数到100循环
-                5 返回数据：当前 时点分
-                6 返回数据：当前时间的 时, 分
-                7 返回数据：年-月-日 时-分-秒 毫秒
+            type (int, str): Return the time type. Default is 0.
+                0 Returns: year-month-day hour:minute:second
+                1 Returns: year-month-day
+                2 Returns: seconds of the current time
+                3 Returns: seconds since January 1, 1970
+                4 Returns: a counter that cycles up to 100 based on the number of calls
+                5 Returns: current hour:minute
+                6 Returns: hour, minute of the current time
+                7 Returns: year-month-day hour-minute-second millisecond
 
         Returns:
-            str: 返回指定格式的时间字符串
+            str: Return a time string in the specified format
             int, int
         """
         if type == 0:
-            utc_now = datetime.utcnow().replace(tzinfo=timezone.utc)  # 获取当前 UTC 时间
+            utc_now = datetime.utcnow().replace(tzinfo=timezone.utc)  # Get the current UTC time
             SHA_TZ = timezone(
                 timedelta(hours=8),
                 name='Asia/Shanghai',
             )
-            beijing_now = utc_now.astimezone(SHA_TZ)  # 将 UTC 时间转换为北京时间
+            beijing_now = utc_now.astimezone(SHA_TZ)  # Convert UTC time to Beijing time
             fmt = '%Y-%m-%d %H:%M:%S'
             now_fmt = beijing_now.strftime(fmt)
             return now_fmt
         elif type == 1:
-            now = datetime.now()  # 获取当前时间
-            year = now.year  # 获取当前年份
-            month = now.month  # 获取当前月份
-            day = now.day  # 获取当前日期
+            now = datetime.now()  # Get the current time
+            year = now.year  # Get the current year
+            month = now.month  # Get the current month
+            day = now.day  # Get the current date
 
             return str(year) + "-" + str(month) + "-" + str(day)
         elif type == 2:
-            now = time.localtime()  # 获取当前时间
+            now = time.localtime()  # Get the current time
 
-            # hour = now.tm_hour   # 获取当前小时
-            # minute = now.tm_min  # 获取当前分钟 
-            second = now.tm_sec  # 获取当前秒数
+            # hour = now.tm_hour   # Get the current hour
+            # minute = now.tm_min  # Get the current minute 
+            second = now.tm_sec  # Get the current second
 
             return str(second)
         elif type == 3:
-            current_time = time.time()  # 返回自1970年1月1日以来的秒数
+            current_time = time.time()  # Return the seconds since January 1, 1970
 
             return str(current_time)
         elif type == 4:
@@ -178,64 +178,64 @@ class Common:
 
             return str(self.count)
         elif type == 5:
-            now = time.localtime()  # 获取当前时间
+            now = time.localtime()  # Get the current time
 
-            hour = now.tm_hour   # 获取当前小时
-            minute = now.tm_min  # 获取当前分钟
+            hour = now.tm_hour   # Get the current hour
+            minute = now.tm_min  # Get the current minute
 
-            return str(hour) + "点" + str(minute) + "分"
+            return str(hour) + ":" + str(minute).zfill(2)
         elif type == 6:
-            now = time.localtime()  # 获取当前时间
+            now = time.localtime()  # Get the current time
 
-            hour = now.tm_hour   # 获取当前小时
-            minute = now.tm_min  # 获取当前分钟 
+            hour = now.tm_hour   # Get the current hour
+            minute = now.tm_min  # Get the current minute 
 
             return hour, minute
         elif type == 7:
-            utc_now = datetime.utcnow().replace(tzinfo=timezone.utc)  # 获取当前 UTC 时间
+            utc_now = datetime.utcnow().replace(tzinfo=timezone.utc)  # Get the current UTC time
             SHA_TZ = timezone(
                 timedelta(hours=8),
                 name='Asia/Shanghai',
             )
-            beijing_now = utc_now.astimezone(SHA_TZ)  # 将 UTC 时间转换为北京时间
+            beijing_now = utc_now.astimezone(SHA_TZ)  # Convert UTC time to Beijing time
             fmt = '%Y-%m-%d %H-%M-%S %f'
             now_fmt = beijing_now.strftime(fmt)
             return now_fmt
     
     def time_difference_in_seconds(self, specific_time_str: str):
-        """计算传入时间和当前时间的时间差
+        """Compute the difference between the given time and the current time
 
         Args:
-            specific_time_str (str): datetime类型字符串
+            specific_time_str (str): datetimeType string
 
         Returns:
-            float: 时间差
+            float: Time difference
         """
         try:
-            # 解析时间字符串
+            # Parse the time string
             specific_time = datetime.strptime(specific_time_str, "%Y-%m-%dT%H:%M:%S")
         except ValueError:
-            # 如果时间字符串格式不正确，则返回 None 或者抛出异常，取决于你的需求
-            return None  # 或者 raise ValueError("Invalid time format. Please use %Y-%m-%dT%H:%M:%S.")
+            # If the time string format is incorrect, return None or raise an exception, depending on your needs
+            return None  # Or raise ValueError("Invalid time format. Please use %Y-%m-%dT%H:%M:%S.")
         
-        # 获取当前时间
+        # Get the current time
         current_time = datetime.now()
         
-        # 计算时间差
+        # Compute the time difference
         time_difference = specific_time - current_time
         
-        # 返回时间差的总秒数
+        # Return the total seconds of the time difference
         return time_difference.total_seconds()
 
     def get_random_value(self, lower_limit, upper_limit):
-        """获得2个数之间的随机值
+        """Get a random value between 2 numbers
 
         Args:
-            lower_limit (float): 随机数下限
-            upper_limit (float): 随机数上限
+            lower_limit (float): Lower bound of the random number
+            upper_limit (float): Upper bound of the random number
 
         Returns:
-            float: 2个数之间的随机值
+            float: 2Random value between the number of
         """
         if lower_limit == upper_limit:
             return round(lower_limit, 2)
@@ -248,15 +248,15 @@ class Common:
     
 
     """
-    Dict操作
+    DictOperation
     """
     def find_keys_by_value(self, dictionary, target_value):
-        # 返回一个包含所有具有指定值的键的列表
+        # Return a list of all keys that have the specified value
         return [key for key, value in dictionary.items() if value == target_value]
 
 
     def find_key_by_value(self, d: dict, value):
-        # 遍历字典项
+        # Iterate over dict items
         for key, val in d.items():
             if val == value:
                 return key
@@ -280,12 +280,12 @@ class Common:
 
     """
 
-    # 判断文本是否可以转为dict JSON格式
+    # Check whether the text can be converted to dict JSON format
     def is_json_convertible(self, text: str) -> bool:
-        """判断文本是否可以转为dict JSON格式
+        """Check whether the text can be converted to dict JSON format
 
         Args:
-            text (str): 待判断内容
+            text (str): Content to check
 
         Returns:
             bool: T / F
@@ -297,7 +297,7 @@ class Common:
         except json.JSONDecodeError:
             return False
 
-    # 生成hash字符串 用于gradio请求
+    # Generate a hash string for gradio requests
     def generate_session_hash(self, length: int=11):
         import hashlib
         import string
@@ -309,18 +309,18 @@ class Common:
 
         return session_hash
 
-    # 将字符串中的数字转换成中文
+    # Convert digits in the string to Chinese numerals
     def convert_digits_to_chinese(self, input_str: str):
-        """将字符串中的数字转换成中文
+        """Convert digits in the string to Chinese numerals
 
         Args:
-            input_str (str): 待转换的字符串
+            input_str (str): String to convert
 
         Returns:
-            str: 转换后的字符串
+            str: Converted string
         """
         try:
-            # 定义阿拉伯数字到中文数字的映射
+            # Define the mapping from Arabic numerals to Chinese numerals
             digit_to_chinese = {
                 '0': '零',
                 '1': '一',
@@ -334,24 +334,24 @@ class Common:
                 '9': '九'
             }
 
-            # 遍历输入字符串并替换数字为中文数字
+            # Iterate over the input string and replace digits with Chinese numerals
             result = ''.join(digit_to_chinese.get(char, char) for char in input_str)
             
             return result
         except Exception as e:
-            logger.error(f"转换数字到中文时出错: {e}")
+            logger.error(f"Error converting number to Chinese: {e}")
             return input_str
 
-    # 删除多余单词
+    # Remove extra words
     def remove_extra_words(self, text="", max_len=30, max_char_len=50):
         words = text.split()
         if len(words) > max_len:
-            words = words[:max_len]  # 列表切片，保留前30个单词
-            text = ' '.join(words) + '...'  # 使用join()函数将单词列表重新组合为字符串，并在末尾添加省略号
+            words = words[:max_len]  # List slicing, keep the first 30 words
+            text = ' '.join(words) + '...'  # Use join() to recombine the word list into a string and append an ellipsis at the end
         return text[:max_char_len]
 
 
-    # 本地敏感词检测 传入敏感词库文件路径和待检查的文本
+    # Local sensitive word detection; pass in the sensitive word library file path and the text to check
     def check_sensitive_words(self, file_path, text):
         with open(file_path, 'r', encoding='utf-8') as file:
             sensitive_words = [line.strip() for line in file.readlines()]
@@ -363,30 +363,30 @@ class Common:
         return False
     
 
-    # 本地敏感词检测 Aho-Corasick 算法 传入敏感词库文件路径和待检查的文本
+    # Local sensitive word detection with the Aho-Corasick algorithm; pass in the sensitive word library file path and the text to check
     def check_sensitive_words2(self, file_path, text):
         with open(file_path, 'r', encoding='utf-8') as file:
             sensitive_words = [line.strip() for line in file.readlines()]
 
-        # 创建 Aho-Corasick 自动机
+        # Create the Aho-Corasick automaton
         automaton = ahocorasick.Automaton()
 
-        # 添加违禁词到自动机中
+        # Add banned words to the automaton
         for word in sensitive_words:
             automaton.add_word(word, word)
 
-        # 构建自动机的转移函数和失效函数
+        # Build the automaton transition function and failure function
         automaton.make_automaton()
 
-        # 在文本中搜索违禁词
+        # Search for banned words in the text
         for _, found_word in automaton.iter(text):
-            logger.warning(f"命中本地违禁词：{found_word}")
+            logger.warning(f"Hit local banned word: {found_word}")
             return found_word
 
         return None
 
 
-    # 本地敏感词转拼音检测 传入敏感词库文件路径和待检查的文本
+    # Local sensitive word to pinyin detection; pass in the sensitive word library file path and the text to check
     def check_sensitive_words3(self, file_path, text):
         with open(file_path, 'r', encoding='utf-8') as file:
             sensitive_words = [line.strip() for line in file.readlines()]
@@ -398,15 +398,15 @@ class Common:
             pinyin_word = self.text2pinyin(word)
             pattern = r'\b' + re.escape(pinyin_word) + r'\b'
             if re.search(pattern, pinyin_text):
-                logger.warning(f"同音违禁拼音：{pinyin_word}")
+                logger.warning(f"Homophone banned pinyin: {pinyin_word}")
                 return True
 
         return False
 
 
-    # 语言检测 TODO:有内存泄漏风险
+    # Language detection TODO: risk of memory leak
     def lang_check(self, text, need="none"):
-        # 语言检测 一个是语言，一个是概率
+        # Language detection: one is the language, the other is the probability
         language, score = langid.classify(text)
 
         if need == "none":
@@ -418,82 +418,82 @@ class Common:
                 return language
 
 
-    # 判断字符串是否全为标点符号
+    # Check whether the string consists entirely of punctuation
     def is_punctuation_string(self, string):
-        # 使用正则表达式匹配标点符号
+        # Match punctuation with a regular expression
         pattern = r'^[^\w\s]+$'
         return re.match(pattern, string) is not None
     
-    # 判断字符串是否全为空格和特殊字符
+    # Check whether the string consists entirely of spaces and special characters
     def is_all_space_and_punct(self, text):
         pattern = r'^[\s\W]+$'
         return re.match(pattern, text) is not None
 
-    # 违禁词校验
+    # Banned word check
     def profanity_content(self, content):
         return profanity.contains_profanity(content)
 
-    # 判断字符串是否以一个list中任意一个字符串打头
+    # Check whether the string starts with any string in a list
     def starts_with_any(self, string, prefixes):
-        """判断字符串是否以一个list中任意一个字符串打头
+        """Check whether the string starts with any string in a list
 
         Args:
-            string (str): 待判断的字符串
-            prefixes (list): 匹配的字符串数组
+            string (str): String to check
+            prefixes (list): Array of matched strings
 
         Returns:
-            str: 命中的匹配到的字符串/None
+            str: The matched string that was hit/None
         """
         try:
             for prefix in prefixes:
                 if string.startswith(prefix):
                     return prefix
         except AttributeError as e:
-            # 处理异常，例如打印错误消息或者返回 False
+            # Handle the exception, e.g. print an error message or return False
             logger.error(f"Error: {e}")
             return None
         
         return None
 
-    # 中文语句切分(只根据特定符号切分)
+    # Chinese sentence splitting (split only by specific symbols)
     def split_sentences1(self, text):
-        # 使用正则表达式切分句子
-        # .的过滤可能会导致 序号类的回复被切分
+        # Split sentences with a regular expression
+        # .Filtering may cause numbered replies to be split
         sentences = re.split('([。！？!?])', text)
         result = []
         for sentence in sentences:
             if sentence not in ["。", "！", "？", ".", "!", "?", ""]:
                 result.append(sentence)
         
-        # 替换换行
+        # Replace newlines
         result = [s.replace('\n', '。') for s in result]
 
         # print(result)
         return result
     
 
-    # 文本切分算法 旧算法，有最大长度限制
+    # Text splitting algorithm, old algorithm with a maximum length limit
     def split_sentences2(self, text):
-        # 最大长度限制，超过后会强制切分
+        # Maximum length limit, exceeding it forces a split
         max_limit_len = 40
 
-        # 使用正则表达式切分句子
+        # Split sentences with a regular expression
         sentences = re.split('([。！？!?])', text)
         result = []
         current_sentence = ""
         for i in range(len(sentences)):
             if sentences[i] not in ["。", "！", "？", ".", "!", "?", ""]:
-                # 去除换行和空格
+                # Remove newlines and spaces
                 sentence = sentences[i].replace('\n', '。')
-                # 如果句子长度小于10个字，则与下一句合并
+                # If the sentence is shorter than 10 characters, merge it with the next one
                 if len(current_sentence) < 10:
                     current_sentence += sentence
-                    # 如果合并后的句子长度超过max_limit_len个字，则进行二次切分
+                    # If the merged sentence is longer than max_limit_len characters, split it a second time
                     if len(current_sentence) > max_limit_len:
-                        # 判断是否有分隔符可用于二次切分
+                        # Check whether there is a separator available for secondary splitting
                         if i+1 < len(sentences) and len(sentences[i+1]) > 0 and sentences[i+1][0] not in ["。", "！", "？", ".", "!", "?"]:
                             next_sentence = sentences[i+1].replace('\n', '。')
-                            # 寻找常用分隔符进行二次切分
+                            # Look for common separators for a secondary split
                             for separator in [",", "，", ";", "；"]:
                                 if separator in next_sentence:
                                     split_index = next_sentence.index(separator) + 1
@@ -502,7 +502,7 @@ class Common:
                                     current_sentence = next_sentence[split_index:]
                                     break
                         else:
-                            # 如果合并后的句子长度超过max_limit_len个字，进行二次切分
+                            # If the merged sentence is longer than max_limit_len characters, perform a secondary split
                             while len(current_sentence) > max_limit_len:
                                 result.append(current_sentence[:max_limit_len])
                                 current_sentence = current_sentence[max_limit_len:]
@@ -510,11 +510,11 @@ class Common:
                     result.append(current_sentence)
                     current_sentence = sentence
 
-        # 添加最后一句
+        # Add the last sentence
         if current_sentence:
             result.append(current_sentence)
 
-        # 2次切分长字符串
+        # 2Split the long string a number of times
         result2 = []
         for string in result:
             if len(string) > max_limit_len:
@@ -526,31 +526,31 @@ class Common:
         return result2
 
 
-    # 文本切分算法
+    # Text splitting algorithm
     def split_sentences(self, text):
-        # 使用正则表达式切分句子
+        # Split sentences with a regular expression
         sentences = re.split(r'(?<=[。！？!?])', text)
         result = []
         current_sentence = ""
         
         for sentence in sentences:
-            # 去除换行和空格
+            # Remove newlines and spaces
             sentence = sentence.replace('\n', '')
             
-            # 如果句子为空则跳过
+            # Skip if the sentence is empty
             if not sentence:
                 continue
             
-            # 如果句子长度小于10个字，则与下一句合并
+            # If the sentence is shorter than 10 characters, merge it with the next one
             if len(current_sentence) < 10:
                 current_sentence += sentence
             else:
-                # 判断当前句子是否以标点符号结尾
+                # Check whether the current sentence ends with punctuation
                 if current_sentence[-1] in ["。", "！", "？", ".", "!", "?"]:
                     result.append(current_sentence)
                     current_sentence = sentence
                 else:
-                    # 如果当前句子不以标点符号结尾，则进行二次切分
+                    # If the current sentence does not end with punctuation, perform a secondary split
                     split_sentences = re.split(r'(?<=[,，;；])', current_sentence)
                     if len(split_sentences) > 1:
                         result.extend(split_sentences[:-1])
@@ -558,53 +558,53 @@ class Common:
                     else:
                         current_sentence += sentence
         
-        # 添加最后一句
+        # Add the last sentence
         if current_sentence:
             result.append(current_sentence)
         
         return result
 
 
-    # 字符串匹配算法来计算字符串之间的相似度，并选择匹配度最高的字符串作为结果
+    # String matching algorithm to compute the similarity between strings and pick the string with the highest match as the result
     def find_best_match(self, substring, string_list, similarity=0.5):
-        """字符串匹配算法来计算字符串之间的相似度，并选择匹配度最高的字符串作为结果
+        """String matching algorithm to compute the similarity between strings and pick the string with the highest match as the result
 
         Args:
-            substring (str): 要搜索的子串
-            string_list (list): 字符串列表
-            similarity (float): 最低相似度
+            substring (str): Substring to search for
+            string_list (list): List of strings
+            similarity (float): Minimum similarity
 
         Returns:
-            _type_: 匹配到的字符串 或 None
+            _type_: Matched string or None
         """
         best_match = None
         best_ratio = 0
         
         for string in string_list:
             ratio = difflib.SequenceMatcher(None, substring, string).ratio()
-            # print(f"String: {string}, Ratio: {ratio}")  # 添加调试语句，输出每个字符串的相似度
+            # print(f"String: {string}, Ratio: {ratio}")  # Add debug statements to output the similarity of each string
             if ratio > best_ratio:
                 best_ratio = ratio
                 best_match = string
         
-        # 如果相似度不到similarity，则认为匹配不成功
+        # If the similarity is below similarity, the match is considered unsuccessful
         if best_ratio < similarity:
             return None
 
         return best_match
     
 
-    # 检查 query_string 是否包含 string_list 列表中的任意一个子字符串
+    # Check whether query_string contains any substring in the string_list list
     def find_substring_in_list(self, query_string, string_list):
         """
-        检查 query_string 是否包含 string_list 列表中的任意一个子字符串
+        Check whether query_string contains any substring in the string_list list
 
         Args:
-            query_string (str): 待查询的字符串。
-            string_list (list of str): 被查询的字符串列表。
+            query_string (str): String to look up.
+            string_list (list of str): List of strings being queried.
 
         Returns:
-            str or None: 如果找到子串，则返回该子串；否则返回 None。
+            str or None: If the substring is found, return it; otherwise return None.
         """
         for string in string_list:
             if string in query_string:
@@ -613,24 +613,24 @@ class Common:
 
 
     def text2pinyin(self, text):
-        """文本转拼音
+        """Text to pinyin
 
         Args:
-            text (str): 传入待转换的文本
+            text (str): Pass in the text to convert
 
         Returns:
-            str: 拼音字符串
+            str: Pinyin string
         """
         pinyin_list = []
         for char in text:
-            # 把每个汉字转为拼音
+            # Convert each Chinese character to pinyin
             char_pinyin_list = pinyin(char, style=Style.NORMAL)
             if char_pinyin_list:
                 _pinyin = char_pinyin_list[0][0]
             else:
                 _pinyin = char
             
-            # 将ü等转换为v
+            # Convert ü etc. tov
             _pinyin = re.sub(r"ü", "v", _pinyin)
             
             pinyin_list.append(_pinyin)
@@ -639,20 +639,20 @@ class Common:
 
 
     def merge_consecutive_asterisks(self, s):
-        """合并字符串末尾连续的*
+        """Merge the consecutive ones at the end of the string*
 
         Args:
-            s (str): 待处理的字符串
+            s (str): String to process
 
         Returns:
-            str: 处理完后的字符串
+            str: String after processing
         """
-        # 从字符串末尾开始遍历，找到连续的*的起始索引
+        # Iterate from the end of the string to find the start index of the consecutive *
         idx = len(s) - 1
         while idx >= 0 and s[idx] == '*':
             idx -= 1
 
-        # 如果找到了超过3个连续的*，则进行替换
+        # If more than 3 consecutive * are found, replace them
         if len(s) - 1 - idx > 3:
             s = s[:idx + 1] + '*' + s[len(s) - 1:]
 
@@ -661,14 +661,14 @@ class Common:
 
     def replace_special_characters(self, input_string, special_characters):
         """
-        将指定的特殊字符替换为空字符。
+        Replace the specified special characters with empty strings.
 
         Args:
-            input_string (str): 要替换特殊字符的输入字符串。
-            special_characters (str): 包含要替换的特殊字符的字符串。
+            input_string (str): Input string whose special characters are to be replaced.
+            special_characters (str): String containing the special characters to be replaced.
 
         Returns:
-            str: 替换后的字符串。
+            str: String after replacement.
         """
         for char in special_characters:
             input_string = input_string.replace(char, "")
@@ -676,42 +676,42 @@ class Common:
         return input_string
 
 
-    # 将cookie数据字符串分割成键值对列表
+    # Split the cookie data string into a list of key-value pairs
     def parse_cookie_data(self, data_str, field_name):
-        """将cookie数据字符串分割成键值对列表
+        """Split the cookie data string into a list of key-value pairs
 
         Args:
-            data_str (str): 待提取数据的cookie字符串
-            field_name (str): 要提取的键名
+            data_str (str): Cookie string from which to extract data
+            field_name (str): Key name to extract
 
         Returns:
-            str: 键所对应的值
+            str: Value corresponding to the key
         """
-        # 将数据字符串分割成键值对列表
+        # Split the data string into a list of key-value pairs
         key_value_pairs = data_str.split(';')
 
         # print(key_value_pairs)
 
-        # 遍历键值对列表，查找指定字段名
+        # Iterate over the key-value list to find the specified field name
         for pair in key_value_pairs:
             key, value = pair.strip().split('=')
             if key == field_name:
                 return value
 
-        # 如果未找到指定字段，返回空字符串
+        # If the specified field is not found, return an empty string
         return ""
 
 
-    # 动态变量替换
+    # Dynamic variable replacement
     def dynamic_variable_replacement(self, template: str, data_json: dict=None):
-        """动态变量替换
+        """Dynamic variable replacement
 
         Args:
-            template (str): 待替换变量的字符串
-            data_json (dict): 用于替换的变量json数据
+            template (str): String whose variables are to be replaced
+            data_json (dict): Variable JSON data used for replacement
 
         Returns:
-            str: 替换完成后的字符串
+            str: String after replacement is complete
         """
         try:
             if data_json is None:
@@ -724,7 +724,7 @@ class Common:
                 if var_name in data_json:
                     template = template.replace("{"+var_name+"}", str(data_json[var_name]))
                 else:
-                    # 变量不存在,保留原样
+                    # Variable does not exist, keep as is
                     pass
 
             logger.debug(f"template={template}")
@@ -735,44 +735,44 @@ class Common:
             return None
 
 
-    # [1|2]括号语法随机获取一个值，返回取值完成后的字符串
+    # [1|2]Bracket syntax randomly picks a value and returns the string after the value is substituted
     def brackets_text_randomize(self, text: str):
         """
-        [1|2]括号语法随机获取一个值，返回取值完成后的字符串
+        [1|2]Bracket syntax randomly picks a value and returns the string after the value is substituted
         Args:
-            text (str): 原始字符串
+            text (str): Original string
 
         Returns:
-            str: 最终字符串
+            str: Final string
         """
-        # 查找所有括号内的内容
+        # Find all content inside brackets
         brackets_content = re.findall(r'\[([^\]]*)\]', text)
         
         for content in brackets_content:
-            # 分割每个括号内的选项
+            # Split the options inside each bracket
             choices = content.split('|')
-            # 从选项中随机选择一个
+            # Randomly pick one from the options
             random_choice = random.choice(choices)
-            # 替换文本中的括号内容
+            # Replace the bracketed content in the text
             text = text.replace(f'[{content}]', random_choice, 1)
         
         return text
 
-    # 从列表中随机获取一个字符串，并进行变量语法转换。如果列表为空，使用单个字符串进行转换。
+    # Randomly get a string from the list and apply variable syntax conversion. If the list is empty, convert the single string instead.
     def get_random_str_in_list_and_format(self, ori_content: str = None, ori_list: list = None, var_json: dict = None) -> dict:
         """
-        从列表中随机获取一个字符串，并进行变量语法转换。如果列表为空，使用单个字符串进行转换。
+        Randomly get a string from the list and apply variable syntax conversion. If the list is empty, convert the single string instead.
 
-        参数:
-            ori_content (str): 单个待处理的字符串。
-            ori_list (list of str): 待处理字符串的列表。
-            var_json (dict): 动态变量替换所需的键值对。
+        Parameter:
+            ori_content (str): A single string to process.
+            ori_list (list of str): List of strings to process.
+            var_json (dict): Key-value pairs needed for dynamic variable replacement.
 
-        返回:
-            dict: 包含转换后内容的字典和返回码。成功时返回 {"ret": 0, "content": content}，失败时返回 {"ret": -1, "content": None}。
+        Return:
+            dict: Dict containing the converted content and the return code. On success returns {"ret": 0, "content": content}, returned on failure {"ret": -1, "content": None}.
         """
         
-        # 检查并处理字符串列表
+        # Check and process the string list
         if ori_list:
             content = random.choice(ori_list)
         elif ori_content:
@@ -780,10 +780,10 @@ class Common:
         else:
             return {"ret": -1, "content": None}
 
-        # [1|2]括号语法随机获取一个值，返回取值完成后的字符串
+        # [1|2]Bracket syntax randomly picks a value and returns the string after the value is substituted
         content = self.brackets_text_randomize(content)
 
-        # 动态变量替换
+        # Dynamic variable replacement
         content = self.dynamic_variable_replacement(content, var_json)
 
         return {"ret": 0, "content": content}
@@ -791,58 +791,58 @@ class Common:
     def get_list_random_or_default(self, strings: list, default_value):
         """
 
-        从列表中随机选择一个字符串，如果列表为空，则返回默认值。
+        Randomly pick a string from the list; if the list is empty, return the default value.
 
-        参数:
-            strings (list of str): 字符串列表。
-            default_value (str): 默认值。
+        Parameter:
+            strings (list of str): List of strings.
+            default_value (str): Default value.
 
-        返回:
-            str: 随机选择的字符串或默认值。
+        Return:
+            str: Randomly selected string or the default value.
         """
-        if not strings:  # 如果列表是空的
+        if not strings:  # If the list is empty
             return default_value
         else:
             return random.choice(strings)
 
-    # llm响应内容<> </>标签内容过滤 主要针对deepseek返回
+    # llmFilter the content inside the <> </> tags of the response, mainly for deepseek output
     def llm_resp_content_filter_tags(self, text: str, filter_state: dict) -> str:
         """
-        过滤标签内容的辅助函数
+        Helper function to filter tag content
         
         Args:
-            text: 要处理的文本
-            filter_state: 过滤状态字典，包含：
-                - is_filtering: 是否正在过滤
-                - current_tag: 当前正在处理的标签
-                - buffer: 未处理完的文本缓冲
+            text: Text to process
+            filter_state: Filter state dict, containing:
+                - is_filtering: Whether filtering is in progress
+                - current_tag: The tag currently being processed
+                - buffer: Buffer of text not yet fully processed
         
         Returns:
-            过滤后的文本
+            Filtered text
         """
         result = ""
         i = 0
 
-        # logger.debug(f"[过滤] 标签过滤前：{text}")
-        # logger.debug(f"[过滤] 过滤状态：{filter_state}")
+        # logger.debug(f"[Filter] Before tag filtering:{text}")
+        # logger.debug(f"[Filter] Filtering state:{filter_state}")
         
         while i < len(text):
             if text[i] == '<':
-                # logger.debug(f"[过滤] 发现开始标签：{text[i]}")
-                # 可能是开始标签
+                # logger.debug(f"[Filter] Found start tag:{text[i]}")
+                # May be a start tag
                 tag_end = text.find('>', i)
                 if tag_end != -1:
                     tag = text[i:tag_end+1]
                     if tag.startswith('</'):
-                        # logger.debug(f"[过滤] 发现结束标签：{tag}")
-                        # 结束标签
+                        # logger.debug(f"[Filter] Found end tag:{tag}")
+                        # End tag
                         tag_name = tag[2:-1]
                         if filter_state['is_filtering'] and tag_name == filter_state['current_tag']:
                             filter_state['is_filtering'] = False
                             filter_state['current_tag'] = None
                     else:
-                        # logger.debug(f"[过滤] 发现开始标签：{tag}")
-                        # 开始标签
+                        # logger.debug(f"[Filter] Found start tag:{tag}")
+                        # Start tag
                         tag_name = tag[1:-1]
                         filter_state['is_filtering'] = True
                         filter_state['current_tag'] = tag_name
@@ -850,11 +850,11 @@ class Common:
                     continue
                     
             if not filter_state['is_filtering']:
-                # logger.debug(f"[过滤] 发现非过滤状态：{text[i]}")
+                # logger.debug(f"[Filter] Found non-filtering state:{text[i]}")
                 result += text[i]
             i += 1
 
-        # logger.debug(f"[过滤] 标签过滤后：{result}")
+        # logger.debug(f"[Filter] After tag filtering:{result}")
         return result
 
     """
@@ -870,12 +870,12 @@ class Common:
     
     """
     
-    # 读取指定文件中所有文本内容并返回 如果文件不存在则创建
+    # Read all text content from the specified file and return it; create the file if it does not exist
     def read_file_return_content(self, file_path):
         try:
             if not os.path.exists(file_path):
-                logger.warning(f"文件不存在，将创建新文件: {file_path}")
-                # 创建文件
+                logger.warning(f"File does not exist, a new file will be created: {file_path}")
+                # Create the file
                 with open(file_path, 'w', encoding='utf-8') as file:
                     content = ""
                 return content
@@ -884,31 +884,31 @@ class Common:
                 content = file.read()
             return content
         except IOError as e:
-            logger.error(f"无法写入文件:{file_path}\n{e}")
+            logger.error(f"Unable to write to the file:{file_path}\n{e}")
             return None
 
 
     
-    # 将一个文件路径的字符串切分成路径和文件名
+    # Split a file path string into the path and the file name
     def split_path_and_filename(self, file_path):
         folder_path, file_name = os.path.split(file_path)
-        # 检查路径末尾是否已经包含了'/'，如果没有，则添加
+        # Check whether the end of the path already contains'/', if none, add
         if not folder_path.endswith('/'):
             folder_path += '/'
         
         return folder_path, file_name
 
 
-    # 从文件路径中提取出带有扩展名的文件名
+    # Extract the file name with extension from the file path
     def extract_filename(self, file_path, with_extension=False):
-        """从文件路径中提取出带有扩展名的文件名
+        """Extract the file name with extension from the file path
 
         Args:
-            file_path (_type_): 文件路径
-            with_extension (bool, optional): 是否需要拓展名. Defaults to False.
+            file_path (_type_): File path
+            with_extension (bool, optional): Whether the extension is needed. Defaults to False.
 
         Returns:
-            str: 文件名
+            str: File name
         """
         file_name_with_extension = os.path.basename(file_path)
         if with_extension:
@@ -918,46 +918,46 @@ class Common:
             return file_name_without_extension
 
 
-    # 获取指定文件夹下的所有文件夹的名称
+    # Get the names of all folders under the specified folder
     def get_folder_names(self, path):
         folder_names = next(os.walk(path))[1]
         return folder_names
 
 
-    # 返回指定文件夹内所有文件的文件绝对路径（包括文件扩展名）
+    # Return the absolute paths of all files in the specified folder (including file extensions)
     def get_all_file_paths(self, folder_path):
-        """返回指定文件夹内所有文件的文件绝对路径（包括文件扩展名）
+        """Return the absolute paths of all files in the specified folder (including file extensions)
 
         Args:
-            folder_path (str): 文件夹路径
+            folder_path (str): Folder path
 
         Returns:
-            list: 文件绝对路径列表
+            list: List of absolute file paths
         """
-        file_paths = []  # 用于存储文件绝对路径的列表
+        file_paths = []  # List used to store absolute file paths
 
-        # 使用 os.walk 遍历文件夹内所有文件和子文件夹
+        # Use os.walk to traverse all files and subfolders in the folder
         for root, directories, files in os.walk(folder_path):
             for filename in files:
-                file_path = os.path.join(root, filename)  # 获取文件的绝对路径
+                file_path = os.path.join(root, filename)  # Get the absolute path of the file
                 file_paths.append(file_path)
 
         return file_paths
 
-    # 获取指定路径下指定拓展名的文件名列表
+    # Get the list of file names with the specified extension under the specified path
     def get_specify_extension_names_in_folder(self, path: str, extension: str):
         """
-        获取指定路径下指定拓展名的文件名列表
+        Get the list of file names with the specified extension under the specified path
 
         Parameters:
-            path (str): 指定的路径
-            extension (str): 指定的拓展名（例如：.json、.txt、.jpg等）
+            path (str): Specified path
+            extension (str): Specified extension (e.g. .json, .txt, .jpg, etc.)
 
         Returns:
-            list: 文件名列表
+            list: File name list
         """
         if not os.path.exists(path):
-            logger.error(f"路径 '{path}' 不存在")
+            logger.error(f"Path '{path}' Does not exist")
             return []
 
         file_names = glob.glob(os.path.join(path, f"*{extension}"))
@@ -965,24 +965,24 @@ class Common:
 
     def remove_extension_from_list(self, file_name_list):
         """
-        将包含多个带有拓展名的文件名的列表中的拓展名去掉，只返回文件名部分组成的新列表
+        Remove the extensions from a list of file names with extensions and return a new list of just the file names
 
         Args:
-            file_name_list (list): 包含多个带有拓展名的文件名的列表
+            file_name_list (list): List containing multiple file names with extensions
 
         Returns:
-            list: 文件名组成的新列表
+            list: New list made of file names
         """
-        # 使用列表推导来处理整个列表，去掉每个文件名的拓展名
+        # Use a list comprehension to process the whole list and remove the extension of each file name
         file_name_without_extension_list = [file_name.split('.')[0] for file_name in file_name_list]
         return file_name_without_extension_list
 
 
     def is_audio_file(self, file_path):
-        """判断文件是否是音频文件
+        """Check whether the file is an audio file
 
         Args:
-            file_path (str): 文件路径
+            file_path (str): File path
 
         Returns:
             bool: True / False
@@ -995,13 +995,13 @@ class Common:
 
 
     def random_search_a_audio_file(self, root_dir):
-        """搜索指定文件夹内所有的音频文件，并随机返回一个音频文件路径
+        """Search all audio files in the specified folder and randomly return one audio file path
 
         Args:
-            root_dir (str): 搜索的文件夹路径
+            root_dir (str): Folder path to search
 
         Returns:
-            str: 随机返回一个音频文件路径
+            str: Randomly return an audio file path
         """
         audio_files = []
 
@@ -1013,21 +1013,21 @@ class Common:
 
                 logger.debug(file_path)
 
-                # 判断文件是否是音频文件
+                # Check whether the file is an audio file
                 if self.is_audio_file(relative_path):
                     audio_files.append(file_path)
 
         if audio_files:
-            # 随机返回一个音频文件路径
+            # Randomly return an audio file path
             return random.choice(audio_files)
         else:
             return None
 
-    # 获取Live2D模型名
+    # Get the Live2D model name
     def get_live2d_model_name(self, path):
         content = self.read_file_return_content(path)
         if content is None:
-            logger.error(f"读取Live2D模型名失败")
+            logger.error(f"Failed to read Live2D model name")
             return None
         
         pattern = r'"(.*?)"'
@@ -1059,7 +1059,7 @@ class Common:
 
     """
 
-    # 读取文件内容 它接受文件路径和返回类型参数，并根据参数返回文件内容作为字典或纯文本。如果读取文件过程中出现异常，则返回 None。
+    # Read file content. It accepts a file path and a return type parameter, and returns the content as a dict or plain text depending on the parameter. Returns None if an exception occurs while reading the file.
     def read_file(self, file_path: str, return_type: str):
         try:
             with open(file_path, 'r', encoding='utf-8') as file:
@@ -1077,53 +1077,53 @@ class Common:
             return None
         
     def ensure_directory_exists(self, path):
-        # 检查路径是否存在
+        # Check whether the path exists
         if not os.path.exists(path):
-            # 如果路径不存在，创建它
+            # If the path does not exist, create it
             os.makedirs(path)
-            logger.info(f"路径已创建：{path}")
+            logger.info(f"Path created:{path}")
 
-    # 写入内容到指定文件中 返回T/F
+    # Write content to the specified file, returnsT/F
     def write_content_to_file(self, file_path, content, write_log=True):
         try:
             with open(file_path, 'w', encoding='utf-8') as file:
                 file.write(content)
 
             if write_log:
-                logger.info(f"写入文件:{file_path}，内容：【{content}】")
+                logger.info(f"Write file: {file_path}, content: [{content}]")
 
             return True
         except IOError as e:
-            logger.error(f"无法写入 【{content}】 到文件:{file_path}\n{e}")
+            logger.error(f"Unable to write [{content}] to the file:{file_path}\n{e}")
             return False
         except Exception as e:
             logger.error(traceback.format_exc())
             return False
 
-    # 移动文件到指定路径 src dest
+    # Move the file to the specified path src dest
     def move_file(self, source_path, destination_path, rename=None, format="wav"):
-        """移动文件到指定路径
+        """Move the file to the specified path
 
         Args:
-            source_path (str): 文件路径含文件名
-            destination_path (_type_): 目标文件夹
-            rename (str, optional): 文件名. Defaults to None.
-            format (str, optional): 文件格式（实际上只是个假拓展名）. Defaults to "wav".
+            source_path (str): File path including file name
+            destination_path (_type_): Target folder
+            rename (str, optional): File name. Defaults to None.
+            format (str, optional): File format (actually just a fake extension). Defaults to "wav".
 
         Returns:
-            str: 输出到的完整路径含文件名
+            str: Full output path including file name
         """
         logger.debug(f"source_path={source_path},destination_path={destination_path},rename={rename}")
 
         # if os.path.exists(destination_path):
-        #     # 如果目标位置已存在同名文件，则先将其移动到回收站
+        #     # If a file with the same name already exists at the target location, move it to the recycle bin first
         #     send2trash(destination_path)
         
         # if rename is not None:
         #     destination_path = os.path.join(os.path.dirname(destination_path), rename)
         
         # shutil.move(source_path, destination_path)
-        # logger.info(f"文件移动成功：{source_path} -> {destination_path}")
+        # logger.info(f"File moved successfully: {source_path} -> {destination_path}")
         destination_directory = os.path.dirname(destination_path)
         logger.debug(f"destination_directory={destination_directory}")
         destination_filename = os.path.basename(source_path)
@@ -1134,70 +1134,70 @@ class Common:
         destination_path = os.path.join(destination_directory, destination_filename)
         
         if os.path.exists(destination_path):
-            # 如果目标位置已存在同名文件，则先删除
+            # If a file with the same name already exists at the target location, delete it first
             os.remove(destination_path)
 
         shutil.move(source_path, destination_path)
-        logger.info(f"文件移动成功：{source_path} -> {destination_path}")
+        logger.info(f"File moved successfully: {source_path} -> {destination_path}")
 
         return destination_path
 
 
-    # 删除文件
+    # Delete the file
     def del_file(self, file_path) -> bool:
         """
-        删除文件
+        Delete the file
 
         Args:
-            file_path (str): 文件路径
+            file_path (str): File path
 
         Returns:
-            bool：True/False
+            bool:True/False
         """
         try:
             if os.path.exists(file_path):
                 os.remove(file_path)
-                logger.info(f"文件删除成功：{file_path}")
+                logger.info(f"File deleted successfully: {file_path}")
 
                 return True
             
-            logger.error(f"文件不存在：{file_path}")
+            logger.error(f"File does not exist: {file_path}")
             return False
         except Exception as e:
             logger.error(traceback.format_exc())
             return False
 
-    # 从给定的文件路径中提取文件名及其扩展名
+    # Extract the file name and its extension from the given file path
     def get_filename_from_path(self, file_path):
         """
-        从给定的文件路径中提取文件名及其扩展名。
+        Extract the file name and its extension from the given file path.
         
-        参数:
-        file_path (str): 文件的绝对路径或相对路径。
+        Parameter:
+        file_path (str): Absolute or relative path of the file.
 
-        返回:
-        dict: 包含状态码和数据的字典。成功时返回文件名，失败时返回错误信息。
+        Return:
+        dict: Dict containing the status code and data. Returns the file name on success and error info on failure.
         """
         response = {
-            'code': 200,  # 默认成功状态码
+            'code': 200,  # Default success status code
             'data': None,
             'error': None
         }
         
         try:
-            # 验证输入路径是否为空
+            # Verify that the input path is not empty
             if not file_path:
-                response['code'] = 400  # 客户端错误状态码
-                response['error'] = '路径不能为空'
+                response['code'] = 400  # Client error status code
+                response['error'] = 'Path must not be empty'
                 raise ValueError(response['error'])
 
-            # 验证文件是否存在
+            # Verify that the file exists
             if not os.path.exists(file_path):
-                response['code'] = 404  # 文件未找到状态码
-                response['error'] = f'文件 {file_path} 不存在'
+                response['code'] = 404  # File-not-found status code
+                response['error'] = f'File {file_path} does not exist'
                 raise FileNotFoundError(response['error'])
 
-            # 提取文件名及其扩展名
+            # Extract the file name and its extension
             filename = os.path.basename(file_path)
             response['data'] = filename
 
@@ -1206,8 +1206,8 @@ class Common:
         except FileNotFoundError as fnf:
             logger.error(fnf)
         except Exception as e:
-            response['code'] = 500  # 服务器错误状态码
-            response['error'] = '发生未知错误'
+            response['code'] = 500  # Server error status code
+            response['error'] = 'An unknown error occurred'
             logger.error(e)
         
         return response
@@ -1228,14 +1228,14 @@ class Common:
             ....           ....    ,.        ,.        .     ...   ....     .....   .                        
 
     """
-    # 获取新的音频路径
+    # Get the new audio path
     def get_new_audio_path(self, audio_out_path, file_name):
-        # 判断路径是否为绝对路径
+        # Check whether the path is absolute
         if os.path.isabs(audio_out_path):
-            # 如果是绝对路径，直接使用
+            # If it is an absolute path, use it directly
             voice_tmp_path = os.path.join(audio_out_path, file_name)
         else:
-            # 如果不是绝对路径，检查是否包含 ./，如果不包含，添加 ./，然后拼接路径
+            # If it is not an absolute path, check whether it contains ./; if not, add ./ and then join the path
             if not audio_out_path.startswith('./'):
                 audio_out_path = './' + audio_out_path
             voice_tmp_path = os.path.normpath(os.path.join(audio_out_path, file_name))
@@ -1244,15 +1244,15 @@ class Common:
 
         return voice_tmp_path
 
-    # 获取所有的声卡设备信息
+    # Get info on all sound card devices
     def get_all_audio_device_info(self, type):
-        """获取所有的声卡设备信息
+        """Get info on all sound card devices
 
         Args:
-            type (str): 声卡类型，"in" 或 "out"
+            type (str): Sound card type, "in" Or "out"
 
         Returns:
-            list: 声卡设备信息列表
+            list: Sound card device info list
         """
         audio = pyaudio.PyAudio()
         device_infos = []
@@ -1289,18 +1289,18 @@ class Common:
     """
     def send_request(self, url: str, method: str='GET', json_data: dict=None, resp_data_type: str="json", timeout: int=60, proxy: str=None):
         """
-        发送 HTTP 请求并返回结果
+        Send an HTTP request and return the result
 
         Parameters:
-            url (str): 请求的 URL
-            method (str): 请求方法，'GET' 或 'POST'
-            json_data (dict): JSON 数据，用于 POST 请求
-            resp_data_type (str): 返回数据的类型（json | content）
-            timeout (int): 请求超时时间
-            proxy (str): 代理服务器地址
+            url (str): Requested URL
+            method (str): Request method,'GET' Or 'POST'
+            json_data (dict): JSON Data, used for the POST request
+            resp_data_type (str): Type of returned data (json | content)
+            timeout (int): Request timeout
+            proxy (str): Proxy server address
 
         Returns:
-            dict|str: 包含响应的 JSON数据 | 字符串数据
+            dict|str: JSON data containing the response | string data
         """
         headers = {'Content-Type': 'application/json'}
 
@@ -1310,101 +1310,101 @@ class Common:
             elif method in ['POST', 'post']:
                 response = requests.post(url, headers=headers, data=json.dumps(json_data), timeout=timeout, proxies=proxy)
             else:
-                raise ValueError('无效 method. 支持的 methods 为 GET 和 POST.')
+                raise ValueError('Invalid method. Supported methods are GET and POST.')
 
-            # 检查请求是否成功
+            # Check whether the request succeeded
             response.raise_for_status()
 
             if resp_data_type == "json":
-                # 解析响应的 JSON 数据
+                # Parse the JSON response data
                 result = response.json()
             else:
                 result = response.content
-                # 使用 'utf-8' 编码来解码字节串
+                # Use 'utf-8' Encoding used to decode the byte string
                 result = result.decode('utf-8')
 
             return result
 
         except requests.exceptions.RequestException as e:
             logger.error(traceback.format_exc())
-            logger.error(f"请求出错: {e}")
+            logger.error(f"Request error: {e}")
             return None
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f"请求出错: {e}")
+            logger.error(f"Request error: {e}")
             return None
 
     async def send_async_request(self, url: str, method: str='GET', json_data: dict=None, resp_data_type: str="json", timeout: int=60, proxy: str=None):
         """
-        发送异步 HTTP 请求并返回结果
+        Send an asynchronous HTTP request and return the result
 
         Parameters:
-            url (str): 请求的 URL
-            method (str): 请求方法，'GET' 或 'POST'
-            json_data (dict): JSON 数据，用于 POST 请求
-            resp_data_type (str): 返回数据的类型（json | content）
-            timeout (int): 请求超时时间
-            proxy (str): 代理服务器地址
+            url (str): Requested URL
+            method (str): Request method,'GET' Or 'POST'
+            json_data (dict): JSON Data, used for the POST request
+            resp_data_type (str): Type of returned data (json | content)
+            timeout (int): Request timeout
+            proxy (str): Proxy server address
 
         Returns:
-            dict|str: 包含响应的 JSON数据 | 字符串数据
+            dict|str: JSON data containing the response | string data
         """
         import aiohttp
 
         headers = {'Content-Type': 'application/json'}
 
         try:
-            # 创建 aiohttp.ClientSession
+            # Create aiohttp.ClientSession
             async with aiohttp.ClientSession() as session:
                 if method in ['GET', 'get']:
                     async with session.get(url, headers=headers, timeout=timeout, proxy=proxy) as response:
-                        # 检查请求是否成功
+                        # Check whether the request succeeded
                         response.raise_for_status()
 
                         if resp_data_type == "json":
-                            # 解析响应的 JSON 数据
+                            # Parse the JSON response data
                             result = await response.json()
                         else:
                             result = await response.read()
 
                 elif method in ['POST', 'post']:
                     async with session.post(url, headers=headers, data=json.dumps(json_data), timeout=timeout, proxy=proxy) as response:
-                        # 检查请求是否成功
+                        # Check whether the request succeeded
                         response.raise_for_status()
 
                         if resp_data_type == "json":
-                            # 解析响应的 JSON 数据
+                            # Parse the JSON response data
                             result = await response.json()
                         else:
                             result = await response.read()
 
                 else:
-                    raise ValueError('无效 method. 支持的 methods 为 GET 和 POST.')
+                    raise ValueError('Invalid method. Supported methods are GET and POST.')
 
                 return result
 
         except aiohttp.ClientError as e:
             logger.error(traceback.format_exc())
-            logger.error(f"请求出错: {e}")
+            logger.error(f"Request error: {e}")
             return None
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f"请求出错: {e}")
+            logger.error(f"Request error: {e}")
             return None
 
     async def send_heartbeat(self):
         """
-        发送异步 HTTP 请求并返回结果
+        Send an asynchronous HTTP request and return the result
 
         Returns:
-            dict|str: 包含响应的 JSON数据 | 字符串数据
+            dict|str: JSON data containing the response | string data
         """
         try:
             pass
             # await self.send_async_request("http://124.221.164.49:8001/heartbeat", "POST", None)
         except Exception as e:
             # logger.error(traceback.format_exc())
-            # logger.error(f"请求出错: {e}")
+            # logger.error(f"Request error: {e}")
             return None
 
 
@@ -1417,21 +1417,21 @@ class Common:
             
             resp_json = self.send_request(api_url, "POST", data_json, resp_data_type="json")
             if resp_json is None:
-                return {"code": 500, "msg": "请求失败"}
+                return {"code": 500, "msg": "Request failed"}
             else:
                 return resp_json
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f"请求出错: {e}")
+            logger.error(f"Request error: {e}")
             return None
 
-    # 请求web字幕打印机
+    # Request the web subtitle printer
     async def send_to_web_captions_printer(self, api_ip_port, data):
-        """请求web字幕打印机
+        """Request the web subtitle printer
 
         Args:
-            api_ip_port (str): api请求地址
-            data (dict): 包含用户名,弹幕内容
+            api_ip_port (str): apiRequest URL
+            data (dict): Contains the username and danmaku content
 
         Returns:
             bool: True/False
@@ -1440,11 +1440,11 @@ class Common:
         # username = data["username"]
         content = data["content"]
 
-        # 记录数据库):
+        # Record database):
         try:
-            # TODO: 换成异步请求
+            # TODO: Switch to async requests
             response = requests.get(url=api_ip_port + f'/send_message?content={content}')
-            response.raise_for_status()  # 检查响应的状态码
+            response.raise_for_status()  # Check the response status code
 
             result = response.content
             ret = json.loads(result)
@@ -1458,25 +1458,25 @@ class Common:
                 logger.error(ret['message'])
                 return False
         except Exception as e:
-            logger.error('web字幕打印机请求失败！请确认配置是否正确或者服务端是否运行！')
+            logger.error('webSubtitle printer request failed! Please confirm the config is correct or the server is running!')
             logger.error(traceback.format_exc())
             return False
         
     
-    # openai 测试key可用性
+    # openai Test key availability
     def test_openai_key(self, data_json, type=1):
         if type == 1:
             from urllib.parse import urljoin
             
-            # 检查可用性
+            # Check availability
             def check_useful(data_json):
-                # 尝试调用 list engines 接口
+                # Try calling the list engines endpoint
                 try:
                     api_key = data_json["api_keys"].split('\n')[0].rstrip()
 
                     url = urljoin(data_json["base_url"], '/v1/chat/completions')
 
-                    logger.debug(f"url=【{url}】, api_keys=【{api_key}】")
+                    logger.debug(f"url=[{url}], api_keys=[{api_key}]")
     
                     headers = {
                         "Content-Type": "application/json",
@@ -1500,13 +1500,13 @@ class Common:
 
                     resp = response_data["choices"][0]["message"]["content"]
 
-                    logger.info("OpenAI API key 可用")
+                    logger.info("OpenAI API key Available")
 
-                    return {"code": 200, "msg": "OpenAI API key 可用"}
+                    return {"code": 200, "msg": "OpenAI API key is valid"}
                 except Exception as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f"OpenAI API key 不可用: {e}")
-                    return {"code": -1, "msg": f"OpenAI API key 不可用: {e}"}
+                    logger.error(f"OpenAI API key Unavailable: {e}")
+                    return {"code": -1, "msg": f"OpenAI API key is invalid: {e}"}
         else:
             import openai
             from packaging import version
@@ -1514,13 +1514,13 @@ class Common:
             # os.environ['http_proxy'] = "http://127.0.0.1:10809"
             # os.environ['https_proxy'] = "http://127.0.0.1:10809"
 
-            # 检查可用性
+            # Check availability
             def check_useful(data_json):
-                # 尝试调用 list engines 接口
+                # Try calling the list engines endpoint
                 try:
                     api_key = data_json["api_keys"].split('\n')[0].rstrip()
 
-                    logger.info(f'base_url=【{data_json["base_url"]}】, api_keys=【{api_key}】, 模型=【{data_json["model"]}】')
+                    logger.info(f'base_url=[{data_json["base_url"]}], api_keys=[{api_key}], model=[{data_json["model"]}]')
 
                     # openai.base_url = self.data_openai['api']
                     # openai.api_key = self.data_openai['api_key'][0]
@@ -1530,9 +1530,9 @@ class Common:
                     openai.api_base = data_json["base_url"]
                     openai.api_key = api_key
 
-                    # 判断openai库版本，1.x.x和0.x.x有破坏性更新
+                    # Check the openai library version; 1.x.x and 0.x.x have breaking changes
                     if version.parse(openai.__version__) < version.parse('1.0.0'):
-                        # 调用 ChatGPT 接口生成回复消息
+                        # Call the ChatGPT API to generate a reply message
                         resp = openai.ChatCompletion.create(
                             model=data_json["model"],
                             messages=[{"role": "user", "content": "Hi"}],
@@ -1547,7 +1547,7 @@ class Common:
                         resp = resp['choices'][0]['message']['content']
                     else:
                         client = openai.OpenAI(base_url=openai.api_base, api_key=openai.api_key)
-                        # 调用 ChatGPT 接口生成回复消息
+                        # Call the ChatGPT API to generate a reply message
                         resp = client.chat.completions.create(
                             model=data_json["model"],
                             messages=[{"role": "user", "content": "Hi"}],
@@ -1562,29 +1562,29 @@ class Common:
                         resp = resp.choices[0].message.content
 
                     logger.debug(resp)
-                    logger.info("OpenAI API key 可用（如需使用此配置，请保存后重新运行）")
+                    logger.info("OpenAI API key Available (to use this config, save it and rerun)")
 
-                    return {"code": 200, "msg": "OpenAI API key 可用（如需使用此配置，请保存后重新运行）"}
+                    return {"code": 200, "msg": "OpenAI API key is valid (save and rerun to use this config)"}
                 except openai.OpenAIError as e:
-                    logger.error(f"OpenAI API key 不可用: {e}")
-                    return {"code": -1, "msg": f"OpenAI API key 不可用: {e}"}
+                    logger.error(f"OpenAI API key Unavailable: {e}")
+                    return {"code": -1, "msg": f"OpenAI API key is invalid: {e}"}
                 except Exception as e:
                     logger.error(traceback.format_exc())
-                    logger.error(f"OpenAI API key 不可用: {e}")
-                    return {"code": -1, "msg": f"OpenAI API key 不可用: {e}"}
+                    logger.error(f"OpenAI API key Unavailable: {e}")
+                    return {"code": -1, "msg": f"OpenAI API key is invalid: {e}"}
         
         return check_useful(data_json)
 
 
     """
-    图像操作
+    Image operations
     """
-    # 获取所有有标题的窗口对象
+    # Get all window objects that have titles
     def list_visible_windows(self):
-        """获取所有有标题的窗口对象
+        """Get all window objects that have titles
 
         Returns:
-            list: 获取所有有标题的窗口名列表
+            list: Get the list of all window names that have titles
         """
         if self.detect_os() == "Windows":
             import pygetwindow as gw
@@ -1593,9 +1593,9 @@ class Common:
             
             window_titles = []
 
-            # 打印每个窗口的标题
+            # Print the title of each window
             for win in windows:
-                if win.title:  # 确保窗口有标题
+                if win.title:  # Make sure the window has a title
                     window_titles.append(win.title)
         else:
             return []
@@ -1605,52 +1605,52 @@ class Common:
     
 
     def capture_window_by_title(self, img_save_path: str, window_title: str):
-        """根据窗口名截图（截图窗口不能被遮挡，必须前置窗口）
+        """Take a screenshot by window name (the window must not be covered and must be in the foreground)
 
         Args:
-            img_save_path (str): 图片保存路径
-            window_title (str): 窗口标题
+            img_save_path (str): Image save path
+            window_title (str): Window title
 
         Returns:
-            str: 图片保存路径含文件名
+            str: Image save path including file name
         """
         try:
             if self.detect_os() == "Windows":
                 import pygetwindow as gw
                 import pyautogui
 
-                # 使用窗口标题查找窗口
-                win = gw.getWindowsWithTitle(window_title)[0]  # 获取第一个匹配的窗口
+                # Find the window by its title
+                win = gw.getWindowsWithTitle(window_title)[0]  # Get the first matching window
                 if win:
-                    # 获取窗口的位置和大小
+                    # Get the position and size of the window
                     left, top = win.left, win.top
                     width, height = win.width, win.height
 
-                    # 使用pyautogui捕获指定区域的截图
+                    # Use pyautogui to capture a screenshot of the specified region
                     screenshot = pyautogui.screenshot(region=(left, top, width, height))
 
-                    # 判断路径存在，不存在就创建
+                    # Check that the path exists, and create it if not
                     self.ensure_directory_exists(img_save_path)
 
                     # logger.debug(f"img_save_path={img_save_path}")
                     destination_directory = os.path.abspath(img_save_path)
                     logger.debug(f"destination_directory={destination_directory}")
 
-                    # 获取图片路径含文件名
+                    # Get the image path including file name
                     destination_path = os.path.join(destination_directory, f"{window_title}.png")
                     logger.debug(f"destination_path={destination_path}")
 
                     screenshot.save(destination_path)
 
-                    logger.info(f"截图已保存到：{destination_path}")
+                    logger.info(f"Screenshot saved to: {destination_path}")
 
                     return destination_path
                 else:
-                    logger.error(f"未找到指定的窗口：{window_title}")
+                    logger.error(f"Specified window not found: {window_title}")
             else:
                 return None
         except IndexError:
-            logger.error(f"未找到指定的窗口：{window_title}")
+            logger.error(f"Specified window not found: {window_title}")
         except Exception as e:
             logger.error(traceback.format_exc())
 
@@ -1658,29 +1658,29 @@ class Common:
     
 
     """
-    摄像头相关
+    Camera related
     """
 
     def list_cameras(self, max_tested=5):
-        """获取所有可用摄像头的索引
+        """Get the indexes of all available cameras
 
         Args:
-            max_tested (int, optional): 最大检索摄像头数. Defaults to 5.
+            max_tested (int, optional): Maximum number of cameras to probe. Defaults to 5.
 
         Returns:
-            list: 可用摄像头的索引列表
+            list: List of indexes of available cameras
         """
         try:
             import cv2
 
             available_cameras = []
             for i in range(max_tested):
-                cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)  # 尝试打开摄像头
-                if cap.isOpened():  # 检查摄像头是否成功打开
+                cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)  # Try to open the camera
+                if cap.isOpened():  # Check whether the camera opened successfully
                     available_cameras.append(i)
-                    cap.release()  # 释放摄像头
+                    cap.release()  # Release the camera
                 else:
-                    break  # 如果一个摄像头索引打不开，假设后面的都不可用
+                    break  # If one camera index cannot be opened, assume the following ones are unavailable too
             return available_cameras
         except Exception as e:
             logger.error(traceback.format_exc())
@@ -1694,44 +1694,44 @@ class Common:
 
             cap = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)
             
-            # 检查摄像头是否成功打开
+            # Check whether the camera opened successfully
             if not cap.isOpened():
-                logger.info(f"无法打开摄像头 索引={camera_index}")
+                logger.info(f"Unable to open the camera, index={camera_index}")
                 return None
 
-            # 读取一帧图像
+            # Read one image frame
             ret, frame = cap.read()
             if not ret:
-                logger.error("无法获取摄像头流数据")
+                logger.error("Unable to get the camera stream data")
                 return None
-            cap.release()  # 释放摄像头
+            cap.release()  # Release the camera
 
-            # 判断路径存在，不存在就创建
+            # Check that the path exists, and create it if not
             self.ensure_directory_exists(img_save_path)
 
             # logger.debug(f"img_save_path={img_save_path}")
             destination_directory = os.path.abspath(img_save_path)
             logger.debug(f"destination_directory={destination_directory}")
 
-            # 构造文件名和保存路径
+            # Construct the file name and save path
             destination_path = os.path.join(destination_directory, f"camera_{camera_index}_{cv2.getTickCount()}")
             logger.debug(f"destination_path={destination_path}")
 
-            # 在系统临时目录中创建一个临时文件
+            # Create a temporary file in the system temp directory
             temp_dir = tempfile.gettempdir()
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png', dir=temp_dir)
             temp_path = temp_file.name
-            temp_file.close()  # 关闭文件，确保可以被其他进程使用
+            temp_file.close()  # Close the file to make sure it can be used by other processes
             
-            # 保存图像
+            # Save the image
             save_ret = cv2.imwrite(temp_path, frame)
             if save_ret:
-                logger.info(f"图像已保存到：{temp_path}")
+                logger.info(f"Image saved to: {temp_path}")
             else:
-                logger.error(f"图像保存失败：{temp_path}")
+                logger.error(f"Failed to save image: {temp_path}")
                 return None
             
-            # 将文件从临时路径移动到目标路径
+            # Move the file from the temporary path to the target path
             final_path = self.move_file(temp_path, destination_path, f"camera_{camera_index}_{cv2.getTickCount()}", "png")
             
             return final_path

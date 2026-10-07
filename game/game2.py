@@ -2,18 +2,18 @@ import pyautogui
 import time
 
 class Game:
-    # 模拟按键按下后释放，传入字符串数组
+    # Simulate pressing then releasing a key, taking a string array
     def simulate_key_press(self, keys):
-        # 模拟按下释放按键
+        # Simulate pressing and releasing a key
         for key in keys:
             pyautogui.keyDown(key)
             time.sleep(0.1)
             pyautogui.keyUp(key)
 
 
-    # 解析字符串数组，根据字符串第一位判断是否需要转换按键后，按压按键
+    # Parse the string array; based on the first character of the string, decide whether the key needs converting, then press the key
     def parse_keys_and_simulate_key_press(self, keys):
-        # 删除数组中非 w a s d 1 2 3 的其他字符串
+        # Delete strings in the array other than w a s d 1 2 3
         def remove_needless(keys):
             for i in range(len(keys)):
                 if keys[i] not in ['w', 'a', 's', 'd', '1', '2', '3']:
@@ -25,7 +25,7 @@ class Game:
 
             keys = remove_needless(keys)
 
-            # 遍历数组，将123改为yui
+            # Iterate over the array and change 123 toyui
             for i in range(len(keys)):
                 if keys[i] == '1':
                     keys[i] = 'y'
@@ -38,7 +38,7 @@ class Game:
 
             keys = remove_needless(keys)
             
-            # 遍历数组，将wsad改为上下左右，123改为789
+            # Iterate over the array, change wsad to up/down/left/right and 123 to789
             for i in range(len(keys)):
                 if keys[i] == 'w':
                     keys[i] = 'up'

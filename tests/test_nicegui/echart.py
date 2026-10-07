@@ -6,34 +6,34 @@ def get_most_common_words(text_list, most_common=10):
     import jieba
     from collections import Counter
 
-    # 假设这是您的字符串数组
+    # Suppose this is your string array
     # text_list = [
-    #     "Python是一种广泛使用的高级编程语言",
-    #     "它结合了解释型、编译型、互动性和面向对象的脚本语言的特点",
-    #     "Python的设计哲学强调代码的可读性和简洁的语法",
-    #     "特别是使用空格缩进来划分代码块，而不是使用大括号或关键字",
-    #     "Python可以让开发者用更少的代码行进行表达",
-    #     "Python是一种解释型语言，意味着开发过程中没有了编译这个环节"
-    #     # ...更多字符串
+    #     "Pythonis a widely used high-level programming language",
+    #     "It combines the features of interpreted, compiled, interactive, and object-oriented scripting languages",
+    #     "Pythondesign philosophy emphasizes code readability and concise syntax",
+    #     "especially the use of whitespace indentation to delimit code blocks instead of braces or keywords",
+    #     "Pythonlets developers express ideas with fewer lines of code",
+    #     "Pythonis an interpreted language, so there is no compile step during development"
+    #     # ...More strings
     # ]
 
-    # 使用jieba进行中文分词
+    # Use jieba for Chinese word segmentation
     words = []
     for text in text_list:
         cut_words = jieba.cut(text)
         # cut_words = jieba.cut_for_search(text)
         words.extend(cut_words)
 
-    # 过滤掉单个字符的分词结果
+    # Filter out single-character segmentation results
     words = [word for word in words if len(word) > 1]
 
-    # 计算每个词的出现次数
+    # Count the occurrences of each word
     word_counts = Counter(words)
 
-    # 找出出现次数最多的词语
-    most_common_words = word_counts.most_common(most_common)  # 获取前10个最常见的词
+    # Find the most frequent words
+    most_common_words = word_counts.most_common(most_common)  # Get the 10 most common words
 
-    # 使用列表推导式和字典推导式进行转换
+    # Use list comprehensions and dict comprehensions for the conversion
     dict_list = [{'name': name, 'value': value} for name, value in most_common_words]
 
     print(dict_list)
@@ -42,7 +42,7 @@ def get_most_common_words(text_list, most_common=10):
 
 
 db = SQLiteDB("E:\GitHub_pro\AI-Vtuber\data\data.db")
-# 查询数据
+# Query data
 select_data_sql = '''
 SELECT content FROM danmu
 '''
@@ -64,26 +64,26 @@ option = {
 #     'tooltip': {
 #     },
 #     'series': [{
-#         'type': 'wordCloud',   #类型
-#         'width': '100%',  #宽度
-#         'height': '100%', #高度
-#         'sizeRange': [14, 60],     #字体大小范围
-#         'textStyle': {                  #随机获取样式
+#         'type': 'wordCloud',   #Type
+#         'width': '100%',  #Width
+#         'height': '100%', #Height
+#         'sizeRange': [14, 60],     #Font size range
+#         'textStyle': {                  #Get a random style
 #             'fontFamily': 'sans-serif',
 #             'fontWeight': 'bold'
 #         },
-#         'emphasis': {    #获得焦点时的样式
+#         'emphasis': {    #Style when focused
 #             'focus': 'self',
 #             'textStyle': {
 #                 'textShadowBlur': 10,
 #                 'textShadowColor': '#333'
 #             }
 #         },
-#         'data': [{'name':'中国','value':124}, {'name':'啊对','value':52}, {'name':'测试','value':20}]     #数据源为数组eg:[{name:'中国',value:124}]
+#         'data': [{'name':'中国','value':124}, {'name':'啊对','value':52}, {'name':'Test','value':20}]     #Data source is an arrayeg:[{name:'中国',value:124}]
 #     }]
 # }
 
-# 可滚动的图例
+# Scrollable legend
 option = {
   'title': {
     'text': '弹幕关键词统计',
@@ -100,7 +100,7 @@ option = {
     'right': 10,
     'top': 20,
     'bottom': 20,
-    'data': [d['name'] for d in get_most_common_words(text_list)] # 使用列表推导式提取所有'name'的值
+    'data': [d['name'] for d in get_most_common_words(text_list)] # Use a list comprehension to extract all'name'value of
   },
   'series': [
     {

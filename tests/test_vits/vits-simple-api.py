@@ -4,12 +4,12 @@ from urllib.parse import urljoin
 from urllib.parse import urlencode
 
 
-# 请求vits的api
+# Request vits APIapi
 async def vits_api(self, data):
     try:
         logging.debug(f"data={data}")
         if data["type"] == "vits":
-            # API地址 "http://127.0.0.1:23456/voice/vits"
+            # APIAddress "http://127.0.0.1:23456/voice/vits"
             API_URL = urljoin(data["api_ip_port"], '/voice/vits')
             data_json = {
                 "text": data["content"],
@@ -35,7 +35,7 @@ async def vits_api(self, data):
             else:
                 data_json["lang"] = "auto"
         elif data["type"] == "bert_vits2":
-            # API地址 "http://127.0.0.1:23456/voice/bert-vits2"
+            # APIAddress "http://127.0.0.1:23456/voice/bert-vits2"
             API_URL = urljoin(data["api_ip_port"], '/voice/bert-vits2')
 
             data_json = {
@@ -63,7 +63,7 @@ async def vits_api(self, data):
             else:
                 data_json["lang"] = "auto"
         elif data["type"] == "gpt_sovits":
-            # 请求vits_simple_api的api gpt_sovits
+            # Request vits_simple_api APIapi gpt_sovits
             async def vits_simple_api_gpt_sovits_api(data):
                 try:
                     from aiohttp import FormData
@@ -86,17 +86,17 @@ async def vits_api(self, data):
                         "temperature": data["gpt_sovits"]["temperature"]
                     }
 
-                    # 创建 FormData 对象
+                    # Create a FormData object
                     form_data = FormData()
-                    # 添加文本字段
+                    # Add the text field
                     for key, value in data_json.items():
                         form_data.add_field(key, str(value))
 
-                    # 以二进制读取模式打开音频文件，并添加到表单数据中
-                    # 'reference_audio' 是字段名称，应与服务器端接收的名称一致
+                    # Open the audio file in binary read mode and add it to the form data
+                    # 'reference_audio' Is the field name, which should match the name the server receives
                     form_data.add_field('reference_audio',
                                 open(data["gpt_sovits"]["reference_audio"], 'rb'),
-                                content_type='audio/mpeg')  # 内容类型根据文件类型修改
+                                content_type='audio/mpeg')  # The content type is modified according to the file type
                         
                     logging.debug(f"data_json={data_json}")
 
@@ -114,10 +114,10 @@ async def vits_api(self, data):
                             return voice_tmp_path
                 except aiohttp.ClientError as e:
                     logging.error(traceback.format_exc())
-                    logging.error(f'vits_simple_api gpt_sovits请求失败，请检查您的vits_simple_api是否启动/配置是否正确，报错内容: {e}')
+                    logging.error(f'vits_simple_api gpt_sovitsRequest failed, please check whether your vits_simple_api is started/configured correctly, error details: {e}')
                 except Exception as e:
                     logging.error(traceback.format_exc())
-                    logging.error(f'vits_simple_api gpt_sovits未知错误，请检查您的vits_simple_api是否启动/配置是否正确，报错内容: {e}')
+                    logging.error(f'vits_simple_api gpt_sovitsUnknown error, please check whether your vits_simple_api is started/configured correctly, error details: {e}')
                 
                 return None
             
@@ -142,18 +142,18 @@ async def vits_api(self, data):
                 return voice_tmp_path
     except aiohttp.ClientError as e:
         logging.error(traceback.format_exc())
-        logging.error(f'vits请求失败，请检查您的vits-simple-api是否启动/配置是否正确，报错内容: {e}')
+        logging.error(f'vitsRequest failed, please check whether your vits-simple-api is started/configured correctly, error details: {e}')
     except Exception as e:
         logging.error(traceback.format_exc())
-        logging.error(f'vits未知错误，请检查您的vits-simple-api是否启动/配置是否正确，报错内容: {e}')
+        logging.error(f'vitsUnknown error, please check whether your vits-simple-api is started/configured correctly, error details: {e}')
     
     return None
 
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logging.basicConfig(
-        level=logging.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logging.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     }
     
 
-    # 调用接口合成语音
+    # Call the API to synthesize speech
     API_URL = urljoin(data["api_ip_port"], '/voice/gpt-sovits')
 
 
@@ -206,41 +206,41 @@ if __name__ == '__main__':
         "temperature": data["gpt_sovits"]["temperature"]
     }
 
-    # 创建 FormData 对象
+    # Create a FormData object
     form_data = FormData()
-    # 添加文本字段
+    # Add the text field
     for key, value in data_json.items():
         form_data.add_field(key, str(value))
 
-    # 以二进制读取模式打开音频文件，并添加到表单数据中
-    # 'reference_audio' 是字段名称，应与服务器端接收的名称一致
+    # Open the audio file in binary read mode and add it to the form data
+    # 'reference_audio' Is the field name, which should match the name the server receives
     form_data.add_field('reference_audio',
                 open(data["gpt_sovits"]["reference_audio"], 'rb'),
-                content_type='audio/mpeg')  # 内容类型根据文件类型修改
+                content_type='audio/mpeg')  # The content type is modified according to the file type
         
     logging.debug(f"data_json={data_json}")
 
     logging.debug(f"API_URL={API_URL}")
 
-    # 初始化pygame
+    # Initializepygame
     pygame.init()
 
-    # 请求音频流数据
+    # Request audio stream data
     url = "your_audio_stream_url"
     response = requests.get(url, stream=True)
 
-    # 创建pygame.mixer.Sound对象
+    # Create a pygame.mixer.Sound object
     sound = pygame.mixer.Sound("1.wav")
 
-    # 从音频流中读取数据并播放
+    # Read data from the audio stream and play it
     for chunk in response.iter_content(chunk_size=1024):
         if chunk:
             sound.play(pygame.mixer.find_channel())
-            pygame.time.wait(int(len(chunk) / (2 * 16000)))  # 假设音频采样率为16000Hz
+            pygame.time.wait(int(len(chunk) / (2 * 16000)))  # Assume the audio sample rate is16000Hz
 
-    # 等待音频播放完毕
+    # Wait for audio playback to finish
     while pygame.mixer.get_busy():
         pygame.time.Clock().tick(10)
 
-    # 退出pygame
+    # Exitpygame
     pygame.quit()

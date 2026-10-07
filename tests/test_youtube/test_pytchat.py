@@ -11,7 +11,7 @@ while live.is_alive():
         for c in live.get().sync_items():
             # if not c.message.startswith("!") and c.message.startswith('#'):
             # if not c.message.startswith("!"):
-            # 过滤表情包
+            # Filter emoticons
             chat_raw = re.sub(r':[^\s]+:', '', c.message)
             chat_raw = chat_raw.replace('#', '')
             if chat_raw != '':

@@ -21,7 +21,7 @@ import utils.my_global as my_global
 
 
 def start_listen(config, common, my_handle, platform: str):
-    # 直播间 https://www.tiktok.com/@username/live 的 room_id 就是 username
+    # The room_id of the live room https://www.tiktok.com/@username/live is username
     room_id = my_handle.get_room_id()
 
     proxys = None
@@ -32,11 +32,11 @@ def start_listen(config, common, my_handle, platform: str):
 
     @client.on(ConnectEvent)
     async def on_connect(_: ConnectEvent):
-        logger.info(f"连接到 房间ID:{client.room_id}")
+        logger.info(f"Connect to roomID:{client.room_id}")
 
     @client.on(DisconnectEvent)
     async def on_disconnect(event: DisconnectEvent):
-        logger.info("断开连接，稍后自动重连")
+        logger.info("Disconnected, will automatically reconnect later")
 
     @client.on(JoinEvent)
     async def on_join(event: JoinEvent):
@@ -44,12 +44,12 @@ def start_listen(config, common, my_handle, platform: str):
 
         username = event.user.nickname
 
-        logger.info(f"[🚹🚺直播间成员加入消息] 欢迎 {username} 进入直播间")
+        logger.info(f"[🚹🚺Live room member join message] Welcome {username} to the live room")
 
         data = {
             "platform": platform,
             "username": username,
-            "content": "进入直播间",
+            "content": "entered the live room",
         }
 
         my_global.add_username_to_last_username_list(username)
@@ -63,7 +63,7 @@ def start_listen(config, common, my_handle, platform: str):
         username = event.user.nickname
         content = event.comment
 
-        logger.info(f"[📧直播间弹幕消息] [{username}]：{content}")
+        logger.info(f"[📧Live room danmaku message] [{username}]:{content}")
 
         data = {"platform": platform, "username": username, "content": content}
 
@@ -73,7 +73,7 @@ def start_listen(config, common, my_handle, platform: str):
     async def on_gift(event: GiftEvent):
         my_global.idle_time_auto_clear(config, "gift")
 
-        # 连击礼物还在连击中，等结束再处理
+        # The combo gift is still combo-ing, handle it after it ends
         if event.gift.streakable and event.streaking:
             return
 
@@ -93,7 +93,7 @@ def start_listen(config, common, my_handle, platform: str):
                 discount_price = data_json[gift_name]
             else:
                 logger.warning(
-                    f"数据文件：{data_path} 中，没有 {gift_name} 对应的价值，请手动补充数据"
+                    f"There is no value for {gift_name} in the data file: {data_path}, please add the data manually"
                 )
                 discount_price = 1
         except Exception:
@@ -103,7 +103,7 @@ def start_listen(config, common, my_handle, platform: str):
         combo_total_coin = repeat_count * discount_price
 
         logger.info(
-            f"[🎁直播间礼物消息] 用户：{username} 赠送 {num} 个 {gift_name}，单价 {discount_price}抖币，总计 {combo_total_coin}抖币"
+            f"[🎁Live room gift message] User: {username} gifted {num} x {gift_name}, unit price {discount_price} Douyin coins, total {combo_total_coin} Douyin coins"
         )
 
         data = {
@@ -123,18 +123,18 @@ def start_listen(config, common, my_handle, platform: str):
 
         username = event.user.nickname
 
-        logger.info(f"[➕直播间关注消息] 感谢 {username} 的关注")
+        logger.info(f"[➕Live room follow message] Thanks {username} for following")
 
         data = {"platform": platform, "username": username}
 
         my_handle.process_data(data, "follow")
 
-    # 断线/不在线时自动重试
+    # Automatically retry when disconnected or offline
     while True:
         try:
-            logger.info(f"连接{room_id}中...")
+            logger.info(f"Connecting to {room_id}...")
             client.run()
         except Exception as e:
-            logger.error(f"连接失败：{e}")
-            logger.info(f"用户ID: @{room_id} 好像不在线, 60秒后重试...")
+            logger.error(f"Connection failed:{e}")
+            logger.info(f"User ID: @{room_id} seems to be offline, retrying in 60 seconds...")
         time.sleep(60)

@@ -12,22 +12,22 @@ def start_listen(config, common, my_handle, platform: str):
         try:
             return config.get("room_display_id")
         except Exception as e:
-            logger.error("获取直播间号失败！\n{0}".format(e))
+            logger.error("Failed to get the live room ID!\n{0}".format(e))
             return None
 
     def process_chat(live):
         while live.is_alive():
             try:
                 for c in live.get().sync_items():
-                    # 过滤表情包
+                    # Filter emoticons
                     chat_raw = re.sub(r":[^\s]+:", "", c.message)
                     chat_raw = chat_raw.replace("#", "")
                     if chat_raw != "":
-                        # 闲时计数清零
+                        # Reset the idle count
                         my_global.idle_time_auto_clear(config, "comment")
 
-                        content = chat_raw  # 获取弹幕内容
-                        username = c.author.name  # 获取发送弹幕的用户昵称
+                        content = chat_raw  # Get the danmaku content
+                        username = c.author.name  # Get the nickname of the user who sent the danmaku
 
                         logger.info(f"[{username}]: {content}")
 
@@ -44,7 +44,7 @@ def start_listen(config, common, my_handle, platform: str):
                 logger.error(traceback.format_exc())
                 logger.error("Error receiving chat: {0}".format(e))
                 my_handle.abnormal_alarm_handle("platform")
-                break  # 退出内部while循环以触发重连机制
+                break  # Exit the inner while loop to trigger the reconnect mechanism
 
     try:
         reconnect_attempts = 0
@@ -59,24 +59,24 @@ def start_listen(config, common, my_handle, platform: str):
             process_chat(live)
 
             current_time = time.time()
-            # 如果重连间隔只有30s内，那就只有3次，如果间隔大于30s，那就无限重连
+            # If the reconnect interval is under 30s, only 3 retries are made; if the interval is over 30s, retry indefinitely
             if last_reconnect_time and (current_time - last_reconnect_time < 30):
                 reconnect_attempts += 1
                 if reconnect_attempts >= 3:
-                    logger.error("重连失败次数已达上限，退出程序...")
+                    logger.error("Reconnect failures reached the limit, exiting the program...")
                     break
                 logger.warning(
-                    f"连接已关闭，间隔小于30秒，尝试重新连接 ({reconnect_attempts}/3)..."
+                    f"Connection closed, interval under 30 seconds, trying to reconnect ({reconnect_attempts}/3)..."
                 )
             else:
-                reconnect_attempts = 0  # 重置重连次数
-                logger.warning("连接已关闭，尝试重新连接...")
+                reconnect_attempts = 0  # Reset the reconnect count
+                logger.warning("Connection closed, trying to reconnect...")
 
             last_reconnect_time = current_time
 
     except KeyboardInterrupt:
-        logger.warning("程序被强行退出")
+        logger.warning("The program was forcibly exited")
 
     finally:
-        logger.warning("关闭连接...")
+        logger.warning("Close the connection...")
         os._exit(0)

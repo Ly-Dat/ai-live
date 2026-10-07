@@ -9,7 +9,7 @@ class Video:
         self.common = Common()
 
 
-    # 音频转视频 排队合成
+    # Audio to video, queued synthesis
     def wav2video(self, ):
         pass
 

@@ -2,54 +2,54 @@ from gradio_client import Client
 import json, logging
 import traceback
 
-# 配置日志输出格式
+# Configure the log output format
 logging.basicConfig(
-    level=logging.DEBUG,  # 设置日志级别，可以根据需求调整
+    level=logging.DEBUG,  # Set the log level; adjust as needed
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-# 请求gradio的api
+# Request gradio APIapi
 def gradio_api(data):
     def get_value_by_index(response, index):
         try:
-            # 确保响应是元组或列表，并且索引在范围内
+            # Make sure the response is a tuple or list and the index is in range
             if isinstance(response, (tuple, list)) and index < len(response):
                 return response[index]
             else:
                 return None
         except IndexError:
             logging.error(traceback.format_exc())
-            # 索引超出范围
+            # Index out of range
             return None
 
     def get_file_path(data):
         try:
-            url = data.pop('url')  # 获取并移除URL
-            fn_index = data.pop('fn_index')  # 获取并移除函数索引
+            url = data.pop('url')  # Get and removeURL
+            fn_index = data.pop('fn_index')  # Get and remove the function index
             data_analysis = data.pop('data_analysis')
 
             client = Client(url)
 
-            # data是一个字典，包含了所有需要的参数
+            # dataA dict containing all required parameters
             data_values = list(data.values())
             result = client.predict(fn_index=fn_index, *data_values)
 
             logging.info(result)
 
             if isinstance(result, (tuple, list)):
-                # 获取索引为1的元素
+                # Get the element at index 1
                 file_path = get_value_by_index(result, int(data_analysis))
 
             if file_path:
-                logging.info(f"文件路径:{file_path}")
+                logging.info(f"File path:{file_path}")
                 return file_path
             else:
                 logging.error("Invalid index or response format.")
                 return None
         except Exception as e:
             logging.error(traceback.format_exc())
-            # 索引超出范围
+            # Index out of range
             return None
 
     data_str = data["request_parameters"]
@@ -63,7 +63,7 @@ def gradio_api(data):
 
 
     # result = client.predict(
-    # 		"你好",	# str  in '输入文本内容' Textbox component
+    # 		"Hello",	# str  in 'Input text' Textbox component
     # 		"派蒙_ZH",	# str (Option from: [('派蒙_ZH', '派蒙_ZH'), ('纳西妲_ZH', '纳西妲_ZH')]) in 'Speaker' Dropdown component
     # 		0.5,	# int | float (numeric value between 0 and 1) in 'SDP Ratio' Slider component
     # 		0.6,	# int | float (numeric value between 0.1 and 2) in 'Noise' Slider component
@@ -73,7 +73,7 @@ def gradio_api(data):
     # 		None,	# str (filepath on your computer (or URL) of file) in 'Audio prompt' Audio component
     # 		"Happy",	# str  in 'Text prompt' Textbox component
     # 		"Text prompt",	# str  in 'Prompt Mode' Radio component
-    # 		"",	# str  in '辅助文本' Textbox component
+    # 		"",	# str  in 'Auxiliary text' Textbox component
     # 		0.7,	# int | float (numeric value between 0 and 1) in 'Weight' Slider component
     # 		fn_index=fn_index
     # )
@@ -116,7 +116,7 @@ def gradio_api(data):
         "url": "https://xzjosh-nana7mi-bert-vits2.hf.space/--replicas/m9qdw/",
         "fn_index": 0,
         "data_analysis": 1,
-        "text_input": "你好",
+        "text_input": "Hello",
         "speaker_option": "Nana7mi",
         "sdp_ratio": 0.5,
         "noise": 0.6,
@@ -133,7 +133,7 @@ def gradio_api(data):
         "url": "https://frankzxshen-vits-fast-fineturning-models-ba.hf.space/",
         "fn_index": 2,
         "data_analysis": 1,
-        "text": "你好",
+        "text": "Hello",
         "character": "果穗",
         "language": "日本語",
         "noise": 0.6,

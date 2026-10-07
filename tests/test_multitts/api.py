@@ -17,7 +17,7 @@ async def download_audio(type: str, file_url: str, timeout: int=30, request_type
                             file.write(content)
                         return voice_tmp_path
                     else:
-                        logging.error(f'{type} 下载音频失败: {response.status}')
+                        logging.error(f'{type} Failed to download audio: {response.status}')
                         return None
             else:
                 async with session.post(file_url, data=data, json=json_data, timeout=timeout) as response:
@@ -29,10 +29,10 @@ async def download_audio(type: str, file_url: str, timeout: int=30, request_type
                             file.write(content)
                         return voice_tmp_path
                     else:
-                        logging.error(f'{type} 下载音频失败: {response.status}')
+                        logging.error(f'{type} Failed to download audio: {response.status}')
                         return None
         except asyncio.TimeoutError:
-            logging.error("{type} 下载音频超时")
+            logging.error("{type} Audio download timed out")
             return None
 
 async def multitts_api(data):
@@ -59,7 +59,7 @@ async def multitts_api(data):
 
     return await download_audio("multitts", API_URL, timeout, "get", data_json)
 
-logging.basicConfig(level=logging.DEBUG)  # 设置日志级别为INFO
+logging.basicConfig(level=logging.DEBUG)  # Set the log level toINFO
 data = {
     "content": "你好，欢迎使用AI Lab！",
     "multitts": {
@@ -70,5 +70,5 @@ data = {
         "voice": ""
     }
 }
-# 执行异步程序
+# Run the async program
 asyncio.run(multitts_api(data))

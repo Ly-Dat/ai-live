@@ -14,10 +14,10 @@ def get_assistant_api_token(api_key, api_secret):
 
     # print(f"url={url}, data={data}")
 
-    # get请求
+    # getRequest
     response = requests.post(url=url, json=data)
 
-    # 获取状态码
+    # Get the status code
     status_code = response.status_code
     print(status_code)
 

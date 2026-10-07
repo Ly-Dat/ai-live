@@ -23,7 +23,7 @@ class SQLiteDB:
         self.connection_pool.put(conn)
 
     def execute(self, query, args=None):
-        conn = sqlite3.connect(self.db_file)  # 创建新的连接对象
+        conn = sqlite3.connect(self.db_file)  # Create a new connection object
         cursor = conn.cursor()
 
         try:
@@ -35,21 +35,21 @@ class SQLiteDB:
         finally:
             conn.close()
 
-    # 执行SQLite数据库查询并返回结果
+    # Execute an SQLite database query and return the results
     def fetch_all(self, query, args=None):
-        conn = sqlite3.connect(self.db_file)  # 创建新的连接对象
-        # 游标用于执行SQL查询和检索结果
+        conn = sqlite3.connect(self.db_file)  # Create a new connection object
+        # The cursor is used to execute SQL queries and retrieve results
         cursor = conn.cursor()
 
         try:
             if args:
-                # 执行SQL查询，如果提供了参数 args，它将被用来替换查询中的占位符。这是一个防止SQL注入的常见做法
+                # Execute the SQL query; if the args parameter is provided, it will be used to replace the placeholders in the query. This is a common practice to prevent SQL injection
                 cursor.execute(query, args)
             else:
                 cursor.execute(query)
-            # 从数据库游标中获取所有查询结果，并将其作为结果返回。fetchall() 方法返回一个包含查询结果的列表。
+            # Fetch all query results from the database cursor and return them as the result. The fetchall() method returns a list containing the query results.
             return cursor.fetchall()
-        # 最后，无论try块中的代码是否成功执行，finally 块都会关闭数据库连接，以确保资源得到正确释放，避免资源泄漏。
+        # Finally, whether or not the code in the try block succeeds, the finally block closes the database connection to ensure resources are properly released and avoid resource leaks.
         finally:
             conn.close()
             
@@ -103,7 +103,7 @@ class SQLiteDB:
 if __name__ == "__main__":
     db = SQLiteDB('data/test.db')
 
-    # 创建表
+    # Create table
     create_table_sql = '''
     CREATE TABLE IF NOT EXISTS danmu (
         username TEXT,
@@ -113,13 +113,13 @@ if __name__ == "__main__":
     '''
     db.execute(create_table_sql)
 
-    # 插入数据
+    # Insert data
     insert_data_sql = '''
     INSERT INTO danmu (username, content, ts) VALUES (?, ?, ?)
     '''
     db.execute(insert_data_sql, ('user1', 'test1', datetime.now()))
 
-    # 查询数据
+    # Query data
     select_data_sql = '''
     SELECT * FROM danmu
     '''

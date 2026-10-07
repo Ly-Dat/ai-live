@@ -22,7 +22,7 @@ class Claude:
         self.common = Common()
 
         if data["slack_user_token"] == "" or data["bot_user_id"] == "":
-            logger.info("Claude slack_user_token or bot_user_id 为空，不进行实例化.")
+            logger.info("Claude slack_user_token or bot_user_id is empty, not instantiating.")
             return None
 
         self.slack_user_token = data["slack_user_token"]
@@ -50,7 +50,7 @@ class Claude:
 
 
     async def get_new_messages(self, channel, last_message_timestamp):
-        timeout = 60  # 超时时间设置为60秒
+        timeout = 60  # Timeout set to 60 seconds
         start_time = time.time()
 
         while True:
@@ -71,7 +71,7 @@ class Claude:
             logger.info(f"Error opening DM channel: {e}")
             return None
 
-    # 获取claude返回内容
+    # Get the claude returned content
     def get_resp(self, text):
         response = self.send_message(self.dm_channel_id, text)
         if response:
@@ -96,7 +96,7 @@ class Claude:
             return new_message
         return None
 
-    # 重置会话
+    # Reset session
     def reset_claude(self):
         response = self.send_message(self.dm_channel_id, "/reset")
         if response:

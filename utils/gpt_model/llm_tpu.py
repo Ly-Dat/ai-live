@@ -18,13 +18,13 @@ class LLM_TPU:
 
 
     def get_resp(self, data):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            data (dict): 你的提问等
+            data (dict): Your question, etc.
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             client = Client(self.config_data["api_ip_port"])
@@ -44,12 +44,12 @@ class LLM_TPU:
 
             self.history = result
 
-            # 启用历史就给我记住！
+            # If history is enabled, remember it for me!
             if self.history_enable:
                 while True:
-                    # 获取嵌套列表中所有字符串的字符数
+                    # Get the character count of all strings in a nested list
                     total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                    # 如果大于限定最大历史数，就剔除第一个元素
+                    # If it exceeds the maximum history limit, remove the first element
                     if total_chars > self.history_max_len:
                         self.history.pop(0)
                     else:
@@ -61,9 +61,9 @@ class LLM_TPU:
             return None
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logger.basicConfig(
-        level=logger.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logger.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -78,6 +78,6 @@ if __name__ == '__main__':
     }
 
     llm_tpu = LLM_TPU(data)
-    logger.info(f'{llm_tpu.get_resp("你可以扮演猫娘吗，每句话后面加个喵")}')
-    logger.info(f'{llm_tpu.get_resp("早上好")}')
+    logger.info(f'{llm_tpu.get_resp("Can you play a catgirl and add meow after every sentence")}')
+    logger.info(f'{llm_tpu.get_resp("Good morning")}')
 

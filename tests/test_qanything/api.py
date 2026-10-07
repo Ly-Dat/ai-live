@@ -13,7 +13,7 @@ import uuid
 class QAnything:
     def __init__(self, data):
         # self.common = Common()
-        # 日志文件路径
+        # Log file path
         # file_path = "./log/log-" + self.common.get_bj_time(1) + ".txt"
         # Configure_logger(file_path)
 
@@ -23,18 +23,18 @@ class QAnything:
         self.history = []
 
 
-    # 获取知识库列表
+    # Get the knowledge base list
     def get_list_knowledge_base(self):
         url = urljoin(self.api_ip_port, "/api/local_doc_qa/list_knowledge_base")
         try:
             response = requests.post(url, json={"user_id": self.config_data["user_id"]})
-            response.raise_for_status()  # 检查响应的状态码
+            response.raise_for_status()  # Check the response status code
 
             result = response.content
             ret = json.loads(result)
 
             logging.debug(ret)
-            logging.info(f"本地知识库列表：{ret['data']}")
+            logging.info(f"Local knowledge base list:{ret['data']}")
 
             return ret['data']
         except Exception as e:
@@ -42,18 +42,18 @@ class QAnything:
             return None
 
 
-    # 官方在线API
+    # Official onlineAPI
     '''
-    添加鉴权相关参数 -
-        appKey : 应用ID
-        salt : 随机值
-        curtime : 当前时间戳(秒)
-        signType : 签名版本
-        sign : 请求签名
+    Add authentication-related parameters -
+        appKey : ApplicationID
+        salt : Random value
+        curtime : Current timestamp (seconds)
+        signType : Signature version
+        sign : Request signature
         
-        @param appKey    您的应用ID
-        @param appSecret 您的应用密钥
-        @param paramsMap 请求参数表
+        @param appKey    Your applicationID
+        @param appSecret Your application secret key
+        @param paramsMap Request parameter table
     '''
     def addAuthParams(self, appKey, appSecret, params):
         def returnAuthMap(appKey, appSecret, q):
@@ -69,14 +69,14 @@ class QAnything:
 
 
         '''
-            计算鉴权签名 -
-            计算方式 : sign = sha256(appKey + input(q) + salt + curtime + appSecret)
-            @param appKey    您的应用ID
-            @param appSecret 您的应用密钥
-            @param q         请求内容
-            @param salt      随机值
-            @param curtime   当前时间戳(秒)
-            @return 鉴权签名sign
+            Compute the authentication signature -
+            Calculation method : sign = sha256(appKey + input(q) + salt + curtime + appSecret)
+            @param appKey    Your applicationID
+            @param appSecret Your application secret key
+            @param q         Request content
+            @param salt      Random value
+            @param curtime   Current timestamp (seconds)
+            @return Authentication signaturesign
         '''
         def calculateSign(appKey, appSecret, q, salt, curtime):
             strSrc = appKey + getInput(q) + salt + curtime + appSecret
@@ -118,7 +118,7 @@ class QAnything:
         data = {'q': kbName}
         data = self.addAuthParams(self.config_data["app_key"], self.config_data["app_secret"], data)
         header = {'Content-Type': 'application/json'}
-        logging.info('请求参数:' + json.dumps(data))
+        logging.info('Request parameters:' + json.dumps(data))
         res = self.doCall('https://openapi.youdao.com/q_anything/paas/create_kb', header, json.dumps(data), 'post')
         logging.info(str(res.content, 'utf-8'))
 
@@ -127,7 +127,7 @@ class QAnything:
         data = {'q': kbId}
         data = self.addAuthParams(self.config_data["app_key"], self.config_data["app_secret"], data)
         header = {'Content-Type': 'application/json'}
-        logging.info('请求参数:' + json.dumps(data))
+        logging.info('Request parameters:' + json.dumps(data))
         res = self.doCall('https://openapi.youdao.com/q_anything/paas/delete_kb', header, json.dumps(data), 'post')
         logging.info(str(res.content, 'utf-8'))
 
@@ -143,7 +143,7 @@ class QAnything:
         data = {'q': kbId, 'url': url}
         data = self.addAuthParams(self.config_data["app_key"], self.config_data["app_secret"], data)
         header = {'Content-Type': 'application/json'}
-        logging.info('请求参数:' + json.dumps(data))
+        logging.info('Request parameters:' + json.dumps(data))
         res = self.doCall('https://openapi.youdao.com/q_anything/paas/upload_url', header, json.dumps(data), 'post')
         logging.info(str(res.content, 'utf-8'))
 
@@ -152,7 +152,7 @@ class QAnything:
         data = {'q': kbId, 'fileIds': [fileId]}
         data = self.addAuthParams(self.config_data["app_key"], self.config_data["app_secret"], data)
         header = {'Content-Type': 'application/json'}
-        logging.info('请求参数:' + json.dumps(data))
+        logging.info('Request parameters:' + json.dumps(data))
         res = self.doCall('https://openapi.youdao.com/q_anything/paas/delete_file', header, json.dumps(data), 'post')
         logging.info(str(res.content, 'utf-8'))
 
@@ -161,7 +161,7 @@ class QAnything:
         data = {'q': ''}
         data = self.addAuthParams(self.config_data["app_key"], self.config_data["app_secret"], data)
         header = {'Content-Type': 'application/json'}
-        logging.debug('请求参数:' + json.dumps(data))
+        logging.debug('Request parameters:' + json.dumps(data))
         res = self.doCall('https://openapi.youdao.com/q_anything/paas/kb_list', header, json.dumps(data), 'post')
         logging.info(str(res.content, 'utf-8'))
 
@@ -170,7 +170,7 @@ class QAnything:
         data = {'q': kbId}
         data = self.addAuthParams(self.config_data["app_key"], self.config_data["app_secret"], data)
         header = {'Content-Type': 'application/json'}
-        logging.info('请求参数:' + json.dumps(data))
+        logging.info('Request parameters:' + json.dumps(data))
         res = self.doCall('https://openapi.youdao.com/q_anything/paas/file_list', header, json.dumps(data), 'post')
         logging.info(str(res.content, 'utf-8'))
 
@@ -181,7 +181,7 @@ class QAnything:
             logging.debug(f"data={data}")
             data = self.addAuthParams(self.config_data["app_key"], self.config_data["app_secret"], data)
             header = {'Content-Type': 'application/json'}
-            logging.debug('请求参数:' + json.dumps(data))
+            logging.debug('Request parameters:' + json.dumps(data))
             res = self.doCall('https://openapi.youdao.com/q_anything/paas/chat', header, json.dumps(data), 'post')
             logging.debug(str(res.content, 'utf-8'))
 
@@ -194,7 +194,7 @@ class QAnything:
         data = {'q': q, 'kbIds': [kbId]}
         data = self.addAuthParams(self.config_data["app_key"], self.config_data["app_secret"], data)
         header = {'Content-Type': 'application/json'}
-        logging.debug('请求参数:' + json.dumps(data))
+        logging.debug('Request parameters:' + json.dumps(data))
         res = self.doCall('https://openapi.youdao.com/q_anything/paas/chat_stream', header, json.dumps(data), 'post')
         logging.debug(str(res.content, 'utf-8'))
 
@@ -207,13 +207,13 @@ class QAnything:
 
 
     def get_resp(self, data):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            data (dict): json数据
+            data (dict): jsonData
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             if self.config_data["type"] == "online":
@@ -231,7 +231,7 @@ class QAnything:
                 }
 
                 response = requests.post(url=url, json=data_json)
-                response.raise_for_status()  # 检查响应的状态码
+                response.raise_for_status()  # Check the response status code
 
                 result = response.content
                 ret = json.loads(result)
@@ -240,15 +240,15 @@ class QAnything:
 
                 resp_content = ret["response"]
 
-                # 启用历史就给我记住！
+                # If history is enabled, remember it for me!
                 if self.config_data["history_enable"]:
                     self.history = ret["history"]
 
                     while True:
-                        # 计算所有字符数
+                        # Count all characters
                         total_chars = sum(len(item) for sublist in self.history for item in sublist)
 
-                        # 如果大于限定最大历史数，就剔除第一个元素
+                        # If it exceeds the maximum history limit, remove the first element
                         if total_chars > self.config_data["history_max_len"]:
                             self.history.pop(0)
                         else:
@@ -261,9 +261,9 @@ class QAnything:
 
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logging.basicConfig(
-        level=logging.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logging.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -285,6 +285,6 @@ if __name__ == '__main__':
     elif data["type"] == "local":
         qanything.get_list_knowledge_base()
 
-    logging.info(qanything.get_resp({"prompt": "伊卡洛斯和妮姆芙的关系"}))
-    # logging.info(qanything.get_resp({"prompt": "伊卡洛斯的英文名"}))
+    logging.info(qanything.get_resp({"prompt": "The relationship between Icarus and Nymph"}))
+    # logging.info(qanything.get_resp({"prompt": "The English name of Icarus"}))
     

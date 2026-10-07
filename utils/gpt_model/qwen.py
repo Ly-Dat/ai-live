@@ -10,7 +10,7 @@ from utils.common import Common
 
 def remove_emotion(message: str) -> str:
     """
-    去除描述表情的部分（如【开心】，要求AI输出格式固定）
+    Remove the parts describing expressions (e.g. [happy]; requires the AI output format to be fixed)
     """
     pattern = r'\【[^\】^\]]*[\]\】]'
     match = re.findall(pattern, message)
@@ -24,7 +24,7 @@ def remove_emotion(message: str) -> str:
 
 def remove_action(line: str) -> str:
     """
-    去除括号里描述动作的部分（要求AI输出格式固定）
+    Remove the parts in parentheses that describe actions (requires the AI output format to be fixed)
     :param line:
     :return:
     """
@@ -35,7 +35,7 @@ def remove_action(line: str) -> str:
     if len(match) == 0:
         return line
     else:
-        print(f"有{len(match)+1}段描述动作的语句")
+        print(f"There are {len(match)+1} sentences describing actions")
         for i in range(len(match)):
             print(match[i])
             line = line.replace(match[i], "")
@@ -58,7 +58,7 @@ class Qwen:
 
 
     def construct_query(self, username, prompt: str, **kwargs) -> Dict:
-        """构造请求体
+        """Build the request body
         """
 
         messages = self.history + [{"role": "user", "content": f"{prompt}"}]
@@ -67,7 +67,7 @@ class Qwen:
             "messages": messages,
             "temperature": self.temperature,
             "top_p": self.top_p,
-            "stream": False,  # 不启用流式API
+            "stream": False,  # Streaming not enabledAPI
         }
 
         self.history = self.history + [{"role": "user", "content": prompt}]
@@ -75,7 +75,7 @@ class Qwen:
 
 
     def construct_observation(self, prompt: str, **kwargs) -> Dict:
-        """构造请求体
+        """Build the request body
         """
         embedding = ""
         for key, value in kwargs.items():
@@ -89,20 +89,20 @@ class Qwen:
             "messages": messages,
             "temperature": self.temperature,
             "top_p": self.top_p,
-            "stream": False,  # 不启用流式API
+            "stream": False,  # Streaming not enabledAPI
         }
         self.history = messages
         return query
 
 
-    # 调用接口，获取返回内容
+    # Call the API and get the returned content
     def get_resp(self, username, prompt):
         # construct query
         query = self.construct_query(username, prompt)
 
         try:
             response = requests.post(url=self.api_ip_port, json=query)
-            response.raise_for_status()  # 检查响应的状态码
+            response.raise_for_status()  # Check the response status code
 
             result = response.content
             ret = json.loads(result)
@@ -115,7 +115,7 @@ class Qwen:
                 self.history = self.history + [
                     {"role": "assistant", "content": f"{predictions}"}]
 
-                # 启用历史就给我记住！
+                # If history is enabled, remember it for me!
                 if self.history_enable:
                     if len(self.history) > self.history_max_len:
                         temp_history = self.history[-self.history_max_len:]

@@ -3,43 +3,43 @@ import pyautogui
 
 def capture_window_by_title(window_title):
     try:
-        # 使用窗口标题查找窗口
-        win = gw.getWindowsWithTitle(window_title)[0]  # 获取第一个匹配的窗口
+        # Find the window by its title
+        win = gw.getWindowsWithTitle(window_title)[0]  # Get the first matching window
         if win:
-            # 获取窗口的位置和大小
+            # Get the position and size of the window
             left, top = win.left, win.top
             width, height = win.width, win.height
 
-            # 使用pyautogui捕获指定区域的截图
+            # Use pyautogui to capture a screenshot of the specified region
             screenshot = pyautogui.screenshot(region=(left, top, width, height))
             screenshot.save(f'{window_title}.png')
-            print(f"截图已保存为 {window_title}.png")
+            print(f"Screenshot saved as {window_title}.png")
         else:
-            print("未找到指定的窗口")
+            print("The specified window was not found")
     except IndexError:
-        print("未找到指定的窗口")
+        print("The specified window was not found")
 
 
-# 获取所有有标题的窗口对象
+# Get all window objects that have titles
 def list_visible_windows():
-    """获取所有有标题的窗口对象
+    """Get all window objects that have titles
 
     Returns:
-        list: 获取所有有标题的窗口名列表
+        list: Get the list of all window names that have titles
     """
     windows = gw.getWindowsWithTitle('')
     
     window_titles = []
 
-    # 打印每个窗口的标题
+    # Print the title of each window
     for win in windows:
-        if win.title:  # 确保窗口有标题
+        if win.title:  # Make sure the window has a title
             window_titles.append(win.title)
 
     return window_titles
 
-# 调用函数，列出所有可见窗口的标题
+# Call the function to list all visible window titles
 list_visible_windows()
     
-# 调用函数，替换"Your Window Title Here"为你想要捕获的窗口的标题
+# Call the function, replace"Your Window Title Here"is the title of the window you want to capture
 capture_window_by_title("伊卡酱 fans群等3个会话")

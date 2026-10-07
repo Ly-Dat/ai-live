@@ -5,17 +5,17 @@ client = Client("http://127.0.0.1:7860/")
 
 
 def get_local_knowledge_base_list():
-    """获取当前存在的知识库列表
+    """Get the current list of knowledge bases
 
     Returns:
-        list: 知识库列表
+        list: Knowledge base list
     """
     result = client.predict(
                     fn_index=1
     )
     try:
         list = result[0]["choices"]
-        print(f'本地知识库列表：{list}')
+        print(f'Local knowledge base list:{list}')
         return list
     except Exception as e:
         print(traceback.format_exc())

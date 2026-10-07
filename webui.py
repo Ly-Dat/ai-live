@@ -229,7 +229,7 @@ def textarea_data_change(data):
             \@@@@`   =@@@@^      ,\@@@@@@@@[   .@@@@^\@@@@@[    .\@@@@@[=@@@@^  @@@@@.    
             
 """
-# 配置
+# Configuration
 webui_ip = config.get("webui", "ip")
 webui_port = config.get("webui", "port")
 webui_title = config.get("webui", "title")
@@ -869,10 +869,10 @@ def goto_func_page():
             "type": "api",
             "api_ip_port": "http://127.0.0.1:9880",
             "ref_audio_path": "F:\\GPT-SoVITS\\raws\\ikaros\\21.wav",
-            "prompt_text": "マスター、どうりょくろか、いいえ、なんでもありません",
+            "prompt_text": "Master, are you working hard? No, it is nothing",
             "prompt_language": "Japanese",
             "language": "Auto detect",
-            "cut": "Split every four sentences",
+            "cut": "Split when reaching four sentences",
             "gpt_model_path": "F:\\GPT-SoVITS\\GPT_weights\\ikaros-e15.ckpt",
             "sovits_model_path": "F:\\GPT-SoVITS\\SoVITS_weights\\ikaros_e8_s280.pth",
             "webtts": {
@@ -880,7 +880,7 @@ def goto_func_page():
                 "spk": "sanyueqi",
                 "lang": "zh",
                 "speed": "1.0",
-                "emotion": "正常"
+                "emotion": "Normal"
             }
         },
         "username": "Master",
@@ -898,10 +898,10 @@ def goto_func_page():
                     "type": "api",
                     "api_ip_port": "http://127.0.0.1:9880",
                     "ref_audio_path": "F:\\\\GPT-SoVITS\\\\raws\\\\ikaros\\\\21.wav",
-                    "prompt_text": "マスター、どうりょくろか、いいえ、なんでもありません",
+                    "prompt_text": "Master, are you working hard? No, it is nothing",
                     "prompt_language": "Japanese",
                     "language": "Auto detect",
-                    "cut": "Split every four sentences",
+                    "cut": "Split when reaching four sentences",
                     "gpt_model_path": "F:\\GPT-SoVITS\\GPT_weights\\ikaros-e15.ckpt",
                     "sovits_model_path": "F:\\GPT-SoVITS\\SoVITS_weights\\ikaros_e8_s280.pth",
                     "webtts": {
@@ -909,7 +909,7 @@ def goto_func_page():
                         "spk": "sanyueqi",
                         "lang": "zh",
                         "speed": "1.0",
-                        "emotion": "正常"
+                        "emotion": "Normal"
                     }
                 },
                 "username": "Master",
@@ -980,7 +980,7 @@ def goto_func_page():
     @app.get("/get_sys_info")
     async def get_sys_info():
         try:
-            # logger.info(f'WEBUI API get_sys_info接口 收到请求')
+            # logger.info(f'WEBUI API get_sys_infoInterface received a request')
 
             main_api_ip = "127.0.0.1" if config.get("api_ip") == "0.0.0.0" else config.get("api_ip")
             resp_json = await common.send_async_request(f'http://{main_api_ip}:{config.get("api_port")}/get_sys_info', "GET", None, "json", timeout=60)
@@ -2417,7 +2417,7 @@ def goto_func_page():
                         "history_enable": (switch_tongyixingchen_history_enable, 'bool'),
                         "history_max_len": (input_tongyixingchen_history_max_len, 'int'),
                         "stream": (switch_tongyixingchen_stream, 'bool'),
-                        "固定角色": {
+                        "Fixed role": {
                             "character_id": (input_tongyixingchen_GDJS_character_id, 'str'),
                             "top_p": (input_tongyixingchen_GDJS_top_p, 'float'),
                             "temperature": (input_tongyixingchen_GDJS_temperature, 'float'),
@@ -3259,7 +3259,7 @@ def goto_func_page():
 
             return None
 
-    # 保存配置
+    # Save configuration
     def save_config():
         """
         Save the config to the local config file
@@ -3357,7 +3357,7 @@ def goto_func_page():
     chat_type_options = {
         'none': 'Disabled', 
         'reread': 'Repeater', 
-        'chatgpt': 'ChatGPT/闻达', 
+        'chatgpt': 'ChatGPT/Wenda', 
         'chat_with_file': 'chat_with_file',
         'chatterbot': 'Chatterbot',
         'text_generation_webui': 'text_generation_webui',
@@ -3366,7 +3366,7 @@ def goto_func_page():
         'zhipu': 'Zhipu AI',
         'bard': 'Bard',
         'tongyixingchen': 'Tongyi Xingchen',
-        'my_wenxinworkshop': 'Qianfan Large Model',
+        'my_wenxinworkshop': 'Qianfan',
         'gemini': 'Gemini',
         'koboldcpp': 'koboldcpp',
         'anythingllm': 'AnythingLLM',
@@ -3398,7 +3398,7 @@ def goto_func_page():
     }
 
     visual_body_options = {
-        '其他': 'Other (external)',
+        'Other': 'Other (external)',
         'metahuman_stream': 'metahuman_stream', 
         'EasyAIVtuber': 'EasyAIVtuber', 
         'digital_human_video_player': 'Digital Human Video Player', 
@@ -3564,11 +3564,11 @@ def goto_func_page():
                         ui.label('Filter')    
                         with ui.grid(columns=6):
                             textarea_filter_before_must_str = ui.textarea(label='Danmaku trigger prefix', placeholder='The prefix must carry any one of these strings to trigger\nFor example: configure #, then this will trigger: #Hello', value=textarea_data_change(config.get("filter", "before_must_str"))).style("width:200px;").tooltip("The prefix must carry any one of these strings to trigger\nFor example: configure #, then this will trigger: #Hello")
-                            textarea_filter_after_must_str = ui.textarea(label='Danmaku trigger suffix', placeholder='The suffix must carry any one of these strings to trigger\nFor example: configure “。”, then this will trigger: Hello。', value=textarea_data_change(config.get("filter", "before_must_str"))).style("width:200px;").tooltip("The suffix must carry any one of these strings to trigger\nFor example: configure “。”, then this will trigger: Hello。")
+                            textarea_filter_after_must_str = ui.textarea(label='Danmaku trigger suffix', placeholder='The suffix must carry any one of these strings to trigger\nFor example: configure “.”, then this will trigger: Hello.', value=textarea_data_change(config.get("filter", "before_must_str"))).style("width:200px;").tooltip("The suffix must carry any one of these strings to trigger\nFor example: configure “.”, then this will trigger: Hello.")
                             textarea_filter_before_filter_str = ui.textarea(label='Danmaku filter prefix', placeholder='When the prefix is any one of these strings, the danmaku is filtered\nFor example: configure #, then this will be filtered: #Hello', value=textarea_data_change(config.get("filter", "before_filter_str"))).style("width:200px;").tooltip("When the prefix is any one of these strings, the danmaku is filtered\nFor example: configure #, then this will be filtered: #Hello")
                             textarea_filter_after_filter_str = ui.textarea(label='Danmaku filter suffix', placeholder='When the suffix is any one of these strings, the danmaku is filtered\nFor example: configure #, then this will be filtered: Hello#', value=textarea_data_change(config.get("filter", "before_filter_str"))).style("width:200px;").tooltip("When the suffix is any one of these strings, the danmaku is filtered\nFor example: configure #, then this will be filtered: Hello#")
                             textarea_filter_before_must_str_for_llm = ui.textarea(label='LLM trigger prefix', placeholder='The prefix must carry any one of these strings to trigger the LLM\nFor example: configure #, then this will trigger: #Hello', value=textarea_data_change(config.get("filter", "before_must_str_for_llm"))).style("width:200px;").tooltip("The prefix must carry any one of these strings to trigger the LLM\nFor example: configure #, then this will trigger: #Hello")
-                            textarea_filter_after_must_str_for_llm = ui.textarea(label='LLM trigger suffix', placeholder='The suffix must carry any one of these strings to trigger the LLM\nFor example: configure “。”, then this will trigger: Hello。', value=textarea_data_change(config.get("filter", "before_must_str_for_llm"))).style("width:200px;").tooltip('The suffix must carry any one of these strings to trigger the LLM\nFor example: configure “。”, then this will trigger: Hello。')
+                            textarea_filter_after_must_str_for_llm = ui.textarea(label='LLM trigger suffix', placeholder='The suffix must carry any one of these strings to trigger the LLM\nFor example: configure “.”, then this will trigger: Hello.', value=textarea_data_change(config.get("filter", "before_must_str_for_llm"))).style("width:200px;").tooltip('The suffix must carry any one of these strings to trigger the LLM\nFor example: configure “.”, then this will trigger: Hello.')
                             
                         with ui.row():
                             input_filter_max_len = ui.input(label='Max words', placeholder='Maximum number of English words to read (space-separated)', value=config.get("filter", "max_len")).style("width:150px;").tooltip('Maximum number of English words to read (space-separated)')
@@ -3869,9 +3869,9 @@ def goto_func_page():
                             select_idle_time_task_type = ui.select(
                                 label='Mechanism type',
                                 options={
-                                    'Idle time updated by the pending-synthesis message queue': 'Idle time updated by the pending-synthesis message queue', 
-                                    'Idle time updated by the pending-playback audio queue': 'Idle time updated by the pending-playback audio queue', 
-                                    'Idle time updated when the live room has no messages': 'Idle time updated when the live room has no messages',
+                                    'Idle: message queue': 'Idle: message queue', 
+                                    'Idle: audio queue': 'Idle: audio queue', 
+                                    'Idle: no room messages': 'Idle: no room messages',
                                 },
                                 value=config.get("idle_time_task", "type")
                             ).tooltip('The logic by which idle-time tasks are executed; different logics give different trigger effects.\nFor selling products, you can choose “Idle time updated by the pending-playback audio queue” and set the trigger value to 1, so idle-time tasks only trigger when there are fewer than 1 audio items, effectively suppressing a flood of tasks.\nFor scenarios that don’t require talking all the time, we recommend “Idle time updated when the live room has no messages” with a larger interval, triggering once in a while.')
@@ -3907,10 +3907,10 @@ def goto_func_page():
                             
                         with ui.row():
                             ui.label('Message types that refresh the idle timer')
-                            # Type列表
+                            # TypeList
                             idle_time_task_trigger_type_list = ["comment", "gift", "entrance", "follow"]
                             idle_time_task_trigger_type_mapping = {
-                                "comment": "Danmaku",
+                                "comment": "Comment",
                                 "gift": "Gift",
                                 "entrance": "Entrance",
                                 "follow": "Follow",
@@ -3958,9 +3958,9 @@ def goto_func_page():
                             switch_search_online_keyword_enable = ui.switch('Keyword trigger', value=config.get("search_online", "keyword_enable")).style(switch_internal_css) 
                             textarea_search_online_before_keyword = ui.textarea(
                                 label='Keyword prefix', 
-                                placeholder='The prefix must carry any one of these strings to trigger online search\nFor example: configure [联网：] then this will trigger: 联网：Hangzhou weather', 
+                                placeholder='The prefix must carry any one of these strings to trigger online search\nFor example: configure [Web search:] then this will trigger: Web search:Hangzhou weather', 
                                 value=textarea_data_change(config.get("search_online", "before_keyword"))
-                            ).style("width:200px;").tooltip('The prefix must carry any one of these strings to trigger online search\nFor example: configure [联网：] then this will trigger: 联网：Hangzhou weather')
+                            ).style("width:200px;").tooltip('The prefix must carry any one of these strings to trigger online search\nFor example: configure [Web search:] then this will trigger: Web search:Hangzhou weather')
                             
                             select_search_online_engine = ui.select(
                                 label='Search engine',
@@ -4026,7 +4026,7 @@ def goto_func_page():
                             ).style("width:200px;").tooltip('To trigger this feature, the command must start with this string, otherwise it will not be parsed as a key mapping command')
                             select_key_mapping_type = ui.select(
                                 label='Capture type',
-                                options={'Danmaku': 'Danmaku', 'Reply': 'Reply', 'Danmaku + Reply': 'Danmaku + Reply'},
+                                options={'Comment': 'Comment', 'Reply': 'Reply', 'Comment + Reply': 'Comment + Reply'},
                                 value=config.get("key_mapping", "type")
                             ).style("width:200px").tooltip('What type of data triggers the function of this section')
                         with ui.row():
@@ -4150,11 +4150,11 @@ def goto_func_page():
                         ui.label("Trigger position")
                         with ui.row(): 
                             luoxi_project_Live_Comment_Assistant_trigger_position_list = [
-                                "When the message is generated", 
+                                "On message created", 
                                 "When the audio is played",
                             ]
                             luoxi_project_Live_Comment_Assistant_trigger_position_mapping = {
-                                "When the message is generated": "When the message is generated",
+                                "On message created": "On message created",
                                 "When the audio is played": "When the audio is played",
                             }
                             luoxi_project_Live_Comment_Assistant_trigger_position_var = {}
@@ -4259,7 +4259,7 @@ def goto_func_page():
                             switch_custom_cmd_enable = ui.switch('Enable', value=config.get("custom_cmd", "enable")).style(switch_internal_css)
                             select_custom_cmd_type = ui.select(
                                 label='Type',
-                                options={'Danmaku': 'Danmaku'},
+                                options={'Comment': 'Comment'},
                                 value=config.get("custom_cmd", "type")
                             ).style("width:200px")
                         with ui.row():
@@ -4384,18 +4384,18 @@ def goto_func_page():
         with ui.tab_panel(llm_page).style(tab_panel_css):
             if config.get("webui", "show_card", "llm", "chatgpt"):
                 with ui.card().style(card_css):
-                    ui.label("ChatGPT | 闻达 | ChatGLM3 | Kimi Chat | Ollama | One-API等OpenAI接口模型 ")
+                    ui.label("ChatGPT | Wenda | ChatGLM3 | Kimi Chat | Ollama | One-API and other OpenAI-interface models ")
                     with ui.row():
                         input_openai_api = ui.input(
                             label='API address', 
-                            placeholder='API请求地址，支持代理', 
+                            placeholder='APIRequest address, supports proxy', 
                             value=config.get("openai", "api"),
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         ).style("width:200px;")
-                        textarea_openai_api_key = ui.textarea(label='API密钥', placeholder='API KEY，支持代理', value=textarea_data_change(config.get("openai", "api_key"))).style("width:400px;")
-                        button_openai_test = ui.button('测试', on_click=lambda: test_openai_key(), color=button_bottom_color).style(button_bottom_css)
+                        textarea_openai_api_key = ui.textarea(label='APIKey', placeholder='API KEY, supports proxy', value=textarea_data_change(config.get("openai", "api_key"))).style("width:400px;")
+                        button_openai_test = ui.button('Test', on_click=lambda: test_openai_key(), color=button_bottom_color).style(button_bottom_css)
                     with ui.row():
                         chatgpt_models = [
                             "gpt-3.5-turbo",
@@ -4416,29 +4416,29 @@ def goto_func_page():
                             "qwen",
                             "qwen:1.8b-chat"
                         ]
-                        # 将用户配置的值插入list（如果不存在）
+                        # Insert the value configured by the user into the list (if it does not exist)
                         if config.get("chatgpt", "model") not in chatgpt_models:
                             chatgpt_models.append(config.get("chatgpt", "model"))
                         data_json = {}
                         for line in chatgpt_models:
                             data_json[line] = line
                         select_chatgpt_model = ui.select(
-                            label='模型', 
+                            label='Model', 
                             options=data_json, 
                             value=config.get("chatgpt", "model"),
                             with_input=True,
                             new_value_mode='add-unique',
                             clearable=True
-                        ).tooltip("如果你没有在此找到你用的模型名，你可以删除此配置项的内容，然后手动输入，最后一定要回车！确认！")
-                        input_chatgpt_temperature = ui.input(label='温度', placeholder='控制生成文本的随机性。较高的温度值会使生成的文本更随机和多样化，而较低的温度值会使生成的文本更加确定和一致。', value=config.get("chatgpt", "temperature")).style("width:100px;")
-                        input_chatgpt_max_tokens = ui.input(label='最大token数', placeholder='限制生成Answer的最大长度。', value=config.get("chatgpt", "max_tokens")).style("width:100px;")
-                        input_chatgpt_top_p = ui.input(label='top_p', placeholder='Nucleus采样。这个参数控制模型从累积概率大于一定阈值的令牌中进行采样。较高的值会产生更多的多样性，较低的值会产生更少但更确定的Answer。', value=config.get("chatgpt", "top_p")).style("width:100px;")
-                        switch_chatgpt_stream = ui.switch('流式输出', value=config.get("chatgpt", "stream")).tooltip("是否开启流式输出，开启后，Answer会逐句输出，关闭后，Answer会一次性输出。")
+                        ).tooltip("If you cannot find the model name you use here, you can delete the content of this config item and enter it manually; finally be sure to press Enter to confirm!")
+                        input_chatgpt_temperature = ui.input(label='Temperature', placeholder='Controls the randomness of the generated text. A higher temperature value makes the generated text more random and diverse, while a lower temperature value makes it more deterministic and consistent.', value=config.get("chatgpt", "temperature")).style("width:100px;")
+                        input_chatgpt_max_tokens = ui.input(label='Max tokens', placeholder='Limit the maximum length of the generated Answer.', value=config.get("chatgpt", "max_tokens")).style("width:100px;")
+                        input_chatgpt_top_p = ui.input(label='top_p', placeholder='NucleusSampling. This parameter controls the model to sample from tokens whose cumulative probability exceeds a certain threshold. A higher value produces more diversity, a lower value produces fewer but more deterministic Answers.', value=config.get("chatgpt", "top_p")).style("width:100px;")
+                        switch_chatgpt_stream = ui.switch('Streaming output', value=config.get("chatgpt", "stream")).tooltip("Whether to enable streaming output. When enabled, the Answer is output sentence by sentence; when disabled, the Answer is output all at once.")
                     with ui.row():
-                        input_chatgpt_presence_penalty = ui.input(label='存在惩罚', placeholder='控制模型生成Answer时对给定Question提示的Follow程度。较高的存在惩罚值会减少模型对给定提示的重复程度，鼓励模型更自主地生成Answer。', value=config.get("chatgpt", "presence_penalty")).style("width:100px;")
-                        input_chatgpt_frequency_penalty = ui.input(label='频率惩罚', placeholder='控制生成Answer时对已经出现过的令牌的惩罚程度。较高的频率惩罚值会减少模型生成已经频繁出现的令牌，以避免重复和过度使用特定词语。', value=config.get("chatgpt", "frequency_penalty")).style("width:100px;")
+                        input_chatgpt_presence_penalty = ui.input(label='Presence penalty', placeholder='Controls how closely the model Follows the given Question prompt when generating an Answer. A higher presence penalty value reduces how much the model repeats the given prompt and encourages it to generate the Answer more independently.', value=config.get("chatgpt", "presence_penalty")).style("width:100px;")
+                        input_chatgpt_frequency_penalty = ui.input(label='Frequency penalty', placeholder='Controls the penalty for tokens that have already appeared when generating an Answer. A higher frequency penalty value reduces the model generating tokens that have appeared frequently, to avoid repetition and overuse of specific words.', value=config.get("chatgpt", "frequency_penalty")).style("width:100px;")
 
-                        input_chatgpt_preset = ui.input(label='预设', placeholder='用于指定一组预定义的设置，以便模型更好地适应特定的对话场景。', value=config.get("chatgpt", "preset")).style("width:500px") 
+                        input_chatgpt_preset = ui.input(label='Preset', placeholder='Used to specify a set of predefined settings so the model better fits specific conversation scenarios.', value=config.get("chatgpt", "preset")).style("width:500px") 
 
             
             
@@ -4455,40 +4455,40 @@ def goto_func_page():
                             options=data_json, 
                             value=config.get("chat_with_file", "chat_mode")
                         )
-                        input_chat_with_file_data_path = ui.input(label='数据文件路径', placeholder='加载的本地zip数据文件路径（到x.zip）, 如：./data/伊卡洛斯百度百科.zip', value=config.get("chat_with_file", "data_path"))
+                        input_chat_with_file_data_path = ui.input(label='Data file path', placeholder='Path of the local zip data file to load (to x.zip), e.g.: ./data/Icarus Baidu Baike.zip', value=config.get("chat_with_file", "data_path"))
                         input_chat_with_file_data_path.style("width:400px")
                     with ui.row():
-                        input_chat_with_file_separator = ui.input(label='分隔符', placeholder='拆分文本的分隔符，这里使用 换行符 作为分隔符。', value=config.get("chat_with_file", "separator"))
+                        input_chat_with_file_separator = ui.input(label='Separator', placeholder='Delimiter for splitting text; a line break is used as the delimiter here.', value=config.get("chat_with_file", "separator"))
                         input_chat_with_file_separator.style("width:300px")
-                        input_chat_with_file_chunk_size = ui.input(label='块大小', placeholder='每个文本块的Max characters(文本块字符越多，消耗token越多，Reply越详细)', value=config.get("chat_with_file", "chunk_size"))
+                        input_chat_with_file_chunk_size = ui.input(label='Chunk size', placeholder='Max characters per text chunk (the more characters in a chunk, the more tokens consumed and the more detailed the Reply)', value=config.get("chat_with_file", "chunk_size"))
                         input_chat_with_file_chunk_size.style("width:300px")
-                        input_chat_with_file_chunk_overlap = ui.input(label='块重叠', placeholder='两个相邻文本块之间的重叠字符数。这种重叠可以帮助保持文本的连贯性，特别是当文本被用于训练语言模型或其他需要上下文信息的机器学习模型时', value=config.get("chat_with_file", "chunk_overlap"))
+                        input_chat_with_file_chunk_overlap = ui.input(label='Chunk overlap', placeholder='Number of overlapping characters between two adjacent text chunks. This overlap helps maintain text coherence, especially when the text is used to train language models or other machine learning models that need contextual information', value=config.get("chat_with_file", "chunk_overlap"))
                         input_chat_with_file_chunk_overlap.style("width:300px")
                         lines = ["sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco", "GanymedeNil/text2vec-large-chinese"]
                         data_json = {}
                         for line in lines:
                             data_json[line] = line
                         select_chat_with_file_local_vector_embedding_model = ui.select(
-                            label='模型', 
+                            label='Model', 
                             options=data_json, 
                             value=config.get("chat_with_file", "local_vector_embedding_model")
                         )
                     with ui.row():
-                        input_chat_with_file_chain_type = ui.input(label='链Type', placeholder='指定要生成的语言链的Type，For example:stuff', value=config.get("chat_with_file", "chain_type"))
+                        input_chat_with_file_chain_type = ui.input(label='ChainType', placeholder='Specify the Type of language chain to generate,For example:stuff', value=config.get("chat_with_file", "chain_type"))
                         input_chat_with_file_chain_type.style("width:300px")
-                        input_chat_with_file_question_prompt = ui.input(label='Question总结提示词', placeholder='通过LLM总结本地向量Database输出内容，此处填写总结用提示词', value=config.get("chat_with_file", "question_prompt"))
+                        input_chat_with_file_question_prompt = ui.input(label='QuestionSummary prompt', placeholder='Summarize the local vector Database output via the LLM; fill in the prompt used for summarizing here', value=config.get("chat_with_file", "question_prompt"))
                         input_chat_with_file_question_prompt.style("width:300px")
-                        input_chat_with_file_local_max_query = ui.input(label='最大查询Database次数', placeholder='最大查询Database次数。限制次数有助于节省token', value=config.get("chat_with_file", "local_max_query"))
+                        input_chat_with_file_local_max_query = ui.input(label='Maximum number of Database queries', placeholder='Maximum number of Database queries. Limiting the count helps savetoken', value=config.get("chat_with_file", "local_max_query"))
                         input_chat_with_file_local_max_query.style("width:300px")
-                        switch_chat_with_file_show_token_cost = ui.switch('显示成本', value=config.get("chat_with_file", "show_token_cost")).style(switch_internal_css)
+                        switch_chat_with_file_show_token_cost = ui.switch('Show cost', value=config.get("chat_with_file", "show_token_cost")).style(switch_internal_css)
             
             if config.get("webui", "show_card", "llm", "chatterbot"):
                 with ui.card().style(card_css):
                     ui.label("Chatterbot")
                     with ui.grid(columns=2):
-                        input_chatterbot_name = ui.input(label='bot名称', placeholder='bot名称', value=config.get("chatterbot", "name"))
+                        input_chatterbot_name = ui.input(label='botName', placeholder='botName', value=config.get("chatterbot", "name"))
                         input_chatterbot_name.style("width:400px")
-                        input_chatterbot_db_path = ui.input(label='Database path', placeholder='Database path（绝对或相对路径）', value=config.get("chatterbot", "db_path"))
+                        input_chatterbot_db_path = ui.input(label='Database path', placeholder='Database path(absolute or relative path)', value=config.get("chatterbot", "db_path"))
                         input_chatterbot_db_path.style("width:400px")
             
             if config.get("webui", "show_card", "llm", "text_generation_webui"):
@@ -4502,17 +4502,17 @@ def goto_func_page():
                         )
                         input_text_generation_webui_api_ip_port = ui.input(
                             label='API address', 
-                            placeholder='text-generation-webui开启API模式后监听的IP和Port地址', 
+                            placeholder='text-generation-webuiThe IP and Port address to listen on after API mode is enabled', 
                             value=config.get("text_generation_webui", "api_ip_port"),
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         )
                         input_text_generation_webui_api_ip_port.style("width:300px")
-                        input_text_generation_webui_max_new_tokens = ui.input(label='max_new_tokens', placeholder='自行查阅', value=config.get("text_generation_webui", "max_new_tokens"))
+                        input_text_generation_webui_max_new_tokens = ui.input(label='max_new_tokens', placeholder='Refer to it yourself', value=config.get("text_generation_webui", "max_new_tokens"))
                         input_text_generation_webui_max_new_tokens.style("width:200px")
-                        switch_text_generation_webui_history_enable = ui.switch('上下文记忆', value=config.get("text_generation_webui", "history_enable")).style(switch_internal_css)
-                        input_text_generation_webui_history_max_len = ui.input(label='最大记忆长度', placeholder='最大记忆的上下文字符数量，不建议设置过大，容易爆显存，自行根据情况配置', value=config.get("text_generation_webui", "history_max_len"))
+                        switch_text_generation_webui_history_enable = ui.switch('Context memory', value=config.get("text_generation_webui", "history_enable")).style(switch_internal_css)
+                        input_text_generation_webui_history_max_len = ui.input(label='Max memory length', placeholder='Maximum number of context characters remembered, not recommended to set too large as it may run out of VRAM, configure according to your situation', value=config.get("text_generation_webui", "history_max_len"))
                         input_text_generation_webui_history_max_len.style("width:200px")
                     with ui.row():
                         select_text_generation_webui_mode = ui.select(
@@ -4520,17 +4520,17 @@ def goto_func_page():
                             options={"chat": "chat", "chat-instruct": "chat-instruct", "instruct": "instruct"}, 
                             value=config.get("text_generation_webui", "mode")
                         ).style("width:150px")
-                        input_text_generation_webui_character = ui.input(label='character', placeholder='自行查阅', value=config.get("text_generation_webui", "character"))
+                        input_text_generation_webui_character = ui.input(label='character', placeholder='Refer to it yourself', value=config.get("text_generation_webui", "character"))
                         input_text_generation_webui_character.style("width:100px")
-                        input_text_generation_webui_instruction_template = ui.input(label='instruction_template', placeholder='自行查阅', value=config.get("text_generation_webui", "instruction_template"))
+                        input_text_generation_webui_instruction_template = ui.input(label='instruction_template', placeholder='Refer to it yourself', value=config.get("text_generation_webui", "instruction_template"))
                         input_text_generation_webui_instruction_template.style("width:150px")
-                        input_text_generation_webui_your_name = ui.input(label='your_name', placeholder='自行查阅', value=config.get("text_generation_webui", "your_name"))
+                        input_text_generation_webui_your_name = ui.input(label='your_name', placeholder='Refer to it yourself', value=config.get("text_generation_webui", "your_name"))
                         input_text_generation_webui_your_name.style("width:100px")
                     with ui.row():
-                        input_text_generation_webui_top_p = ui.input(label='top_p', value=config.get("text_generation_webui", "top_p"), placeholder='topP生成时，核采样方法的概率阈值。例如，取值为0.8时，仅保留累计概率之和大于等于0.8的概率分布中的token，作为随机采样的候选集。取值范围为(0,1.0)，取值越大，生成的随机性越高；取值越低，生成的随机性越低。默认值 0.95。注意，取值不要大于等于1')
-                        input_text_generation_webui_top_k = ui.input(label='top_k', value=config.get("text_generation_webui", "top_k"), placeholder='匹配搜索结果条数')
-                        input_text_generation_webui_temperature = ui.input(label='temperature', value=config.get("text_generation_webui", "temperature"), placeholder='较高的值将使输出更加随机，而较低的值将使输出更加集中和确定。可选，默认取值0.92')
-                        input_text_generation_webui_seed = ui.input(label='seed', value=config.get("text_generation_webui", "seed"), placeholder='seed生成时，随机数的种子，用于控制模型生成的随机性。如果使用相同的种子，每次Run生成的结果都将相同；当需要复现模型的生成结果时，可以使用相同的种子。seed参数支持无符号64位整数Type。默认值 1683806810')
+                        input_text_generation_webui_top_p = ui.input(label='top_p', value=config.get("text_generation_webui", "top_p"), placeholder='topPProbability threshold of the nucleus sampling method during generation. For example, when set to 0.8, only the tokens in the probability distribution whose cumulative probability sum is greater than or equal to 0.8 are kept as the candidate set for random sampling. The value range is (0,1.0); the larger the value, the higher the randomness of generation; the lower the value, the lower the randomness. Default 0.95. Note, the value must not be greater than or equal to1')
+                        input_text_generation_webui_top_k = ui.input(label='top_k', value=config.get("text_generation_webui", "top_k"), placeholder='Number of matching search results')
+                        input_text_generation_webui_temperature = ui.input(label='temperature', value=config.get("text_generation_webui", "temperature"), placeholder='A higher value makes the output more random, while a lower value makes the output more focused and deterministic. Optional, default value0.92')
+                        input_text_generation_webui_seed = ui.input(label='seed', value=config.get("text_generation_webui", "seed"), placeholder='seedRandom number seed during generation, used to control the randomness of model generation. If the same seed is used, the results generated on each Run will be identical; when you need to reproduce the generation results of the model, you can use the same seed. The seed parameter supports the unsigned 64-bit integer Type. Default 1683806810')
 
             if config.get("webui", "show_card", "llm", "sparkdesk"):    
                 with ui.card().style(card_css):
@@ -4549,22 +4549,22 @@ def goto_func_page():
                     with ui.card().style(card_css):
                         ui.label("WEB")
                         with ui.row():
-                            input_sparkdesk_cookie = ui.input(label='cookie', placeholder='web抓包请求头中的cookie，参考文档教程', value=config.get("sparkdesk", "cookie"))
+                            input_sparkdesk_cookie = ui.input(label='cookie', placeholder='webCookie in the captured request headers, see the documentation tutorial', value=config.get("sparkdesk", "cookie"))
                             input_sparkdesk_cookie.style("width:300px")
-                            input_sparkdesk_fd = ui.input(label='fd', placeholder='web抓包负载中的fd，参考文档教程', value=config.get("sparkdesk", "fd"))
+                            input_sparkdesk_fd = ui.input(label='fd', placeholder='webfd in the captured payload, see the documentation tutorial', value=config.get("sparkdesk", "fd"))
                             input_sparkdesk_fd.style("width:200px")      
-                            input_sparkdesk_GtToken = ui.input(label='GtToken', placeholder='web抓包负载中的GtToken，参考文档教程', value=config.get("sparkdesk", "GtToken"))
+                            input_sparkdesk_GtToken = ui.input(label='GtToken', placeholder='webGtToken in the captured payload, see the documentation tutorial', value=config.get("sparkdesk", "GtToken"))
                             input_sparkdesk_GtToken.style("width:200px")
 
                     with ui.card().style(card_css):
                         ui.label("API")
                         with ui.row():
-                            input_sparkdesk_app_id = ui.input(label='app_id', value=config.get("sparkdesk", "app_id"), placeholder='申请官方API后，云Platform中提供的APPID').style("width:100px")   
-                            input_sparkdesk_api_secret = ui.input(label='api_secret', value=config.get("sparkdesk", "api_secret"), placeholder='申请官方API后，云Platform中提供的APISecret').style("width:200px") 
-                            input_sparkdesk_api_key = ui.input(label='api_key', value=config.get("sparkdesk", "api_key"), placeholder='申请官方API后，云Platform中提供的APIKey').style("width:200px") 
+                            input_sparkdesk_app_id = ui.input(label='app_id', value=config.get("sparkdesk", "app_id"), placeholder='After applying for the official API, the one provided in the cloud PlatformAPPID').style("width:100px")   
+                            input_sparkdesk_api_secret = ui.input(label='api_secret', value=config.get("sparkdesk", "api_secret"), placeholder='After applying for the official API, the one provided in the cloud PlatformAPISecret').style("width:200px") 
+                            input_sparkdesk_api_key = ui.input(label='api_key', value=config.get("sparkdesk", "api_key"), placeholder='After applying for the official API, the one provided in the cloud PlatformAPIKey').style("width:200px") 
                             
                             select_sparkdesk_version = ui.select(
-                                label='版本', 
+                                label='Version', 
                                 options={
                                     "4.0": "Ultra",
                                     "3.5": "Max",
@@ -4575,7 +4575,7 @@ def goto_func_page():
                                 }, 
                                 value=str(config.get("sparkdesk", "version"))
                             ).style("width:100px") 
-                            input_sparkdesk_assistant_id = ui.input(label='助手ID', value=config.get("sparkdesk", "assistant_id"), placeholder='助手创作中心，创建助手后助手API的接口地址最后的助手ID').style("width:100px") 
+                            input_sparkdesk_assistant_id = ui.input(label='Assistant ID', value=config.get("sparkdesk", "assistant_id"), placeholder='Assistant creation center; after creating an assistant, the last part of the assistant API endpoint address is the assistantID').style("width:100px") 
                  
             if config.get("webui", "show_card", "llm", "langchain_chatchat"):  
                 with ui.card().style(card_css):
@@ -4583,14 +4583,14 @@ def goto_func_page():
                     with ui.row():
                         input_langchain_chatchat_api_ip_port = ui.input(
                             label='API address', 
-                            placeholder='langchain_chatchat的API版本Run后的服务链接（需要完整的URL）', 
+                            placeholder='langchain_chatchatService link after the API version of it Runs (full URL required)', 
                             value=config.get("langchain_chatchat", "api_ip_port"),
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         )
                         input_langchain_chatchat_api_ip_port.style("width:400px")
-                        lines = ["模型", "知识库", "Search engine"]
+                        lines = ["Model", "Knowledge base", "Search engine"]
                         data_json = {}
                         for line in lines:
                             data_json[line] = line
@@ -4599,28 +4599,28 @@ def goto_func_page():
                             options=data_json, 
                             value=config.get("langchain_chatchat", "chat_type")
                         )
-                        switch_langchain_chatchat_history_enable = ui.switch('上下文记忆', value=config.get("langchain_chatchat", "history_enable")).style(switch_internal_css)
-                        input_langchain_chatchat_history_max_len = ui.input(label='最大记忆长度', placeholder='最大记忆的上下文字符数量，不建议设置过大，容易爆显存，自行根据情况配置', value=config.get("langchain_chatchat", "history_max_len"))
+                        switch_langchain_chatchat_history_enable = ui.switch('Context memory', value=config.get("langchain_chatchat", "history_enable")).style(switch_internal_css)
+                        input_langchain_chatchat_history_max_len = ui.input(label='Max memory length', placeholder='Maximum number of context characters remembered, not recommended to set too large as it may run out of VRAM, configure according to your situation', value=config.get("langchain_chatchat", "history_max_len"))
                         input_langchain_chatchat_history_max_len.style("width:400px")
                     with ui.row():
                         with ui.card().style(card_css):
-                            ui.label("模型")
+                            ui.label("Model")
                             with ui.row():
-                                input_langchain_chatchat_llm_model_name = ui.input(label='LLM模型', value=config.get("langchain_chatchat", "llm", "model_name"), placeholder='本地加载的LLM模型名')
-                                input_langchain_chatchat_llm_temperature = ui.input(label='温度', value=config.get("langchain_chatchat", "llm", "temperature"), placeholder='采样温度，控制输出的随机性，必须为正数\n取值范围是：(0.0,1.0]，不能等于 0,默认值为 0.95\n值越大，会使输出更随机，更具创造性；值越小，输出会更加稳定或确定\n建议您根据应用场景调整 top_p 或 temperature 参数，但不要同时调整两个参数')
-                                input_langchain_chatchat_llm_max_tokens = ui.input(label='max_tokens', value=config.get("langchain_chatchat", "llm", "max_tokens"), placeholder='大于0的正整数，不建议太大，你可能会爆显存')
-                                input_langchain_chatchat_llm_prompt_name = ui.input(label='Prompt模板', value=config.get("langchain_chatchat", "llm", "prompt_name"), placeholder='本地存在的提示词模板文件名')
+                                input_langchain_chatchat_llm_model_name = ui.input(label='LLM model', value=config.get("langchain_chatchat", "llm", "model_name"), placeholder='Name of the locally loaded LLM model')
+                                input_langchain_chatchat_llm_temperature = ui.input(label='Temperature', value=config.get("langchain_chatchat", "llm", "temperature"), placeholder='Sampling temperature, controls the randomness of the output, must be a positive number\nValue range: (0.0,1.0], cannot equal 0, default 0.95\nThe larger the value, the more random and creative the output; the smaller the value, the more stable or deterministic the output\nIt is recommended to adjust either the top_p or temperature parameter according to your application scenario, but not both at the same time')
+                                input_langchain_chatchat_llm_max_tokens = ui.input(label='max_tokens', value=config.get("langchain_chatchat", "llm", "max_tokens"), placeholder='Positive integer greater than 0, not recommended to be too large, you may run out of VRAM')
+                                input_langchain_chatchat_llm_prompt_name = ui.input(label='PromptTemplate', value=config.get("langchain_chatchat", "llm", "prompt_name"), placeholder='File name of a locally existing prompt template')
                     with ui.row():
                         with ui.card().style(card_css):
-                            ui.label("知识库")
+                            ui.label("Knowledge base")
                             with ui.row():
-                                input_langchain_chatchat_knowledge_base_knowledge_base_name = ui.input(label='知识库名', value=config.get("langchain_chatchat", "knowledge_base", "knowledge_base_name"), placeholder='本地添加的知识库名，Run时会自动检索存在的知识库列表，输出到cmd，请自行查看')
-                                input_langchain_chatchat_knowledge_base_top_k = ui.input(label='匹配搜索结果条数', value=config.get("langchain_chatchat", "knowledge_base", "top_k"), placeholder='匹配搜索结果条数')
-                                input_langchain_chatchat_knowledge_base_score_threshold = ui.input(label='知识匹配分数阈值', value=config.get("langchain_chatchat", "knowledge_base", "score_threshold"), placeholder='0.00-2.00之间')
-                                input_langchain_chatchat_knowledge_base_model_name = ui.input(label='LLM模型', value=config.get("langchain_chatchat", "knowledge_base", "model_name"), placeholder='本地加载的LLM模型名')
-                                input_langchain_chatchat_knowledge_base_temperature = ui.input(label='温度', value=config.get("langchain_chatchat", "knowledge_base", "temperature"), placeholder='采样温度，控制输出的随机性，必须为正数\n取值范围是：(0.0,1.0]，不能等于 0,默认值为 0.95\n值越大，会使输出更随机，更具创造性；值越小，输出会更加稳定或确定\n建议您根据应用场景调整 top_p 或 temperature 参数，但不要同时调整两个参数')
-                                input_langchain_chatchat_knowledge_base_max_tokens = ui.input(label='max_tokens', value=config.get("langchain_chatchat", "knowledge_base", "max_tokens"), placeholder='大于0的正整数，不建议太大，你可能会爆显存')
-                                input_langchain_chatchat_knowledge_base_prompt_name = ui.input(label='Prompt模板', value=config.get("langchain_chatchat", "knowledge_base", "prompt_name"), placeholder='本地存在的提示词模板文件名')
+                                input_langchain_chatchat_knowledge_base_knowledge_base_name = ui.input(label='Knowledge base name', value=config.get("langchain_chatchat", "knowledge_base", "knowledge_base_name"), placeholder='Name of the locally added knowledge base; on Run the list of existing knowledge bases is retrieved automatically and printed to cmd, please check it yourself')
+                                input_langchain_chatchat_knowledge_base_top_k = ui.input(label='Number of matching search results', value=config.get("langchain_chatchat", "knowledge_base", "top_k"), placeholder='Number of matching search results')
+                                input_langchain_chatchat_knowledge_base_score_threshold = ui.input(label='Knowledge match score threshold', value=config.get("langchain_chatchat", "knowledge_base", "score_threshold"), placeholder='0.00-2.00Between')
+                                input_langchain_chatchat_knowledge_base_model_name = ui.input(label='LLM model', value=config.get("langchain_chatchat", "knowledge_base", "model_name"), placeholder='Name of the locally loaded LLM model')
+                                input_langchain_chatchat_knowledge_base_temperature = ui.input(label='Temperature', value=config.get("langchain_chatchat", "knowledge_base", "temperature"), placeholder='Sampling temperature, controls the randomness of the output, must be a positive number\nValue range: (0.0,1.0], cannot equal 0, default 0.95\nThe larger the value, the more random and creative the output; the smaller the value, the more stable or deterministic the output\nIt is recommended to adjust either the top_p or temperature parameter according to your application scenario, but not both at the same time')
+                                input_langchain_chatchat_knowledge_base_max_tokens = ui.input(label='max_tokens', value=config.get("langchain_chatchat", "knowledge_base", "max_tokens"), placeholder='Positive integer greater than 0, not recommended to be too large, you may run out of VRAM')
+                                input_langchain_chatchat_knowledge_base_prompt_name = ui.input(label='PromptTemplate', value=config.get("langchain_chatchat", "knowledge_base", "prompt_name"), placeholder='File name of a locally existing prompt template')
                     with ui.row():
                         with ui.card().style(card_css):
                             ui.label("Search engine")
@@ -4634,21 +4634,21 @@ def goto_func_page():
                                     options=data_json, 
                                     value=config.get("langchain_chatchat", "search_engine", "search_engine_name")
                                 )
-                                input_langchain_chatchat_search_engine_top_k = ui.input(label='匹配搜索结果条数', value=config.get("langchain_chatchat", "search_engine", "top_k"), placeholder='匹配搜索结果条数')
-                                input_langchain_chatchat_search_engine_model_name = ui.input(label='LLM模型', value=config.get("langchain_chatchat", "search_engine", "model_name"), placeholder='本地加载的LLM模型名')
-                                input_langchain_chatchat_search_engine_temperature = ui.input(label='温度', value=config.get("langchain_chatchat", "search_engine", "temperature"), placeholder='采样温度，控制输出的随机性，必须为正数\n取值范围是：(0.0,1.0]，不能等于 0,默认值为 0.95\n值越大，会使输出更随机，更具创造性；值越小，输出会更加稳定或确定\n建议您根据应用场景调整 top_p 或 temperature 参数，但不要同时调整两个参数')
-                                input_langchain_chatchat_search_engine_max_tokens = ui.input(label='max_tokens', value=config.get("langchain_chatchat", "search_engine", "max_tokens"), placeholder='大于0的正整数，不建议太大，你可能会爆显存')
-                                input_langchain_chatchat_search_engine_prompt_name = ui.input(label='Prompt模板', value=config.get("langchain_chatchat", "search_engine", "prompt_name"), placeholder='本地存在的提示词模板文件名')
+                                input_langchain_chatchat_search_engine_top_k = ui.input(label='Number of matching search results', value=config.get("langchain_chatchat", "search_engine", "top_k"), placeholder='Number of matching search results')
+                                input_langchain_chatchat_search_engine_model_name = ui.input(label='LLM model', value=config.get("langchain_chatchat", "search_engine", "model_name"), placeholder='Name of the locally loaded LLM model')
+                                input_langchain_chatchat_search_engine_temperature = ui.input(label='Temperature', value=config.get("langchain_chatchat", "search_engine", "temperature"), placeholder='Sampling temperature, controls the randomness of the output, must be a positive number\nValue range: (0.0,1.0], cannot equal 0, default 0.95\nThe larger the value, the more random and creative the output; the smaller the value, the more stable or deterministic the output\nIt is recommended to adjust either the top_p or temperature parameter according to your application scenario, but not both at the same time')
+                                input_langchain_chatchat_search_engine_max_tokens = ui.input(label='max_tokens', value=config.get("langchain_chatchat", "search_engine", "max_tokens"), placeholder='Positive integer greater than 0, not recommended to be too large, you may run out of VRAM')
+                                input_langchain_chatchat_search_engine_prompt_name = ui.input(label='PromptTemplate', value=config.get("langchain_chatchat", "search_engine", "prompt_name"), placeholder='File name of a locally existing prompt template')
             
             if config.get("webui", "show_card", "llm", "zhipu"):  
                 with ui.card().style(card_css):
                     ui.label("Zhipu AI")
                     with ui.row():
-                        input_zhipu_api_key = ui.input(label='api key', placeholder='具体参考官方文档，申请地址：https://open.bigmodel.cn/usercenter/apikeys', value=config.get("zhipu", "api_key"))
+                        input_zhipu_api_key = ui.input(label='api key', placeholder='See the official documentation for details, application address:https://open.bigmodel.cn/usercenter/apikeys', value=config.get("zhipu", "api_key"))
                         input_zhipu_api_key.style("width:200px")
                         lines = [
-                            '应用',
-                            '智能体',
+                            'App',
+                            'Agent',
                             'glm-3-turbo', 
                             'glm-4', 
                             'glm-4-flash',
@@ -4664,59 +4664,59 @@ def goto_func_page():
                         for line in lines:
                             data_json[line] = line
                         select_zhipu_model = ui.select(
-                            label='模型', 
+                            label='Model', 
                             options=data_json, 
                             value=config.get("zhipu", "model"),
                             with_input=True,
                             new_value_mode='add-unique',
                             clearable=True
                         )
-                        input_zhipu_app_id = ui.input(label='应用ID', value=config.get("zhipu", "app_id"), placeholder='在 模型为：应用，会自动检索你Platform上添加的All应用信息，然后从Log中复制你需要的应用ID即可').style("width:200px")
+                        input_zhipu_app_id = ui.input(label='App ID', value=config.get("zhipu", "app_id"), placeholder='When the model is: Application, all application information added on your Platform is retrieved automatically, then just copy the application ID you need from the Log').style("width:200px")
                         
                     with ui.row():
-                        input_zhipu_top_p = ui.input(label='top_p', placeholder='用温度取样的另一种方法，称为核取样\n取值范围是：(0.0,1.0)；开区间，不能等于 0 或 1，默认值为 0.7\n模型考虑具有 top_p 概率质量的令牌的结果。所以 0.1 意味着模型解码器只考虑从前 10% 的概率的候选集中取tokens\n建议您根据应用场景调整 top_p 或 temperature 参数，但不要同时调整两个参数', value=config.get("zhipu", "top_p"))
+                        input_zhipu_top_p = ui.input(label='top_p', placeholder='Another alternative to temperature sampling, called nucleus sampling\nValue range: (0.0,1.0); an open interval, cannot equal 0 or 1, default 0.7\nThe model considers the results of tokens with top_p probability mass. So 0.1 means the model decoder only takes tokens from the candidate set with the top 10% probability\nIt is recommended to adjust either the top_p or temperature parameter according to your application scenario, but not both at the same time', value=config.get("zhipu", "top_p"))
                         input_zhipu_top_p.style("width:200px")
-                        input_zhipu_temperature = ui.input(label='temperature', placeholder='采样温度，控制输出的随机性，必须为正数\n取值范围是：(0.0,1.0]，不能等于 0,默认值为 0.95\n值越大，会使输出更随机，更具创造性；值越小，输出会更加稳定或确定\n建议您根据应用场景调整 top_p 或 temperature 参数，但不要同时调整两个参数', value=config.get("zhipu", "temperature"))
+                        input_zhipu_temperature = ui.input(label='temperature', placeholder='Sampling temperature, controls the randomness of the output, must be a positive number\nValue range: (0.0,1.0], cannot equal 0, default 0.95\nThe larger the value, the more random and creative the output; the smaller the value, the more stable or deterministic the output\nIt is recommended to adjust either the top_p or temperature parameter according to your application scenario, but not both at the same time', value=config.get("zhipu", "temperature"))
                         input_zhipu_temperature.style("width:200px")
-                        switch_zhipu_history_enable = ui.switch('上下文记忆', value=config.get("zhipu", "history_enable")).style(switch_internal_css)
-                        input_zhipu_history_max_len = ui.input(label='最大记忆长度', placeholder='最长能记忆的Q&A字符串长度，超长会丢弃最早记忆的内容，请慎用！配置过大可能会有丢大米', value=config.get("zhipu", "history_max_len"))
+                        switch_zhipu_history_enable = ui.switch('Context memory', value=config.get("zhipu", "history_enable")).style(switch_internal_css)
+                        input_zhipu_history_max_len = ui.input(label='Max memory length', placeholder='Maximum length of the Q&A string that can be remembered; when exceeded, the earliest remembered content is discarded, use with caution! Setting it too large may lose data', value=config.get("zhipu", "history_max_len"))
                         input_zhipu_history_max_len.style("width:200px")
                     with ui.row():
-                        input_zhipu_user_info = ui.input(label='用户信息', placeholder='用户信息，当使用characterglm时需要配置', value=config.get("zhipu", "user_info"))
+                        input_zhipu_user_info = ui.input(label='User info', placeholder='User info, needs to be configured when using characterglm', value=config.get("zhipu", "user_info"))
                         input_zhipu_user_info.style("width:400px")
-                        input_zhipu_bot_info = ui.input(label='角色信息', placeholder='角色信息，当使用characterglm时需要配置', value=config.get("zhipu", "bot_info"))
+                        input_zhipu_bot_info = ui.input(label='Character info', placeholder='Character info, needs to be configured when using characterglm', value=config.get("zhipu", "bot_info"))
                         input_zhipu_bot_info.style("width:400px")
-                        input_zhipu_bot_name = ui.input(label='角色名称', placeholder='角色名称，当使用characterglm时需要配置', value=config.get("zhipu", "bot_name"))
+                        input_zhipu_bot_name = ui.input(label='Character name', placeholder='Character name, needs to be configured when using characterglm', value=config.get("zhipu", "bot_name"))
                         input_zhipu_bot_name.style("width:200px")
-                        input_zhipu_username = ui.input(label='Username称', placeholder='Username称，默认值为用户，当使用characterglm时需要配置', value=config.get("zhipu", "username"))
+                        input_zhipu_username = ui.input(label='UsernameName', placeholder='UsernameName, the default value is user, needs to be configured when using characterglm', value=config.get("zhipu", "username"))
                         input_zhipu_username.style("width:200px")
                     with ui.row():
-                        switch_zhipu_remove_useless = ui.switch('删除无用字符', value=config.get("zhipu", "remove_useless")).style(switch_internal_css)
-                        switch_zhipu_stream = ui.switch('流式输出', value=config.get("zhipu", "stream")).tooltip("是否开启流式输出，开启后，Answer会逐句输出，关闭后，Answer会一次性输出。")
+                        switch_zhipu_remove_useless = ui.switch('Delete useless characters', value=config.get("zhipu", "remove_useless")).style(switch_internal_css)
+                        switch_zhipu_stream = ui.switch('Streaming output', value=config.get("zhipu", "stream")).tooltip("Whether to enable streaming output. When enabled, the Answer is output sentence by sentence; when disabled, the Answer is output all at once.")
                     with ui.card().style(card_css):
-                        ui.label("智能体")
+                        ui.label("Agent")
                         with ui.row():
                             input_zhipu_assistant_api_api_key = ui.input(
-                                label='智能体API Key', 
-                                placeholder='智能体 创作者中心申请API：https://chatglm.cn/developersPanel/apiSet', 
+                                label='Agent API Key', 
+                                placeholder='Agent Creator Center, apply for the API:https://chatglm.cn/developersPanel/apiSet', 
                                 value=config.get("zhipu", "assistant_api", "api_key")
-                            ).style("width:150px").tooltip('智能体 创作者中心申请API：https://chatglm.cn/developersPanel/apiSet')
+                            ).style("width:150px").tooltip('Agent Creator Center, apply for the API:https://chatglm.cn/developersPanel/apiSet')
                             input_zhipu_assistant_api_api_secret = ui.input(
-                                label='智能体API Secret', 
-                                placeholder='智能体 创作者中心申请API：https://chatglm.cn/developersPanel/apiSet', 
+                                label='Agent API Secret', 
+                                placeholder='Agent Creator Center, apply for the API:https://chatglm.cn/developersPanel/apiSet', 
                                 value=config.get("zhipu", "assistant_api", "api_secret")
-                            ).style("width:150px").tooltip('智能体 创作者中心申请API：https://chatglm.cn/developersPanel/apiSet')
+                            ).style("width:150px").tooltip('Agent Creator Center, apply for the API:https://chatglm.cn/developersPanel/apiSet')
                             input_zhipu_assistant_api_assistant_id = ui.input(
-                                label='智能体ID', 
-                                placeholder='智能体 ID，浏览器打开智能体对话页后，可通过URL地址栏查看，那一串English数字', 
+                                label='Agent ID', 
+                                placeholder='Agent ID; after opening the agent conversation page in the browser, it can be seen in the URL address bar, that string of English letters and digits', 
                                 value=config.get("zhipu", "assistant_api", "assistant_id")
-                            ).style("width:200px").tooltip('智能体 ID，浏览器打开智能体对话页后，可通过URL地址栏查看，那一串English数字')
+                            ).style("width:200px").tooltip('Agent ID; after opening the agent conversation page in the browser, it can be seen in the URL address bar, that string of English letters and digits')
 
             if config.get("webui", "show_card", "llm", "bard"):  
                 with ui.card().style(card_css):
                     ui.label("Bard")
                     with ui.grid(columns=2):
-                        input_bard_token = ui.input(label='token', placeholder='登录bard，打开F12，在cookie中获取 __Secure-1PSID 对应的值', value=config.get("bard", "token"))
+                        input_bard_token = ui.input(label='token', placeholder='Log in to bard, open F12, and get the value corresponding to __Secure-1PSID in the cookie', value=config.get("bard", "token"))
                         input_bard_token.style("width:400px")
             
             
@@ -4724,8 +4724,8 @@ def goto_func_page():
                 with ui.card().style(card_css):
                     ui.label("Tongyi Xingchen")
                     with ui.row():
-                        input_tongyixingchen_access_token = ui.input(label='密钥', value=config.get("tongyixingchen", "access_token"), placeholder='官网申请开通API-KEY，然后找官方申请调用权限')
-                        lines = ['固定角色']
+                        input_tongyixingchen_access_token = ui.input(label='Key', value=config.get("tongyixingchen", "access_token"), placeholder='Apply on the official website to activate the API-KEY, then ask the official side for call permission')
+                        lines = ['Fixed role']
                         data_json = {}
                         for line in lines:
                             data_json[line] = line
@@ -4734,38 +4734,38 @@ def goto_func_page():
                             options=data_json, 
                             value=config.get("tongyixingchen", "type")
                         ).style("width:100px")
-                        switch_tongyixingchen_history_enable = ui.switch('上下文记忆', value=config.get("tongyixingchen", "history_enable")).style(switch_internal_css)
-                        input_tongyixingchen_history_max_len = ui.input(label='最大记忆长度', value=config.get("tongyixingchen", "history_max_len"), placeholder='最长能记忆的Q&A字符串长度，超长会丢弃最早记忆的内容，请慎用！配置过大可能会有丢大米')
-                        switch_tongyixingchen_stream = ui.switch('流式输出', value=config.get("tongyixingchen", "stream")).tooltip("是否开启流式输出，开启后，Answer会逐句输出，关闭后，Answer会一次性输出。")
+                        switch_tongyixingchen_history_enable = ui.switch('Context memory', value=config.get("tongyixingchen", "history_enable")).style(switch_internal_css)
+                        input_tongyixingchen_history_max_len = ui.input(label='Max memory length', value=config.get("tongyixingchen", "history_max_len"), placeholder='Maximum length of the Q&A string that can be remembered; when exceeded, the earliest remembered content is discarded, use with caution! Setting it too large may lose data')
+                        switch_tongyixingchen_stream = ui.switch('Streaming output', value=config.get("tongyixingchen", "stream")).tooltip("Whether to enable streaming output. When enabled, the Answer is output sentence by sentence; when disabled, the Answer is output all at once.")
                     
                     with ui.card().style(card_css):
-                        ui.label("固定角色")
+                        ui.label("Fixed role")
                         with ui.row():
-                            input_tongyixingchen_GDJS_character_id = ui.input(label='角色ID', value=config.get("tongyixingchen", "固定角色", "character_id"), placeholder='官网Chat页，创建的角色，然后点开角色的信息，可以看见ID')
-                            input_tongyixingchen_GDJS_top_p = ui.input(label='top_p', value=config.get("tongyixingchen", "固定角色", "top_p"), placeholder='topP生成时，核采样方法的概率阈值。例如，取值为0.8时，仅保留累计概率之和大于等于0.8的概率分布中的token，作为随机采样的候选集。取值范围为(0,1.0)，取值越大，生成的随机性越高；取值越低，生成的随机性越低。默认值 0.95。注意，取值不要大于等于1')
-                            input_tongyixingchen_GDJS_temperature = ui.input(label='temperature', value=config.get("tongyixingchen", "固定角色", "temperature"), placeholder='较高的值将使输出更加随机，而较低的值将使输出更加集中和确定。可选，默认取值0.92')
-                            input_tongyixingchen_GDJS_seed = ui.input(label='seed', value=config.get("tongyixingchen", "固定角色", "seed"), placeholder='seed生成时，随机数的种子，用于控制模型生成的随机性。如果使用相同的种子，每次Run生成的结果都将相同；当需要复现模型的生成结果时，可以使用相同的种子。seed参数支持无符号64位整数Type。默认值 1683806810')
+                            input_tongyixingchen_GDJS_character_id = ui.input(label='CharacterID', value=config.get("tongyixingchen", "Fixed role", "character_id"), placeholder='On the official website Chat page, create a character, then open the character info and you can seeID')
+                            input_tongyixingchen_GDJS_top_p = ui.input(label='top_p', value=config.get("tongyixingchen", "Fixed role", "top_p"), placeholder='topPProbability threshold of the nucleus sampling method during generation. For example, when set to 0.8, only the tokens in the probability distribution whose cumulative probability sum is greater than or equal to 0.8 are kept as the candidate set for random sampling. The value range is (0,1.0); the larger the value, the higher the randomness of generation; the lower the value, the lower the randomness. Default 0.95. Note, the value must not be greater than or equal to1')
+                            input_tongyixingchen_GDJS_temperature = ui.input(label='temperature', value=config.get("tongyixingchen", "Fixed role", "temperature"), placeholder='A higher value makes the output more random, while a lower value makes the output more focused and deterministic. Optional, default value0.92')
+                            input_tongyixingchen_GDJS_seed = ui.input(label='seed', value=config.get("tongyixingchen", "Fixed role", "seed"), placeholder='seedRandom number seed during generation, used to control the randomness of model generation. If the same seed is used, the results generated on each Run will be identical; when you need to reproduce the generation results of the model, you can use the same seed. The seed parameter supports the unsigned 64-bit integer Type. Default 1683806810')
                         with ui.row():
-                            input_tongyixingchen_GDJS_user_id = ui.input(label='用户ID', value=config.get("tongyixingchen", "固定角色", "user_id"), placeholder='业务系统用户唯一标识，同一用户不能并行对话，必须待上次对话Reply结束后才可发起下轮对话')
-                            input_tongyixingchen_GDJS_username = ui.input(label='对话Username称', value=config.get("tongyixingchen", "固定角色", "username"), placeholder='对话Username称，即你的名字')
-                            input_tongyixingchen_GDJS_role_name = ui.input(label='固定角色名称', value=config.get("tongyixingchen", "固定角色", "role_name"), placeholder='角色ID对应的角色名称，自己编写的别告诉我你不知道！')
+                            input_tongyixingchen_GDJS_user_id = ui.input(label='UserID', value=config.get("tongyixingchen", "Fixed role", "user_id"), placeholder='Unique user identifier of the business system; the same user cannot hold parallel conversations, and the next conversation can only start after the previous Reply has finished')
+                            input_tongyixingchen_GDJS_username = ui.input(label='Chat Username', value=config.get("tongyixingchen", "Fixed role", "username"), placeholder='Chat Username, i.e. your name')
+                            input_tongyixingchen_GDJS_role_name = ui.input(label='Fixed role name', value=config.get("tongyixingchen", "Fixed role", "role_name"), placeholder='Character name corresponding to the character ID; if you wrote it yourself, do not tell me you do not know!')
 
             if config.get("webui", "show_card", "llm", "my_wenxinworkshop"): 
                 with ui.card().style(card_css):
-                    ui.label("Qianfan Large Model")
+                    ui.label("Qianfan")
                     with ui.row():
                         select_my_wenxinworkshop_type = ui.select(
                             label='Type', 
-                            options={"Qianfan Large Model": "Qianfan Large Model", "AppBuilder": "AppBuilder"}, 
+                            options={"Qianfan": "Qianfan", "AppBuilder": "AppBuilder"}, 
                             value=config.get("my_wenxinworkshop", "type")
                         ).style("width:150px")
-                        switch_my_wenxinworkshop_history_enable = ui.switch('上下文记忆', value=config.get("my_wenxinworkshop", "history_enable")).style(switch_internal_css)
-                        input_my_wenxinworkshop_history_max_len = ui.input(label='最大记忆长度', value=config.get("my_wenxinworkshop", "history_max_len"), placeholder='最长能记忆的Q&A字符串长度，超长会丢弃最早记忆的内容，请慎用！配置过大可能会有丢大米')
-                        switch_my_wenxinworkshop_stream = ui.switch('流式输出', value=config.get("my_wenxinworkshop", "stream")).tooltip("是否开启流式输出，开启后，Answer会逐句输出，关闭后，Answer会一次性输出。")
+                        switch_my_wenxinworkshop_history_enable = ui.switch('Context memory', value=config.get("my_wenxinworkshop", "history_enable")).style(switch_internal_css)
+                        input_my_wenxinworkshop_history_max_len = ui.input(label='Max memory length', value=config.get("my_wenxinworkshop", "history_max_len"), placeholder='Maximum length of the Q&A string that can be remembered; when exceeded, the earliest remembered content is discarded, use with caution! Setting it too large may lose data')
+                        switch_my_wenxinworkshop_stream = ui.switch('Streaming output', value=config.get("my_wenxinworkshop", "stream")).tooltip("Whether to enable streaming output. When enabled, the Answer is output sentence by sentence; when disabled, the Answer is output all at once.")
                     
                     with ui.row():
-                        input_my_wenxinworkshop_api_key = ui.input(label='api_key', value=config.get("my_wenxinworkshop", "api_key"), placeholder='Qianfan Large ModelPlatform，开通对应服务。应用接入-创建应用，填入api key')
-                        input_my_wenxinworkshop_secret_key = ui.input(label='secret_key', value=config.get("my_wenxinworkshop", "secret_key"), placeholder='Qianfan Large ModelPlatform，开通对应服务。应用接入-创建应用，填入secret key')
+                        input_my_wenxinworkshop_api_key = ui.input(label='api_key', value=config.get("my_wenxinworkshop", "api_key"), placeholder='Qianfan Large ModelPlatform, activate the corresponding service. Application access - create application, fill inapi key')
+                        input_my_wenxinworkshop_secret_key = ui.input(label='secret_key', value=config.get("my_wenxinworkshop", "secret_key"), placeholder='Qianfan Large ModelPlatform, activate the corresponding service. Application access - create application, fill insecret key')
                         lines = [
                             "ERNIEBot",
                             "ERNIEBot_turbo",
@@ -4794,17 +4794,17 @@ def goto_func_page():
                         for line in lines:
                             data_json[line] = line
                         select_my_wenxinworkshop_model = ui.select(
-                            label='模型', 
+                            label='Model', 
                             options=data_json, 
                             value=config.get("my_wenxinworkshop", "model")
                         ).style("width:150px")
                         
-                        input_my_wenxinworkshop_temperature = ui.input(label='温度', value=config.get("my_wenxinworkshop", "temperature"), placeholder='(0, 1.0] 控制生成文本的随机性。较高的温度值会使生成的文本更随机和多样化，而较低的温度值会使生成的文本更加确定和一致。').style("width:200px;")
-                        input_my_wenxinworkshop_top_p = ui.input(label='前p个选择', value=config.get("my_wenxinworkshop", "top_p"), placeholder='[0, 1.0] Nucleus采样。这个参数控制模型从累积概率大于一定阈值的令牌中进行采样。较高的值会产生更多的多样性，较低的值会产生更少但更确定的Answer。').style("width:200px;")
-                        input_my_wenxinworkshop_penalty_score = ui.input(label='惩罚得分', value=config.get("my_wenxinworkshop", "penalty_score"), placeholder='[1.0, 2.0] 在生成文本时对某些词语或模式施加的惩罚。这是一种调节生成内容的机制，用来减少或避免不希望出现的内容。').style("width:200px;")
+                        input_my_wenxinworkshop_temperature = ui.input(label='Temperature', value=config.get("my_wenxinworkshop", "temperature"), placeholder='(0, 1.0] Controls the randomness of the generated text. A higher temperature value makes the generated text more random and diverse, while a lower temperature value makes it more deterministic and consistent.').style("width:200px;")
+                        input_my_wenxinworkshop_top_p = ui.input(label='Top p selection', value=config.get("my_wenxinworkshop", "top_p"), placeholder='[0, 1.0] NucleusSampling. This parameter controls the model to sample from tokens whose cumulative probability exceeds a certain threshold. A higher value produces more diversity, a lower value produces fewer but more deterministic Answers.').style("width:200px;")
+                        input_my_wenxinworkshop_penalty_score = ui.input(label='Penalty score', value=config.get("my_wenxinworkshop", "penalty_score"), placeholder='[1.0, 2.0] Penalty applied to certain words or patterns when generating text. This is a mechanism for adjusting the generated content, used to reduce or avoid undesired content.').style("width:200px;")
                     with ui.row():
-                        input_my_wenxinworkshop_app_id = ui.input(label='AppBuilder 应用ID', value=config.get("my_wenxinworkshop", "app_id"), placeholder='千帆AppBuilderPlatform，个人空间 应用 应用ID').style("width:200px;")
-                        input_my_wenxinworkshop_app_token = ui.input(label='AppBuilder app_token', value=config.get("my_wenxinworkshop", "app_token"), placeholder='千帆AppBuilderPlatform，我的应用-应用配置-发布详情-我的Agent应用-API调用，填入app_token').style("width:200px;")
+                        input_my_wenxinworkshop_app_id = ui.input(label='AppBuilder App ID', value=config.get("my_wenxinworkshop", "app_id"), placeholder='Qianfan AppBuilder Platform, Personal Space, Applications, ApplicationID').style("width:200px;")
+                        input_my_wenxinworkshop_app_token = ui.input(label='AppBuilder app_token', value=config.get("my_wenxinworkshop", "app_token"), placeholder='Qianfan AppBuilder Platform, My Applications - Application Configuration - Publish Details - My Agent Applications - API Call, fill inapp_token').style("width:200px;")
                         
 
 
@@ -4813,7 +4813,7 @@ def goto_func_page():
                 with ui.card().style(card_css):
                     ui.label("Gemini")
                     with ui.row():
-                        input_gemini_api_key = ui.input(label='api_key', value=config.get("gemini", "api_key"), placeholder='谷歌AI Studio创建api key')
+                        input_gemini_api_key = ui.input(label='api_key', value=config.get("gemini", "api_key"), placeholder='Created in Google AI Studioapi key')
                         lines = [
                             "gemini-pro",
                         ]
@@ -4821,20 +4821,20 @@ def goto_func_page():
                         for line in lines:
                             data_json[line] = line
                         select_gemini_model = ui.select(
-                            label='模型', 
+                            label='Model', 
                             options=data_json, 
                             value=config.get("gemini", "model")
                         ).style("width:150px")
-                        switch_gemini_history_enable = ui.switch('上下文记忆', value=config.get("gemini", "history_enable")).style(switch_internal_css)
-                        input_gemini_history_max_len = ui.input(label='最大记忆长度', value=config.get("gemini", "history_max_len"), placeholder='最长能记忆的Q&A字符串长度，超长会丢弃最早记忆的内容，请慎用！配置过大可能会有丢大米')
+                        switch_gemini_history_enable = ui.switch('Context memory', value=config.get("gemini", "history_enable")).style(switch_internal_css)
+                        input_gemini_history_max_len = ui.input(label='Max memory length', value=config.get("gemini", "history_max_len"), placeholder='Maximum length of the Q&A string that can be remembered; when exceeded, the earliest remembered content is discarded, use with caution! Setting it too large may lose data')
                     with ui.row():
-                        input_gemini_http_proxy = ui.input(label='HTTP proxy address', value=config.get("gemini", "http_proxy"), placeholder='http代理地址，需要魔法才能使用，所以需要配置此项。').style("width:200px;")
-                        input_gemini_https_proxy = ui.input(label='HTTPS proxy address', value=config.get("gemini", "https_proxy"), placeholder='https代理地址，需要魔法才能使用，所以需要配置此项。').style("width:200px;")
+                        input_gemini_http_proxy = ui.input(label='HTTP proxy address', value=config.get("gemini", "http_proxy"), placeholder='httpProxy address; a VPN is required to use it, so this must be configured.').style("width:200px;")
+                        input_gemini_https_proxy = ui.input(label='HTTPS proxy address', value=config.get("gemini", "https_proxy"), placeholder='httpsProxy address; a VPN is required to use it, so this must be configured.').style("width:200px;")
                     with ui.row():
-                        input_gemini_max_output_tokens = ui.input(label='最大输出token数', value=config.get("gemini", "max_output_tokens"), placeholder='候选输出中包含的最大token数')
-                        input_gemini_max_temperature = ui.input(label='temperature', value=config.get("gemini", "temperature"), placeholder='控制输出的随机性。值范围为[0.0,1.0]，包括0.0和1.0。值越接近1.0，生成的响应将更加多样化和创造性，而值越接近0.0，通常会导致模型产生更加直接的响应。')
-                        input_gemini_top_p = ui.input(label='top_p', value=config.get("gemini", "top_p"), placeholder='在抽样时考虑的标记的最大累积概率。根据其分配的概率对标记进行排序，以仅考虑最可能的标记。Top-k采样直接限制要考虑的标记的最大数量，而Nucleus采样则基于累积概率限制标记的数量。')
-                        input_gemini_top_k = ui.input(label='top_k', value=config.get("gemini", "top_k"), placeholder='在抽样时考虑的标记的最大数量。Top-k采样考虑一组top_k最有可能的标记。默认值为40。')
+                        input_gemini_max_output_tokens = ui.input(label='Max output tokens', value=config.get("gemini", "max_output_tokens"), placeholder='Maximum number of tokens in the candidate output')
+                        input_gemini_max_temperature = ui.input(label='temperature', value=config.get("gemini", "temperature"), placeholder='Controls the randomness of the output. The value range is [0.0,1.0], inclusive of 0.0 and 1.0. The closer the value is to 1.0, the more diverse and creative the generated response will be, while the closer to 0.0, the more straightforward the model response usually is.')
+                        input_gemini_top_p = ui.input(label='top_p', value=config.get("gemini", "top_p"), placeholder='Maximum cumulative probability of tokens considered during sampling. Tokens are sorted by their assigned probability so that only the most likely tokens are considered. Top-k sampling directly limits the maximum number of tokens to consider, while Nucleus sampling limits the number of tokens based on cumulative probability.')
+                        input_gemini_top_k = ui.input(label='top_k', value=config.get("gemini", "top_k"), placeholder='Maximum number of tokens considered during sampling. Top-k sampling considers the set of top_k most likely tokens. The default is 40.')
 
             
             if config.get("webui", "show_card", "llm", "koboldcpp"):
@@ -4844,7 +4844,7 @@ def goto_func_page():
                         input_koboldcpp_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("koboldcpp", "api_ip_port"), 
-                            placeholder='koboldcpp启动后API监听的ipPort地址',
+                            placeholder='koboldcppThe ip and Port address the API listens on after starting',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
@@ -4856,14 +4856,14 @@ def goto_func_page():
                         input_koboldcpp_rep_pen_range = ui.input(label='rep_pen_range', value=config.get("koboldcpp", "rep_pen_range"), placeholder='rep_pen_range')
                         input_koboldcpp_rep_pen_slope = ui.input(label='rep_pen_slope', value=config.get("koboldcpp", "rep_pen_slope"), placeholder='rep_pen_slope')
                     with ui.row():
-                        input_koboldcpp_temperature = ui.input(label='temperature', value=config.get("koboldcpp", "temperature"), placeholder='控制输出的随机性。')
+                        input_koboldcpp_temperature = ui.input(label='temperature', value=config.get("koboldcpp", "temperature"), placeholder='Controls the randomness of the output.')
                         input_koboldcpp_tfs = ui.input(label='tfs', value=config.get("koboldcpp", "tfs"), placeholder='tfs')
                         input_koboldcpp_top_a = ui.input(label='top_a', value=config.get("koboldcpp", "top_a"), placeholder='top_a')
-                        input_koboldcpp_top_p = ui.input(label='top_p', value=config.get("koboldcpp", "top_p"), placeholder='在抽样时考虑的标记的最大累积概率。根据其分配的概率对标记进行排序，以仅考虑最可能的标记。Top-k采样直接限制要考虑的标记的最大数量，而Nucleus采样则基于累积概率限制标记的数量。')
-                        input_koboldcpp_top_k = ui.input(label='top_k', value=config.get("koboldcpp", "top_k"), placeholder='在抽样时考虑的标记的最大数量。Top-k采样考虑一组top_k最有可能的标记。默认值为40。')
+                        input_koboldcpp_top_p = ui.input(label='top_p', value=config.get("koboldcpp", "top_p"), placeholder='Maximum cumulative probability of tokens considered during sampling. Tokens are sorted by their assigned probability so that only the most likely tokens are considered. Top-k sampling directly limits the maximum number of tokens to consider, while Nucleus sampling limits the number of tokens based on cumulative probability.')
+                        input_koboldcpp_top_k = ui.input(label='top_k', value=config.get("koboldcpp", "top_k"), placeholder='Maximum number of tokens considered during sampling. Top-k sampling considers the set of top_k most likely tokens. The default is 40.')
                         input_koboldcpp_typical = ui.input(label='typical', value=config.get("koboldcpp", "typical"), placeholder='typical')
-                        switch_koboldcpp_history_enable = ui.switch('上下文记忆', value=config.get("koboldcpp", "history_enable")).style(switch_internal_css)
-                        input_koboldcpp_history_max_len = ui.input(label='最大记忆长度', value=config.get("koboldcpp", "history_max_len"), placeholder='最长能记忆的Q&A字符串长度，超长会丢弃最早记忆的内容，请慎用！配置过大可能会有丢大米')
+                        switch_koboldcpp_history_enable = ui.switch('Context memory', value=config.get("koboldcpp", "history_enable")).style(switch_internal_css)
+                        input_koboldcpp_history_max_len = ui.input(label='Max memory length', value=config.get("koboldcpp", "history_max_len"), placeholder='Maximum length of the Q&A string that can be remembered; when exceeded, the earliest remembered content is discarded, use with caution! Setting it too large may lose data')
 
             if config.get("webui", "show_card", "llm", "anythingllm"):
                 with ui.card().style(card_css):
@@ -4872,20 +4872,20 @@ def goto_func_page():
                         input_anythingllm_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("anythingllm", "api_ip_port"), 
-                            placeholder='anythingllm启动后API监听的ipPort地址',
+                            placeholder='anythingllmThe ip and Port address the API listens on after starting',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         )
             
-                        input_anythingllm_api_key = ui.input(label='API密钥', value=config.get("anythingllm", "api_key"), placeholder='API密钥，设置里面获取')
+                        input_anythingllm_api_key = ui.input(label='APIKey', value=config.get("anythingllm", "api_key"), placeholder='APIKey, obtained in the settings')
                         select_anythingllm_mode = ui.select(
-                            label='模式', 
-                            options={'chat': 'Chat', 'query': '仅查询知识库'}, 
+                            label='Mode', 
+                            options={'chat': 'Chat', 'query': 'Query the knowledge base only'}, 
                             value=config.get("anythingllm", "mode")
                         ).style("width:200px")
                         select_anythingllm_workspace_slug = ui.select(
-                            label='工作区slug', 
+                            label='Workspaceslug', 
                             options={config.get("anythingllm", "workspace_slug"): config.get("anythingllm", "workspace_slug")}, 
                             value=config.get("anythingllm", "workspace_slug")
                         ).style("width:200px")
@@ -4908,13 +4908,13 @@ def goto_func_page():
                                 select_anythingllm_workspace_slug.set_options(data_json)
                                 select_anythingllm_workspace_slug.set_value(config.get("anythingllm", "workspace_slug"))
 
-                                logger.info("读取工作区Success")
-                                ui.notify(position="top", type="positive", message="读取工作区Success")
+                                logger.info("Read workspaceSuccess")
+                                ui.notify(position="top", type="positive", message="Read workspaceSuccess")
                             except Exception as e:
-                                logger.error(f"读取工作区Failed!\n{e}")
-                                ui.notify(position="top", type="negative", message=f"读取工作区Failed!\n{e}")
+                                logger.error(f"Read workspaceFailed!\n{e}")
+                                ui.notify(position="top", type="negative", message=f"Read workspaceFailed!\n{e}")
 
-                        button_anythingllm_get_workspaces_list = ui.button('获取All工作区slug', on_click=lambda: anythingllm_get_workspaces_list(), color=button_internal_color).style(button_internal_css)
+                        button_anythingllm_get_workspaces_list = ui.button('Get All workspacesslug', on_click=lambda: anythingllm_get_workspaces_list(), color=button_internal_color).style(button_internal_css)
                 
 
             if config.get("webui", "show_card", "llm", "tongyi"):           
@@ -4930,7 +4930,7 @@ def goto_func_page():
                             options=data_json, 
                             value=config.get("tongyi", "type")
                         ).style("width:100px")
-                        input_tongyi_cookie_path = ui.input(label='cookie路径', placeholder='webType下，通义千问登录后，通过浏览器插件Cookie Editor获取Cookie JSON串，然后将数据保存在这个路径的文件中', value=config.get("tongyi", "cookie_path"))
+                        input_tongyi_cookie_path = ui.input(label='cookiePath', placeholder='webTypeUnder it, after logging in to Tongyi Qianwen, get the Cookie JSON string through the Cookie Editor browser plugin, then save the data in a file at this path', value=config.get("tongyi", "cookie_path"))
                         input_tongyi_cookie_path.style("width:400px")
                     with ui.row():
                         lines = [
@@ -4959,17 +4959,17 @@ def goto_func_page():
                             new_value_mode='add-unique',
                             clearable=True
                         ).style("width:150px")
-                        input_tongyi_api_key = ui.input(label='密钥', value=config.get("tongyi", "api_key"), placeholder='APIType下，DashScopePlatform申请的API密钥')
-                        input_tongyi_preset = ui.input(label='预设', placeholder='APIType下，用于指定一组预定义的设置，以便模型更好地适应特定的对话场景。', value=config.get("tongyi", "preset")).style("width:500px") 
-                        input_tongyi_temperature = ui.input(label='temperature', value=config.get("tongyi", "temperature"), placeholder='控制输出的随机性。').style("width:100px")
-                        input_tongyi_top_p = ui.input(label='top_p', value=config.get("tongyi", "top_p"), placeholder='在抽样时考虑的标记的最大累积概率。根据其分配的概率对标记进行排序，以仅考虑最可能的标记。Top-k采样直接限制要考虑的标记的最大数量，而Nucleus采样则基于累积概率限制标记的数量。').style("width:100px")
-                        input_tongyi_top_k = ui.input(label='top_k', value=config.get("tongyi", "top_k"), placeholder='在抽样时考虑的标记的最大数量。Top-k采样考虑一组top_k最有可能的标记。默认值为40。').style("width:100px")
+                        input_tongyi_api_key = ui.input(label='Key', value=config.get("tongyi", "api_key"), placeholder='APITypeUnder it, the API key applied for on the DashScope Platform')
+                        input_tongyi_preset = ui.input(label='Preset', placeholder='APITypeUnder it, used to specify a set of predefined settings so the model better fits specific conversation scenarios.', value=config.get("tongyi", "preset")).style("width:500px") 
+                        input_tongyi_temperature = ui.input(label='temperature', value=config.get("tongyi", "temperature"), placeholder='Controls the randomness of the output.').style("width:100px")
+                        input_tongyi_top_p = ui.input(label='top_p', value=config.get("tongyi", "top_p"), placeholder='Maximum cumulative probability of tokens considered during sampling. Tokens are sorted by their assigned probability so that only the most likely tokens are considered. Top-k sampling directly limits the maximum number of tokens to consider, while Nucleus sampling limits the number of tokens based on cumulative probability.').style("width:100px")
+                        input_tongyi_top_k = ui.input(label='top_k', value=config.get("tongyi", "top_k"), placeholder='Maximum number of tokens considered during sampling. Top-k sampling considers the set of top_k most likely tokens. The default is 40.').style("width:100px")
                         switch_tongyi_enable_search = ui.switch('Online search', value=config.get("tongyi", "enable_search")).style(switch_internal_css)
                         
                     with ui.row():
-                        switch_tongyi_history_enable = ui.switch('上下文记忆', value=config.get("tongyi", "history_enable")).style(switch_internal_css)
-                        input_tongyi_history_max_len = ui.input(label='最大记忆长度', value=config.get("tongyi", "history_max_len"), placeholder='最长能记忆的Q&A字符串长度，超长会丢弃最早记忆的内容，请慎用！配置过大可能会有丢大米')
-                        switch_tongyi_stream = ui.switch('流式输出', value=config.get("tongyi", "stream")).tooltip("是否开启流式输出，开启后，Answer会逐句输出，关闭后，Answer会一次性输出。")
+                        switch_tongyi_history_enable = ui.switch('Context memory', value=config.get("tongyi", "history_enable")).style(switch_internal_css)
+                        input_tongyi_history_max_len = ui.input(label='Max memory length', value=config.get("tongyi", "history_max_len"), placeholder='Maximum length of the Q&A string that can be remembered; when exceeded, the earliest remembered content is discarded, use with caution! Setting it too large may lose data')
+                        switch_tongyi_stream = ui.switch('Streaming output', value=config.get("tongyi", "stream")).tooltip("Whether to enable streaming output. When enabled, the Answer is output sentence by sentence; when disabled, the Answer is output all at once.")
                     
             if config.get("webui", "show_card", "llm", "gpt4free"):
                 with ui.card().style(card_css):
@@ -4993,36 +4993,36 @@ def goto_func_page():
                             "g4f.Provider.GptTalkRu",
                             "g4f.Provider.Koala",
                         ]
-                        # 将用户配置的值插入list（如果不存在）
+                        # Insert the value configured by the user into the list (if it does not exist)
                         if config.get("gpt4free", "provider") not in providers:
                             providers.append(config.get("gpt4free", "provider"))
                         data_json = {}
                         for line in providers:
                             data_json[line] = line
                         select_gpt4free_provider = ui.select(
-                            label='供应商', 
+                            label='Provider', 
                             options=data_json, 
                             value=config.get("gpt4free", "provider"),
                             with_input=True,
                             new_value_mode='add-unique',
                             clearable=True
                         )
-                        input_gpt4free_api_key = ui.input(label='API密钥', placeholder='API KEY，支持代理', value=config.get("gpt4free", "api_key")).style("width:300px;")
-                        # button_gpt4free_test = ui.button('测试', on_click=lambda: test_openai_key(), color=button_bottom_color).style(button_bottom_css)
+                        input_gpt4free_api_key = ui.input(label='APIKey', placeholder='API KEY, supports proxy', value=config.get("gpt4free", "api_key")).style("width:300px;")
+                        # button_gpt4free_test = ui.button('Test', on_click=lambda: test_openai_key(), color=button_bottom_color).style(button_bottom_css)
 
                         gpt4free_models = [
                             "gpt-3.5-turbo",
                             "gpt-4",
                             "gpt-4-turbo",
                         ]
-                        # 将用户配置的值插入list（如果不存在）
+                        # Insert the value configured by the user into the list (if it does not exist)
                         if config.get("gpt4free", "model") not in gpt4free_models:
                             gpt4free_models.append(config.get("gpt4free", "model"))
                         data_json = {}
                         for line in gpt4free_models:
                             data_json[line] = line
                         select_gpt4free_model = ui.select(
-                            label='模型', 
+                            label='Model', 
                             options=data_json, 
                             value=config.get("gpt4free", "model"),
                             with_input=True,
@@ -5031,11 +5031,11 @@ def goto_func_page():
                         )
                         input_gpt4free_proxy = ui.input(label='HTTP proxy address', placeholder='HTTP proxy address', value=config.get("gpt4free", "proxy")).style("width:300px;")
                     with ui.row():
-                        input_gpt4free_max_tokens = ui.input(label='最大token数', value=config.get("gpt4free", "max_tokens"), placeholder='限制生成Answer的最大长度。').style("width:200px;")
+                        input_gpt4free_max_tokens = ui.input(label='Max tokens', value=config.get("gpt4free", "max_tokens"), placeholder='Limit the maximum length of the generated Answer.').style("width:200px;")
                     
-                        input_gpt4free_preset = ui.input(label='预设', value=config.get("gpt4free", "preset"), placeholder='用于指定一组预定义的设置，以便模型更好地适应特定的对话场景。').style("width:500px") 
-                        switch_gpt4free_history_enable = ui.switch('上下文记忆', value=config.get("gpt4free", "history_enable")).style(switch_internal_css)
-                        input_gpt4free_history_max_len = ui.input(label='最大记忆长度', value=config.get("gpt4free", "history_max_len"), placeholder='最长能记忆的Q&A字符串长度，超长会丢弃最早记忆的内容，请慎用！配置过大可能会有丢大米')
+                        input_gpt4free_preset = ui.input(label='Preset', value=config.get("gpt4free", "preset"), placeholder='Used to specify a set of predefined settings so the model better fits specific conversation scenarios.').style("width:500px") 
+                        switch_gpt4free_history_enable = ui.switch('Context memory', value=config.get("gpt4free", "history_enable")).style(switch_internal_css)
+                        input_gpt4free_history_max_len = ui.input(label='Max memory length', value=config.get("gpt4free", "history_max_len"), placeholder='Maximum length of the Q&A string that can be remembered; when exceeded, the earliest remembered content is discarded, use with caution! Setting it too large may lose data')
 
             if config.get("webui", "show_card", "llm", "dify"):
                 with ui.card().style(card_css):
@@ -5044,36 +5044,36 @@ def goto_func_page():
                         input_dify_api_ip_port = ui.input(
                             label="API address", 
                             value=config.get("dify", "api_ip_port"), 
-                            placeholder='Dify API address，从应用的API文档复制过来即可', 
+                            placeholder='Dify API address, just copy it from the API documentation of the application', 
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
-                        ).style("width:200px;").tooltip('Dify API address，从应用的API文档复制过来即可')
-                        input_dify_api_key = ui.input(label='API密钥', value=config.get("dify", "api_key"), placeholder='API密钥，API页面获取').tooltip('API密钥，API页面获取')
+                        ).style("width:200px;").tooltip('Dify API address, just copy it from the API documentation of the application')
+                        input_dify_api_key = ui.input(label='APIKey', value=config.get("dify", "api_key"), placeholder='APIKey, obtained from the API page').tooltip('APIKey, obtained from the API page')
                         select_dify_type = ui.select(
-                            label='应用Type', 
-                            options={'Chat助手': 'Chat助手', '工作流': '工作流'}, 
+                            label='App type', 
+                            options={'Chat assistant': 'Chat assistant', 'Workflow': 'Workflow'}, 
                             value=config.get("dify", "type")
                         ).style("width:200px")
-                        switch_dify_stream = ui.switch('流式响应', value=config.get("dify", "stream")).style(switch_internal_css)
+                        switch_dify_stream = ui.switch('Streaming response', value=config.get("dify", "stream")).style(switch_internal_css)
                         
-                        switch_dify_history_enable = ui.switch('上下文记忆', value=config.get("dify", "history_enable")).style(switch_internal_css)
+                        switch_dify_history_enable = ui.switch('Context memory', value=config.get("dify", "history_enable")).style(switch_internal_css)
                         textarea_dify_custom_params = ui.textarea(
-                            label=f"工作流自定义参数（JSON）", 
+                            label=f"Workflow custom parameters (JSON)", 
                             value=config.get("dify", "custom_params"), 
-                            placeholder='inputs传递的参数，注意JSON格式',
+                            placeholder='inputsParameters to pass, note the JSON format',
                         ).style("width:200px;").tooltip('API link for sending HTTP requests')
             if config.get("webui", "show_card", "llm", "volcengine"):
                 with ui.card().style(card_css):
                     ui.label("Volcengine")
                     with ui.row():
-                        input_volcengine_model = ui.input(label='模型ID', value=config.get("volcengine", "model"), placeholder='推理接入点名称').tooltip('推理接入点名称')
+                        input_volcengine_model = ui.input(label='Model ID', value=config.get("volcengine", "model"), placeholder='Inference endpoint name').tooltip('Inference endpoint name')
                         
-                        input_volcengine_api_key = ui.input(label='API密钥', value=config.get("volcengine", "api_key"), placeholder='API密钥，API页面获取').tooltip('API密钥，API页面获取')
-                        input_volcengine_preset = ui.input(label='预设', value=config.get("volcengine", "preset"), placeholder='用于指定一组预定义的设置，以便模型更好地适应特定的对话场景。').style("width:500px") 
-                        switch_volcengine_history_enable = ui.switch('上下文记忆', value=config.get("volcengine", "history_enable")).style(switch_internal_css)
-                        input_volcengine_history_max_len = ui.input(label='最大记忆长度', value=config.get("volcengine", "history_max_len"), placeholder='最长能记忆的Q&A字符串长度，超长会丢弃最早记忆的内容，请慎用！配置过大可能会有丢大米')
-                        switch_volcengine_stream = ui.switch('流式输出', value=config.get("volcengine", "stream")).style(switch_internal_css)
+                        input_volcengine_api_key = ui.input(label='APIKey', value=config.get("volcengine", "api_key"), placeholder='APIKey, obtained from the API page').tooltip('APIKey, obtained from the API page')
+                        input_volcengine_preset = ui.input(label='Preset', value=config.get("volcengine", "preset"), placeholder='Used to specify a set of predefined settings so the model better fits specific conversation scenarios.').style("width:500px") 
+                        switch_volcengine_history_enable = ui.switch('Context memory', value=config.get("volcengine", "history_enable")).style(switch_internal_css)
+                        input_volcengine_history_max_len = ui.input(label='Max memory length', value=config.get("volcengine", "history_max_len"), placeholder='Maximum length of the Q&A string that can be remembered; when exceeded, the earliest remembered content is discarded, use with caution! Setting it too large may lose data')
+                        switch_volcengine_stream = ui.switch('Streaming output', value=config.get("volcengine", "stream")).style(switch_internal_css)
                         
 
             if config.get("webui", "show_card", "llm", "custom_llm"):
@@ -5089,14 +5089,14 @@ def goto_func_page():
                             }
                         ).style("width:200px;").tooltip('API link for sending HTTP requests')
                         textarea_custom_llm_method = ui.select(label=f"APIType", value=config.get("custom_llm", "method"), options={"GET": "GET", "POST": "POST"}).style("width:100px;").tooltip('APIType')
-                        textarea_custom_llm_headers = ui.textarea(label=f"请求头", value=config.get("custom_llm", "headers"), placeholder='换行分隔，例：Content-Type:application/json\nAuthorization:Bearer sk').style("width:300px;").tooltip('换行分隔，例：Content-Type:application/json\nAuthorization:Bearer sk')
-                        textarea_custom_llm_proxies = ui.textarea(label=f"代理", value=config.get("custom_llm", "proxies"), placeholder='requests库代理配置方法，json数据用"双引号').style("width:200px;").tooltip('requests库代理配置方法，json数据用"双引号')
+                        textarea_custom_llm_headers = ui.textarea(label=f"Request headers", value=config.get("custom_llm", "headers"), placeholder='Separate with line breaks, e.g.:Content-Type:application/json\nAuthorization:Bearer sk').style("width:300px;").tooltip('Separate with line breaks, e.g.:Content-Type:application/json\nAuthorization:Bearer sk')
+                        textarea_custom_llm_proxies = ui.textarea(label=f"Proxy", value=config.get("custom_llm", "proxies"), placeholder='requestsLibrary proxy configuration method, json data uses"Double quotes').style("width:200px;").tooltip('requestsLibrary proxy configuration method, json data uses"Double quotes')
                     with ui.row():
-                        select_custom_llm_body_type = ui.select(label=f"请求体Type", value=config.get("custom_llm", "body_type"), options={"json": "json", "raw": "raw"}).style("width:150px;").tooltip('请求体Type')
-                        textarea_custom_llm_body = ui.textarea(label=f"请求体", value=config.get("custom_llm", "body"), placeholder='请求体，写字符串，注意变量需要两个大括号包裹{{}}，json数据的话用"双引号').style("width:300px;").tooltip('请求体，写字符串，注意变量需要两个大括号包裹{{}}，json数据的话用"双引号')
-                        select_custom_llm_resp_data_type = ui.select(label=f"请求返回Data type", value=config.get("custom_llm", "resp_data_type"), options={"json": "json", "content": "content"}).style("width:150px;").tooltip('请求返回Data type')
-                        textarea_custom_llm_data_analysis = ui.textarea(label=f"数据解析（eval执行）", value=config.get("custom_llm", "data_analysis"), placeholder='Data parsing; do not modify the resp variable arbitrarily, it is used to parse the final returned data').style("width:300px;").tooltip('Data parsing; do not modify the resp variable arbitrarily, it is used to parse the final returned data')
-                        textarea_custom_llm_resp_template = ui.textarea(label=f"返回内容模板", value=config.get("custom_llm", "resp_template"), placeholder='Do not delete the data variable arbitrarily; dynamic variables are supported; it will finally be merged into the complete content for audio synthesis').style("width:300px;").tooltip('Do not delete the data variable arbitrarily; dynamic variables are supported; it will finally be merged into the complete content for audio synthesis')
+                        select_custom_llm_body_type = ui.select(label=f"Request bodyType", value=config.get("custom_llm", "body_type"), options={"json": "json", "raw": "raw"}).style("width:150px;").tooltip('Request bodyType')
+                        textarea_custom_llm_body = ui.textarea(label=f"Request body", value=config.get("custom_llm", "body"), placeholder='Request body, write a string; note that variables must be wrapped in two curly braces {{}}; for json data use"Double quotes').style("width:300px;").tooltip('Request body, write a string; note that variables must be wrapped in two curly braces {{}}; for json data use"Double quotes')
+                        select_custom_llm_resp_data_type = ui.select(label=f"Request responseData type", value=config.get("custom_llm", "resp_data_type"), options={"json": "json", "content": "content"}).style("width:150px;").tooltip('Request responseData type')
+                        textarea_custom_llm_data_analysis = ui.textarea(label=f"Data parsing (executed with eval)", value=config.get("custom_llm", "data_analysis"), placeholder='Data parsing; do not modify the resp variable arbitrarily, it is used to parse the final returned data').style("width:300px;").tooltip('Data parsing; do not modify the resp variable arbitrarily, it is used to parse the final returned data')
+                        textarea_custom_llm_resp_template = ui.textarea(label=f"Response content template", value=config.get("custom_llm", "resp_template"), placeholder='Do not delete the data variable arbitrarily; dynamic variables are supported; it will finally be merged into the complete content for audio synthesis').style("width:300px;").tooltip('Do not delete the data variable arbitrarily; dynamic variables are supported; it will finally be merged into the complete content for audio synthesis')
 
             if config.get("webui", "show_card", "llm", "llm_tpu"): 
                 with ui.card().style(card_css):
@@ -5105,37 +5105,37 @@ def goto_func_page():
                         input_llm_tpu_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("llm_tpu", "api_ip_port"), 
-                            placeholder='llm_tpu启动gradio web demo后监听的ipPort地址',
+                            placeholder='llm_tpuThe ip and Port address to listen on after starting the gradio web demo',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         )
-                        switch_llm_tpu_history_enable = ui.switch('上下文记忆', value=config.get("llm_tpu", "history_enable")).style(switch_internal_css)
-                        input_llm_tpu_history_max_len = ui.input(label='最大记忆长度', value=config.get("llm_tpu", "history_max_len"), placeholder='最长能记忆的Q&A字符串长度，超长会丢弃最早记忆的内容，请慎用！配置过大可能会有丢大米')
+                        switch_llm_tpu_history_enable = ui.switch('Context memory', value=config.get("llm_tpu", "history_enable")).style(switch_internal_css)
+                        input_llm_tpu_history_max_len = ui.input(label='Max memory length', value=config.get("llm_tpu", "history_max_len"), placeholder='Maximum length of the Q&A string that can be remembered; when exceeded, the earliest remembered content is discarded, use with caution! Setting it too large may lose data')
                     
                     with ui.row():
                         input_llm_tpu_max_length = ui.input(label='max_length', value=config.get("llm_tpu", "max_length"), placeholder='max_length').style("width:200px;")
-                        input_llm_tpu_temperature = ui.input(label='温度', value=config.get("llm_tpu", "temperature"), placeholder='(0, 1.0] 控制生成文本的随机性。较高的温度值会使生成的文本更随机和多样化，而较低的温度值会使生成的文本更加确定和一致。').style("width:200px;")
-                        input_llm_tpu_top_p = ui.input(label='前p个选择', value=config.get("llm_tpu", "top_p"), placeholder='[0, 1.0] Nucleus采样。这个参数控制模型从累积概率大于一定阈值的令牌中进行采样。较高的值会产生更多的多样性，较低的值会产生更少但更确定的Answer。').style("width:200px;")
+                        input_llm_tpu_temperature = ui.input(label='Temperature', value=config.get("llm_tpu", "temperature"), placeholder='(0, 1.0] Controls the randomness of the generated text. A higher temperature value makes the generated text more random and diverse, while a lower temperature value makes it more deterministic and consistent.').style("width:200px;")
+                        input_llm_tpu_top_p = ui.input(label='Top p selection', value=config.get("llm_tpu", "top_p"), placeholder='[0, 1.0] NucleusSampling. This parameter controls the model to sample from tokens whose cumulative probability exceeds a certain threshold. A higher value produces more diversity, a lower value produces fewer but more deterministic Answers.').style("width:200px;")
                         
         with ui.tab_panel(tts_page).style(tab_panel_css):
-            # 通用-合成试听音频
+            # General - synthesize preview audio
             async def tts_common_audio_synthesis():
-                ui.notify(position="top", type="warning", message="音频合成中，将会阻塞其他任务Run，请勿做其他操作，查看Log情况，耐心等待")
-                logger.warning("音频合成中，将会阻塞其他任务Run，请勿做其他操作，查看Log情况，耐心等待")
+                ui.notify(position="top", type="warning", message="Audio synthesis in progress, it will block other tasks from Running, please do not do anything else, check the Log and wait patiently")
+                logger.warning("Audio synthesis in progress, it will block other tasks from Running, please do not do anything else, check the Log and wait patiently")
                 
                 content = input_tts_common_text.value
                 audio_synthesis_type = select_tts_common_audio_synthesis_type.value
 
-                # 使用本地配置进行音频合成，返回音频路径
+                # Synthesize audio using the local configuration, returns the audio path
                 file_path = await audio.audio_synthesis_use_local_config(content, audio_synthesis_type)
 
                 if file_path:
-                    logger.info(f"音频Synthesis succeeded，存储于：{file_path}")
-                    ui.notify(position="top", type="positive", message=f"音频Synthesis succeeded，存储于：{file_path}")
+                    logger.info(f"Audio Synthesis succeeded, stored at:{file_path}")
+                    ui.notify(position="top", type="positive", message=f"Audio Synthesis succeeded, stored at:{file_path}")
                 else:
-                    logger.error(f"音频合成Failed!请查看Log排查Question")
-                    ui.notify(position="top", type="negative", message=f"音频合成Failed!请查看Log排查Question")
+                    logger.error(f"Audio synthesis Failed! Please check the Log to troubleshootQuestion")
+                    ui.notify(position="top", type="negative", message=f"Audio synthesis Failed! Please check the Log to troubleshootQuestion")
                     return
 
                 def clear_tts_common_audio_card(file_path):
@@ -5147,7 +5147,7 @@ def goto_func_page():
                 
                 # Clear the card
                 tts_common_audio_card.clear()
-                tmp_label = ui.label(f"音频Synthesis succeeded，存储于：{file_path}")
+                tmp_label = ui.label(f"Audio Synthesis succeeded, stored at:{file_path}")
                 tmp_label.move(tts_common_audio_card)
                 audio_tmp = ui.audio(src=file_path)
                 audio_tmp.move(tts_common_audio_card)
@@ -5156,19 +5156,19 @@ def goto_func_page():
                 
                 
             with ui.card().style(card_css):
-                ui.label("合成测试（只是测试，若确认使用此TTS，请前往 Common Config 配置 Speech synthesis）")
+                ui.label("Synthesis test (for testing only; if you confirm using this TTS, go to Common Config to configure Speech synthesis)")
                 with ui.row():
                     select_tts_common_audio_synthesis_type = ui.select(
                         label='Speech synthesis', 
                         options=audio_synthesis_type_options, 
                         value=config.get("audio_synthesis_type")
                     ).style("width:200px;")
-                    input_tts_common_text = ui.input(label='待合成音频内容', placeholder='此处填写待合成的音频文本内容', value="此处填写待合成的音频文本内容，用于试听效果，Type切换不需要保存即可生效。").style("width:350px;")
-                    button_tts_common_audio_synthesis = ui.button('试听', on_click=lambda: tts_common_audio_synthesis(), color=button_internal_color).style(button_internal_css)
+                    input_tts_common_text = ui.input(label='Audio content to be synthesized', placeholder='Fill in the audio text content to be synthesized here', value="Fill in the audio text content to be synthesized here, for previewing the effect; Type changes take effect without saving.").style("width:350px;")
+                    button_tts_common_audio_synthesis = ui.button('Preview', on_click=lambda: tts_common_audio_synthesis(), color=button_internal_color).style(button_internal_css)
                 tts_common_audio_card = ui.card()
                 with tts_common_audio_card.style(card_css):
                     with ui.row():
-                        ui.label("此处显示生成的音频，仅显示最新合成的音频，可以在此操作删除合成的音频")
+                        ui.label("The generated audio is shown here, only the most recently synthesized audio is shown, and you can delete the synthesized audio here")
 
             if config.get("webui", "show_card", "tts", "edge-tts"):
                 with ui.card().style(card_css):
@@ -5176,21 +5176,21 @@ def goto_func_page():
                     with ui.row():
                         with open('data/edge-tts-voice-list.txt', 'r') as file:
                             file_content = file.read()
-                        # 按行分割内容，并去除每行末尾的换行符
+                        # Split content by line and remove the line break at the end of each line
                         lines = file_content.strip().split('\n')
                         data_json = {}
                         for line in lines:
                             data_json[line] = line
                         select_edge_tts_voice = ui.select(
-                            label='说话人', 
+                            label='Speaker', 
                             options=data_json, 
                             value=config.get("edge-tts", "voice")
                         )
 
-                        input_edge_tts_rate = ui.input(label='语速增益', placeholder='语速增益 默认是 +0%，可以增减，注意 + - %符合别搞没了，不然会影响Speech synthesis', value=config.get("edge-tts", "rate")).style("width:150px;").tooltip("语速增益 默认是 +0%，可以增减，注意 + - %符合别搞没了，不然会影响Speech synthesis")
+                        input_edge_tts_rate = ui.input(label='Speech rate gain', placeholder='Speech rate gain, default is +0%, can be increased or decreased; be careful not to lose the + - % symbols, otherwise it will affectSpeech synthesis', value=config.get("edge-tts", "rate")).style("width:150px;").tooltip("Speech rate gain, default is +0%, can be increased or decreased; be careful not to lose the + - % symbols, otherwise it will affectSpeech synthesis")
 
-                        input_edge_tts_volume = ui.input(label='音量增益', placeholder='音量增益 默认是 +0%，可以增减，注意 + - %符合别搞没了，不然会影响Speech synthesis', value=config.get("edge-tts", "volume")).style("width:150px;").tooltip("音量增益 默认是 +0%，可以增减，注意 + - %符合别搞没了，不然会影响Speech synthesis")
-                        input_edge_tts_proxy = ui.input(label='HTTP proxy address', placeholder='例：http://127.0.0.1:10809', value=config.get("edge-tts", "proxy")).style("width:300px;").tooltip("根据您的实际代理配置，例：http://127.0.0.1:10809")
+                        input_edge_tts_volume = ui.input(label='Volume gain', placeholder='Volume gain, default is +0%, can be increased or decreased; be careful not to lose the + - % symbols, otherwise it will affectSpeech synthesis', value=config.get("edge-tts", "volume")).style("width:150px;").tooltip("Volume gain, default is +0%, can be increased or decreased; be careful not to lose the + - % symbols, otherwise it will affectSpeech synthesis")
+                        input_edge_tts_proxy = ui.input(label='HTTP proxy address', placeholder='Example:http://127.0.0.1:10809', value=config.get("edge-tts", "proxy")).style("width:300px;").tooltip("According to your actual proxy configuration, e.g.:http://127.0.0.1:10809")
                         
             if config.get("webui", "show_card", "tts", "vits"):
                 with ui.card().style(card_css):
@@ -5201,20 +5201,20 @@ def goto_func_page():
                             options={'vits': 'vits', 'bert_vits2': 'bert_vits2', 'gpt_sovits': 'gpt_sovits'}, 
                             value=config.get("vits", "type")
                         ).style("width:200px;")
-                        input_vits_config_path = ui.input(label='Config file path', placeholder='模型配置文件存储路径', value=config.get("vits", "config_path")).style("width:200px;")
+                        input_vits_config_path = ui.input(label='Config file path', placeholder='Model configuration file storage path', value=config.get("vits", "config_path")).style("width:200px;")
 
                         input_vits_api_ip_port = ui.input(
                             label='API address', 
-                            placeholder='vits-simple-api启动后监听的ipPort地址', 
+                            placeholder='vits-simple-apiThe ip and Port address to listen on after starting', 
                             value=config.get("vits", "api_ip_port"),
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         ).style("width:300px;")
                     with ui.row():
-                        # input_vits_id = ui.input(label='说话人ID', placeholder='API启动时会给配置文件重新划分id，一般为拼音顺序排列，从0开始', value=config.get("vits", "id")).style("width:200px;")
+                        # input_vits_id = ui.input(label='SpeakerID', placeholder='APIOn startup the configuration file ids are reassigned, generally in pinyin order, starting from 0', value=config.get("vits", "id")).style("width:200px;")
                         select_vits_id = ui.select(
-                            label='说话人ID', 
+                            label='SpeakerID', 
                             options={config.get("vits", "id"): config.get("vits", "id")}, 
                             value=config.get("vits", "id")
                         ).style("width:200px;")
@@ -5226,11 +5226,11 @@ def goto_func_page():
                                 resp_data = await common.send_async_request(API_URL, "GET", resp_data_type="json")
 
                                 if resp_data is None:
-                                    content = "vits-simple-api检索说话人Failure，请查看双方Log排查Question"
+                                    content = "vits-simple-api speaker lookup failed, check both logs"
                                     logger.error(content)
                                     ui.notify(position="top", type="negative", message=content)
                                 else:
-                                    content = "vits-simple-api检索说话人Success"
+                                    content = "vits-simple-api speaker lookup succeeded"
                                     logger.info(content)
                                     ui.notify(position="top", type="positive", message=content)
 
@@ -5250,49 +5250,49 @@ def goto_func_page():
                                     
                             except Exception as e:
                                 logger.error(traceback.format_exc())
-                                logger.error(f'vits-simple-api未知错误: {e}')
-                                ui.notify(position="top", type="negative", message=f'vits-simple-api未知错误: {e}')
+                                logger.error(f'vits-simple-apiUnknown error: {e}')
+                                ui.notify(position="top", type="negative", message=f'vits-simple-apiUnknown error: {e}')
 
                         
                         select_vits_lang = ui.select(
-                            label='语言', 
-                            options={'自动': '自动', 'Chinese': 'Chinese', 'English': 'English', 'Japanese': 'Japanese'}, 
+                            label='Language', 
+                            options={'Auto': 'Auto', '中文': 'Chinese', '英文': 'English', '日文': 'Japanese'}, 
                             value=config.get("vits", "lang")
                         ).style("width:100px;")
-                        input_vits_length = ui.input(label='语音长度', placeholder='调节语音长度，相当于调节语速，该数值越大语速越慢', value=config.get("vits", "length")).style("width:200px;")
+                        input_vits_length = ui.input(label='Speech length', placeholder='Adjust speech length, equivalent to adjusting speech rate; the larger the value, the slower the speech', value=config.get("vits", "length")).style("width:200px;")
 
-                        button_vits_get_speaker_id = ui.button('检索说话人', on_click=lambda: vits_get_speaker_id(), color=button_internal_color).style(button_internal_css)
+                        button_vits_get_speaker_id = ui.button('Retrieve speakers', on_click=lambda: vits_get_speaker_id(), color=button_internal_color).style(button_internal_css)
                 
                     with ui.row():
-                        input_vits_noise = ui.input(label='噪声', placeholder='控制感情变化程度', value=config.get("vits", "noise")).style("width:200px;")
+                        input_vits_noise = ui.input(label='Noise', placeholder='Controls the degree of emotional variation', value=config.get("vits", "noise")).style("width:200px;")
                     
-                        input_vits_noisew = ui.input(label='噪声偏差', placeholder='控制音素发音长度', value=config.get("vits", "noisew")).style("width:200px;")
+                        input_vits_noisew = ui.input(label='Noise deviation', placeholder='Controls the phoneme pronunciation length', value=config.get("vits", "noisew")).style("width:200px;")
 
-                        input_vits_max = ui.input(label='分段阈值', placeholder='按标点符号分段，加起来大于max时为一段文本。max<=0表示不分段。', value=config.get("vits", "max")).style("width:200px;")
-                        input_vits_format = ui.input(label='音频格式', placeholder='支持wav,ogg,silk,mp3,flac', value=config.get("vits", "format")).style("width:200px;")
+                        input_vits_max = ui.input(label='Segment threshold', placeholder='Split into segments by punctuation; when the sum exceeds max it becomes one segment of text. max<=0 means no segmentation.', value=config.get("vits", "max")).style("width:200px;")
+                        input_vits_format = ui.input(label='Audio format', placeholder='Supportswav,ogg,silk,mp3,flac', value=config.get("vits", "format")).style("width:200px;")
 
-                        input_vits_sdp_radio = ui.input(label='SDP/DP混合比', placeholder='SDP/DP混合比：SDP在合成时的占比，理论上此比率越高，合成的语音语调方差越大。', value=config.get("vits", "sdp_radio")).style("width:200px;")
+                        input_vits_sdp_radio = ui.input(label='SDP/DPMix ratio', placeholder='SDP/DPMix ratio: the proportion of SDP in synthesis; in theory the higher this ratio, the larger the variance of the synthesized speech intonation.', value=config.get("vits", "sdp_radio")).style("width:200px;")
 
                     with ui.expansion('GPT-SOVITS', icon="settings", value=True).classes('w-full'):
                         with ui.row():
                             select_vits_gpt_sovits_id = ui.select(
-                                label='说话人ID', 
+                                label='SpeakerID', 
                                 options={config.get("vits", "gpt_sovits", "id"): config.get("vits", "gpt_sovits", "id")}, 
                                 value=config.get("vits", "gpt_sovits", "id")
                             ).style("width:200px;")
 
                             select_vits_gpt_sovits_lang = ui.select(
-                                label='语言', 
-                                options={'auto': '自动', 'zh': 'Chinese', 'jp': 'English', 'en': 'Japanese'}, 
+                                label='Language', 
+                                options={'auto': 'Auto', 'zh': 'Chinese', 'jp': 'Japanese', 'en': 'English'}, 
                                 value=config.get("vits", "gpt_sovits", "lang")
                             ).style("width:100px;")
-                            input_vits_gpt_sovits_format = ui.input(label='音频格式', value=config.get("vits", "gpt_sovits", "format"), placeholder='支持wav,ogg,silk,mp3,flac').style("width:100px;")
+                            input_vits_gpt_sovits_format = ui.input(label='Audio format', value=config.get("vits", "gpt_sovits", "format"), placeholder='Supportswav,ogg,silk,mp3,flac').style("width:100px;")
                             input_vits_gpt_sovits_segment_size = ui.input(label='segment_size', value=config.get("vits", "gpt_sovits", "segment_size"), placeholder='segment_size').style("width:100px;")
-                            input_vits_gpt_sovits_reference_audio = ui.input(label='参考音频路径', value=config.get("vits", "gpt_sovits", "reference_audio"), placeholder='参考音频路径').style("width:200px;")
-                            input_vits_gpt_sovits_prompt_text = ui.input(label='参考音频文本内容', value=config.get("vits", "gpt_sovits", "prompt_text"), placeholder='参考音频文本内容').style("width:200px;")
+                            input_vits_gpt_sovits_reference_audio = ui.input(label='Reference audio path', value=config.get("vits", "gpt_sovits", "reference_audio"), placeholder='Reference audio path').style("width:200px;")
+                            input_vits_gpt_sovits_prompt_text = ui.input(label='Reference audio text content', value=config.get("vits", "gpt_sovits", "prompt_text"), placeholder='Reference audio text content').style("width:200px;")
                             select_vits_gpt_sovits_prompt_lang = ui.select(
-                                label='参考音频语言', 
-                                options={'auto': '自动', 'zh': 'Chinese', 'jp': 'English', 'en': 'Japanese'}, 
+                                label='Reference audio language', 
+                                options={'auto': 'Auto', 'zh': 'Chinese', 'jp': 'Japanese', 'en': 'English'}, 
                                 value=config.get("vits", "gpt_sovits", "prompt_lang")
                             ).style("width:150px;")
                         with ui.row():
@@ -5316,97 +5316,97 @@ def goto_func_page():
                         with ui.row():
                             input_bert_vits2_api_ip_port = ui.input(
                                 label='API address', 
-                                placeholder='bert_vits2启动后Hiyori UI后监听的ipPort地址', 
+                                placeholder='bert_vits2The ip and Port address the Hiyori UI listens on after starting', 
                                 value=config.get("bert_vits2", "api_ip_port"),
                                 validation={
                                     'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                                 }
                             ).style("width:300px;")
-                            input_bert_vits2_model_id = ui.input(label='模型ID', placeholder='给配置文件重新划分id，一般为拼音顺序排列，从0开始', value=config.get("bert_vits2", "model_id")).style("width:200px;")
-                            input_bert_vits2_speaker_name = ui.input(label='说话人名称', value=config.get("bert_vits2", "speaker_name"), placeholder='配置文件中，对应的说话人的名称').style("width:200px;")
-                            input_bert_vits2_speaker_id = ui.input(label='说话人ID', value=config.get("bert_vits2", "speaker_id"), placeholder='给配置文件重新划分id，一般为拼音顺序排列，从0开始').style("width:200px;")
+                            input_bert_vits2_model_id = ui.input(label='Model ID', placeholder='Reassign ids to the configuration file, generally in pinyin order, starting from 0', value=config.get("bert_vits2", "model_id")).style("width:200px;")
+                            input_bert_vits2_speaker_name = ui.input(label='Speaker name', value=config.get("bert_vits2", "speaker_name"), placeholder='Name of the corresponding speaker in the configuration file').style("width:200px;")
+                            input_bert_vits2_speaker_id = ui.input(label='SpeakerID', value=config.get("bert_vits2", "speaker_id"), placeholder='Reassign ids to the configuration file, generally in pinyin order, starting from 0').style("width:200px;")
                             
                             select_bert_vits2_language = ui.select(
-                                label='语言', 
-                                options={'auto': '自动', 'ZH': 'Chinese', 'JP': 'Japanese', 'EN': 'English'}, 
+                                label='Language', 
+                                options={'auto': 'Auto', 'ZH': 'Chinese', 'JP': 'Japanese', 'EN': 'English'}, 
                                 value=config.get("bert_vits2", "language")
                             ).style("width:100px;")
-                            input_bert_vits2_length = ui.input(label='语音长度', placeholder='调节语音长度，相当于调节语速，该数值越大语速越慢', value=config.get("bert_vits2", "length")).style("width:200px;")
+                            input_bert_vits2_length = ui.input(label='Speech length', placeholder='Adjust speech length, equivalent to adjusting speech rate; the larger the value, the slower the speech', value=config.get("bert_vits2", "length")).style("width:200px;")
 
                         with ui.row():
-                            input_bert_vits2_noise = ui.input(label='噪声', value=config.get("bert_vits2", "noise"), placeholder='控制感情变化程度').style("width:200px;")
-                            input_bert_vits2_noisew = ui.input(label='噪声偏差', value=config.get("bert_vits2", "noisew"), placeholder='控制音素发音长度').style("width:200px;")
-                            input_bert_vits2_sdp_radio = ui.input(label='SDP/DP混合比', value=config.get("bert_vits2", "sdp_radio"), placeholder='SDP/DP混合比：SDP在合成时的占比，理论上此比率越高，合成的语音语调方差越大。').style("width:200px;")
+                            input_bert_vits2_noise = ui.input(label='Noise', value=config.get("bert_vits2", "noise"), placeholder='Controls the degree of emotional variation').style("width:200px;")
+                            input_bert_vits2_noisew = ui.input(label='Noise deviation', value=config.get("bert_vits2", "noisew"), placeholder='Controls the phoneme pronunciation length').style("width:200px;")
+                            input_bert_vits2_sdp_radio = ui.input(label='SDP/DPMix ratio', value=config.get("bert_vits2", "sdp_radio"), placeholder='SDP/DPMix ratio: the proportion of SDP in synthesis; in theory the higher this ratio, the larger the variance of the synthesized speech intonation.').style("width:200px;")
                         with ui.row():
                             input_bert_vits2_emotion = ui.input(label='emotion', value=config.get("bert_vits2", "emotion"), placeholder='emotion').style("width:200px;")
-                            input_bert_vits2_style_text = ui.input(label='风格文本', value=config.get("bert_vits2", "style_text"), placeholder='style_text').style("width:200px;")
-                            input_bert_vits2_style_weight = ui.input(label='风格权重', value=config.get("bert_vits2", "style_weight"), placeholder='主文本和辅助文本的bert混合比率，0表示仅主文本，1表示仅辅助文本0.7').style("width:200px;")
-                            switch_bert_vits2_auto_translate = ui.switch('自动Translation', value=config.get("bert_vits2", "auto_translate")).style(switch_internal_css)
-                            switch_bert_vits2_auto_split = ui.switch('自动切分', value=config.get("bert_vits2", "auto_split")).style(switch_internal_css)
-                    with ui.expansion('刘悦-中文特化API', icon="settings", value=True).classes('w-full'):
+                            input_bert_vits2_style_text = ui.input(label='Style text', value=config.get("bert_vits2", "style_text"), placeholder='style_text').style("width:200px;")
+                            input_bert_vits2_style_weight = ui.input(label='Style weight', value=config.get("bert_vits2", "style_weight"), placeholder='Bert mixing ratio of the main text and auxiliary text; 0 means main text only, 1 means auxiliary text only0.7').style("width:200px;")
+                            switch_bert_vits2_auto_translate = ui.switch('Auto translation', value=config.get("bert_vits2", "auto_translate")).style(switch_internal_css)
+                            switch_bert_vits2_auto_split = ui.switch('Auto split', value=config.get("bert_vits2", "auto_split")).style(switch_internal_css)
+                    with ui.expansion('Liuyue Chinese-specialized API', icon="settings", value=True).classes('w-full'):
                         with ui.row():
                             input_bert_vits2_liuyue_zh_api_api_ip_port = ui.input(
                                 label='API address', 
-                                placeholder='接口服务后监听的ipPort地址', 
+                                placeholder='The ip and Port address to listen on after the interface service starts', 
                                 value=config.get("bert_vits2", "刘悦-中文特化API", "api_ip_port"),
                                 validation={
                                     'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                                 }
                             ).style("width:300px;")
-                            input_bert_vits2_liuyue_zh_api_speaker = ui.input(label='说话人名称', value=config.get("bert_vits2", "刘悦-中文特化API", "speaker"), placeholder='配置文件中，对应的说话人的名称').style("width:200px;")
+                            input_bert_vits2_liuyue_zh_api_speaker = ui.input(label='Speaker name', value=config.get("bert_vits2", "刘悦-中文特化API", "speaker"), placeholder='Name of the corresponding speaker in the configuration file').style("width:200px;")
                             
                             select_bert_vits2_liuyue_zh_api_language = ui.select(
-                                label='语言', 
-                                options={'auto': '自动', 'ZH': 'Chinese', 'JP': 'Japanese', 'EN': 'English'}, 
+                                label='Language', 
+                                options={'auto': 'Auto', 'ZH': 'Chinese', 'JP': 'Japanese', 'EN': 'English'}, 
                                 value=config.get("bert_vits2", "刘悦-中文特化API", "language")
                             ).style("width:100px;")
-                            input_bert_vits2_liuyue_zh_api_length_scale = ui.input(label='语音长度', placeholder='调节语音长度，相当于调节语速，该数值越大语速越慢', value=config.get("bert_vits2", "刘悦-中文特化API", "length_scale")).style("width:200px;")
+                            input_bert_vits2_liuyue_zh_api_length_scale = ui.input(label='Speech length', placeholder='Adjust speech length, equivalent to adjusting speech rate; the larger the value, the slower the speech', value=config.get("bert_vits2", "刘悦-中文特化API", "length_scale")).style("width:200px;")
                             
                         with ui.row():
                             input_bert_vits2_liuyue_zh_api_interval_between_para = ui.input(label='interval_between_para', value=config.get("bert_vits2", "刘悦-中文特化API", "interval_between_para"), placeholder='interval_between_para').style("width:200px;")
                             input_bert_vits2_liuyue_zh_api_interval_between_sent = ui.input(label='interval_between_sent', value=config.get("bert_vits2", "刘悦-中文特化API", "interval_between_sent"), placeholder='interval_between_sent').style("width:200px;")
                            
-                            input_bert_vits2_liuyue_zh_api_noise_scale = ui.input(label='噪声', value=config.get("bert_vits2", "刘悦-中文特化API", "noise_scale"), placeholder='控制感情变化程度').style("width:200px;")
-                            input_bert_vits2_liuyue_zh_api_noise_scale_w = ui.input(label='噪声偏差', value=config.get("bert_vits2", "刘悦-中文特化API", "noise_scale_w"), placeholder='控制音素发音长度').style("width:200px;")
-                            input_bert_vits2_liuyue_zh_api_sdp_radio = ui.input(label='SDP/DP混合比', value=config.get("bert_vits2", "刘悦-中文特化API", "sdp_radio"), placeholder='SDP/DP混合比：SDP在合成时的占比，理论上此比率越高，合成的语音语调方差越大。').style("width:200px;")
+                            input_bert_vits2_liuyue_zh_api_noise_scale = ui.input(label='Noise', value=config.get("bert_vits2", "刘悦-中文特化API", "noise_scale"), placeholder='Controls the degree of emotional variation').style("width:200px;")
+                            input_bert_vits2_liuyue_zh_api_noise_scale_w = ui.input(label='Noise deviation', value=config.get("bert_vits2", "刘悦-中文特化API", "noise_scale_w"), placeholder='Controls the phoneme pronunciation length').style("width:200px;")
+                            input_bert_vits2_liuyue_zh_api_sdp_radio = ui.input(label='SDP/DPMix ratio', value=config.get("bert_vits2", "刘悦-中文特化API", "sdp_radio"), placeholder='SDP/DPMix ratio: the proportion of SDP in synthesis; in theory the higher this ratio, the larger the variance of the synthesized speech intonation.').style("width:200px;")
                         with ui.row():
                             input_bert_vits2_liuyue_zh_api_emotion = ui.input(label='emotion', value=config.get("bert_vits2", "刘悦-中文特化API", "emotion"), placeholder='emotion').style("width:200px;")
-                            input_bert_vits2_liuyue_zh_api_style_text = ui.input(label='风格文本', value=config.get("bert_vits2", "刘悦-中文特化API", "style_text"), placeholder='style_text').style("width:200px;")
-                            input_bert_vits2_liuyue_zh_api_style_weight = ui.input(label='风格权重', value=config.get("bert_vits2", "刘悦-中文特化API", "style_weight"), placeholder='主文本和辅助文本的bert混合比率，0表示仅主文本，1表示仅辅助文本0.7').style("width:200px;")
+                            input_bert_vits2_liuyue_zh_api_style_text = ui.input(label='Style text', value=config.get("bert_vits2", "刘悦-中文特化API", "style_text"), placeholder='style_text').style("width:200px;")
+                            input_bert_vits2_liuyue_zh_api_style_weight = ui.input(label='Style weight', value=config.get("bert_vits2", "刘悦-中文特化API", "style_weight"), placeholder='Bert mixing ratio of the main text and auxiliary text; 0 means main text only, 1 means auxiliary text only0.7').style("width:200px;")
                             switch_bert_vits2_cut_by_sent = ui.switch('cut_by_sent', value=config.get("bert_vits2", "刘悦-中文特化API", "cut_by_sent")).style(switch_internal_css)
                             
             if config.get("webui", "show_card", "tts", "vits_fast"):
                 with ui.card().style(card_css):
                     ui.label("VITS-Fast")
                     with ui.row():
-                        input_vits_fast_config_path = ui.input(label='Config file path', placeholder='配置文件的路径，For example:E:\\inference\\finetune_speaker.json', value=config.get("vits_fast", "config_path"))
+                        input_vits_fast_config_path = ui.input(label='Config file path', placeholder='Path of the configuration file,For example:E:\\inference\\finetune_speaker.json', value=config.get("vits_fast", "config_path"))
         
                         input_vits_fast_api_ip_port = ui.input(
                             label='API address', 
-                            placeholder='推理服务Run的链接（需要完整的URL）', 
+                            placeholder='Link of the Running inference service (full URL required)', 
                             value=config.get("vits_fast", "api_ip_port"),
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         )
-                        input_vits_fast_character = ui.input(label='说话人', placeholder='选择的说话人，配置文件中的speaker中的其中一个', value=config.get("vits_fast", "character"))
+                        input_vits_fast_character = ui.input(label='Speaker', placeholder='Selected speaker, one of the speakers in the configuration file', value=config.get("vits_fast", "character"))
 
                         select_vits_fast_language = ui.select(
-                            label='语言', 
-                            options={'Auto detect': 'Auto detect', '日本語': '日本語', '简体Chinese': '简体Chinese', 'English': 'English', 'Mix': 'Mix'}, 
+                            label='Language', 
+                            options={'Auto detect': 'Auto detect', '日本語': 'Japanese', '简体中文': 'Simplified Chinese', 'English': 'English', 'Mix': 'Mix'}, 
                             value=config.get("vits_fast", "language")
                         )
-                        input_vits_fast_speed = ui.input(label='语速', placeholder='语速，默认为1', value=config.get("vits_fast", "speed"))
+                        input_vits_fast_speed = ui.input(label='Speech rate', placeholder='Speech rate, default:1', value=config.get("vits_fast", "speed"))
             
             if config.get("webui", "show_card", "tts", "elevenlabs"):
                 with ui.card().style(card_css):
                     ui.label("elevenlabs")
                     with ui.row():
-                        input_elevenlabs_api_key = ui.input(label='api密钥', placeholder='elevenlabs密钥，可以不填，默认也有一定额度的免费使用权限，具体多少不知道', value=config.get("elevenlabs", "api_key"))
+                        input_elevenlabs_api_key = ui.input(label='apiKey', placeholder='elevenlabsKey, can be left empty; by default there is also a certain free usage quota, exact amount unknown', value=config.get("elevenlabs", "api_key"))
 
-                        input_elevenlabs_voice = ui.input(label='说话人', placeholder='选择的说话人名', value=config.get("elevenlabs", "voice"))
+                        input_elevenlabs_voice = ui.input(label='Speaker', placeholder='Selected speaker name', value=config.get("elevenlabs", "voice"))
 
-                        input_elevenlabs_model = ui.input(label='模型', placeholder='选择的模型', value=config.get("elevenlabs", "model"))
+                        input_elevenlabs_model = ui.input(label='Model', placeholder='Selected model', value=config.get("elevenlabs", "model"))
             
             
             if config.get("webui", "show_card", "tts", "openai_tts"): 
@@ -5421,19 +5421,19 @@ def goto_func_page():
                         input_openai_tts_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("openai_tts", "api_ip_port"), 
-                            placeholder='huggingface上对应项目的API address',
+                            placeholder='huggingfaceCorresponding project onAPI address',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         ).style("width:200px;")
                     with ui.row():
                         select_openai_tts_model = ui.select(
-                            label='模型', 
+                            label='Model', 
                             options={'tts-1': 'tts-1', 'tts-1-hd': 'tts-1-hd'}, 
                             value=config.get("openai_tts", "model")
                         ).style("width:200px;")
                         select_openai_tts_voice = ui.select(
-                            label='说话人', 
+                            label='Speaker', 
                             options={'alloy': 'alloy', 'echo': 'echo', 'fable': 'fable', 'onyx': 'onyx', 'nova': 'nova', 'shimmer': 'shimmer'}, 
                             value=config.get("openai_tts", "voice")
                         ).style("width:200px;")
@@ -5443,7 +5443,7 @@ def goto_func_page():
                 with ui.card().style(card_css):
                     ui.label("Gradio")
                     with ui.row():
-                        textarea_gradio_tts_request_parameters = ui.textarea(label='请求参数', value=config.get("gradio_tts", "request_parameters"), placeholder='一定要注意格式啊！{content}用于替换待合成的文本。\nurl是请求地址；\nfn_index是api对应的索引；\ndata_analysis是数据解析规则，暂时只支持元组和列表数据的index索引，请参考模板进行配置\n键不影响请求，需要注意的是参数顺序需要和API请求保持一致\n那么数据可以用json库将dict转成str，这样再用来配置就可靠很多').style("width:800px;")
+                        textarea_gradio_tts_request_parameters = ui.textarea(label='Request parameters', value=config.get("gradio_tts", "request_parameters"), placeholder='Be sure to pay attention to the format! {content} is used to replace the text to be synthesized.\nurl is the request address;\nfn_index is the index corresponding to the api;\ndata_analysis is the data parsing rule, currently only index lookup on tuple and list data is supported, please refer to the template for configuration\nThe keys do not affect the request; note that the parameter order must match the API request\nThe data can then be converted from dict to str with the json library, which makes configuration much more reliable').style("width:800px;")
            
             if config.get("webui", "show_card", "tts", "gpt_sovits"): 
                 with ui.card().style(card_css):
@@ -5464,15 +5464,15 @@ def goto_func_page():
                         input_gpt_sovits_gradio_ip_port = ui.input(
                             label='Gradio API address', 
                             value=config.get("gpt_sovits", "gradio_ip_port"), 
-                            placeholder='官方webui程序启动后gradio监听的地址',
+                            placeholder='Address gradio listens on after the official webui program starts',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         ).style("width:200px;")
                         input_gpt_sovits_api_ip_port = ui.input(
-                            label='API address（http）', 
+                            label='API address(http)', 
                             value=config.get("gpt_sovits", "api_ip_port"), 
-                            placeholder='官方API程序启动后监听的地址',
+                            placeholder='Address the official API program listens on after startup',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
@@ -5481,74 +5481,52 @@ def goto_func_page():
                     
                     with ui.row():
                         input_gpt_sovits_gpt_model_path = ui.input(
-                            label='GPT模型路径', 
+                            label='GPTModel path', 
                             value=config.get("gpt_sovits", "gpt_model_path"), 
-                            placeholder='GPT模型路径，填绝对路径'
+                            placeholder='GPTModel path, fill in an absolute path'
                         ).style("width:300px;")
-                        input_gpt_sovits_sovits_model_path = ui.input(label='SOVITS模型路径', value=config.get("gpt_sovits", "sovits_model_path"), placeholder='SOVITS模型路径，填绝对路径').style("width:300px;")
-                        button_gpt_sovits_set_model = ui.button('加载模型', on_click=lambda: gpt_sovits_set_model(), color=button_internal_color).style(button_internal_css)
+                        input_gpt_sovits_sovits_model_path = ui.input(label='SOVITSModel path', value=config.get("gpt_sovits", "sovits_model_path"), placeholder='SOVITSModel path, fill in an absolute path').style("width:300px;")
+                        button_gpt_sovits_set_model = ui.button('Load model', on_click=lambda: gpt_sovits_set_model(), color=button_internal_color).style(button_internal_css)
                     
                     with ui.card().style(card_css):
                         ui.label("api")
                         with ui.row():
-                            input_gpt_sovits_ref_audio_path = ui.input(label='参考音频路径', value=config.get("gpt_sovits", "ref_audio_path"), placeholder='参考音频路径，建议填绝对路径').style("width:300px;")
-                            input_gpt_sovits_prompt_text = ui.input(label='参考音频的文本', value=config.get("gpt_sovits", "prompt_text"), placeholder='参考音频的文本').style("width:200px;")
+                            input_gpt_sovits_ref_audio_path = ui.input(label='Reference audio path', value=config.get("gpt_sovits", "ref_audio_path"), placeholder='Reference audio path, an absolute path is recommended').style("width:300px;")
+                            input_gpt_sovits_prompt_text = ui.input(label='Text of the reference audio', value=config.get("gpt_sovits", "prompt_text"), placeholder='Text of the reference audio').style("width:200px;")
                             select_gpt_sovits_prompt_language = ui.select(
-                                label='参考音频的语种', 
-                                options={'Chinese':'Chinese', 'Japanese':'Japanese', 'English':'English'}, 
+                                label='Language of the reference audio', 
+                                options={'中文': 'Chinese', '日文': 'Japanese', '英文': 'English'}, 
                                 value=config.get("gpt_sovits", "prompt_language")
                             ).style("width:150px;")
                             select_gpt_sovits_language = ui.select(
-                                label='需要合成的语种', 
-                                options={'Auto detect':'Auto detect', 'Chinese':'Chinese', 'Japanese':'Japanese', 'English':'English'}, 
+                                label='Language to synthesize', 
+                                options={'Auto detect': 'Auto detect', '中文': 'Chinese', '日文': 'Japanese', '英文': 'English'}, 
                                 value=config.get("gpt_sovits", "language")
                             ).style("width:150px;")
                             select_gpt_sovits_cut = ui.select(
-                                label='语句切分', 
-                                options={
-                                    '不切':'不切', 
-                                    'Split every four sentences':'Split every four sentences', 
-                                    '凑50字一切':'凑50字一切', 
-                                    '按Chinese句号。切':'按Chinese句号。切', 
-                                    '按English句号.切':'按English句号.切',
-                                    '按标点符号切':'按标点符号切'
-                                }, 
+                                label='Sentence splitting', 
+                                options={'不切': 'No split', '凑四句一切': 'Split every 4 sentences', '凑50字一切': 'Split every 50 characters', '按中文句号。切': 'Split at Chinese periods', '按英文句号.切': 'Split at English periods', '按标点符号切': 'Split at punctuation'}, 
                                 value=config.get("gpt_sovits", "cut")
                             ).style("width:200px;")
                     
                     with ui.card().style(card_css):
                         ui.label("api_0322 | gradio_0322")
                         with ui.row():
-                            input_gpt_sovits_api_0322_ref_audio_path = ui.input(label='参考音频路径', value=config.get("gpt_sovits", "api_0322", "ref_audio_path"), placeholder='参考音频路径，建议填绝对路径').style("width:300px;")
-                            input_gpt_sovits_api_0322_prompt_text = ui.input(label='参考音频的文本', value=config.get("gpt_sovits", "api_0322", "prompt_text"), placeholder='参考音频的文本').style("width:200px;")
+                            input_gpt_sovits_api_0322_ref_audio_path = ui.input(label='Reference audio path', value=config.get("gpt_sovits", "api_0322", "ref_audio_path"), placeholder='Reference audio path, an absolute path is recommended').style("width:300px;")
+                            input_gpt_sovits_api_0322_prompt_text = ui.input(label='Text of the reference audio', value=config.get("gpt_sovits", "api_0322", "prompt_text"), placeholder='Text of the reference audio').style("width:200px;")
                             select_gpt_sovits_api_0322_prompt_lang = ui.select(
-                                label='参考音频的语种', 
-                                options={'Chinese':'Chinese', 'Japanese':'Japanese', 'English':'English'}, 
+                                label='Language of the reference audio', 
+                                options={'中文': 'Chinese', '日文': 'Japanese', '英文': 'English'}, 
                                 value=config.get("gpt_sovits", "api_0322", "prompt_lang")
                             ).style("width:150px;")
                             select_gpt_sovits_api_0322_text_lang = ui.select(
-                                label='需要合成的语种', 
-                                options={
-                                    'Auto detect':'Auto detect', 
-                                    'Chinese':'Chinese', 
-                                    'Japanese':'Japanese', 
-                                    'English':'English', 
-                                    '中英混合': '中英混合',
-                                    '日英混合': '日英混合',
-                                    '多语种混合': '多语种混合',
-                                }, 
+                                label='Language to synthesize', 
+                                options={'Auto detect': 'Auto detect', '中文': 'Chinese', '日文': 'Japanese', '英文': 'English', '中英混合': 'Chinese + English mixed', '日英混合': 'Japanese + English mixed', '多语种混合': 'Multilingual mixed'}, 
                                 value=config.get("gpt_sovits", "api_0322", "text_lang")
                             ).style("width:150px;")
                             select_gpt_sovits_api_0322_text_split_method = ui.select(
-                                label='语句切分', 
-                                options={
-                                    '不切':'不切', 
-                                    'Split every four sentences':'Split every four sentences', 
-                                    '凑50字一切':'凑50字一切', 
-                                    '按Chinese句号。切':'按Chinese句号。切', 
-                                    '按English句号.切':'按English句号.切',
-                                    '按标点符号切':'按标点符号切'
-                                }, 
+                                label='Sentence splitting', 
+                                options={'不切': 'No split', '凑四句一切': 'Split every 4 sentences', '凑50字一切': 'Split every 50 characters', '按中文句号。切': 'Split at Chinese periods', '按英文句号.切': 'Split at English periods', '按标点符号切': 'Split at punctuation'}, 
                                 value=config.get("gpt_sovits", "api_0322", "text_split_method")
                             ).style("width:200px;")
                         with ui.row():
@@ -5557,71 +5535,63 @@ def goto_func_page():
                             input_gpt_sovits_api_0322_temperature = ui.input(label='temperature', value=config.get("gpt_sovits", "api_0322", "temperature"), placeholder='temperature').style("width:100px;")
                             input_gpt_sovits_api_0322_batch_size = ui.input(label='batch_size', value=config.get("gpt_sovits", "api_0322", "batch_size"), placeholder='batch_size').style("width:100px;")
                             input_gpt_sovits_api_0322_speed_factor = ui.input(label='speed_factor', value=config.get("gpt_sovits", "api_0322", "speed_factor"), placeholder='speed_factor').style("width:100px;")
-                            input_gpt_sovits_api_0322_fragment_interval = ui.input(label='分段间隔(秒)', value=config.get("gpt_sovits", "api_0322", "fragment_interval"), placeholder='fragment_interval').style("width:100px;")
+                            input_gpt_sovits_api_0322_fragment_interval = ui.input(label='Segment interval (seconds)', value=config.get("gpt_sovits", "api_0322", "fragment_interval"), placeholder='fragment_interval').style("width:100px;")
                             switch_gpt_sovits_api_0322_split_bucket = ui.switch('split_bucket', value=config.get("gpt_sovits", "api_0322", "split_bucket")).style(switch_internal_css)
                             switch_gpt_sovits_api_0322_return_fragment = ui.switch('return_fragment', value=config.get("gpt_sovits", "api_0322", "return_fragment")).style(switch_internal_css)
                     
                     with ui.card().style(card_css):
                         ui.label("api_0706")
                         with ui.row():
-                            input_gpt_sovits_api_0706_refer_wav_path = ui.input(label='参考音频路径', value=config.get("gpt_sovits", "api_0706", "refer_wav_path"), placeholder='参考音频路径，建议填绝对路径').style("width:300px;")
-                            input_gpt_sovits_api_0706_prompt_text = ui.input(label='参考音频的文本', value=config.get("gpt_sovits", "api_0706", "prompt_text"), placeholder='参考音频的文本').style("width:200px;")
+                            input_gpt_sovits_api_0706_refer_wav_path = ui.input(label='Reference audio path', value=config.get("gpt_sovits", "api_0706", "refer_wav_path"), placeholder='Reference audio path, an absolute path is recommended').style("width:300px;")
+                            input_gpt_sovits_api_0706_prompt_text = ui.input(label='Text of the reference audio', value=config.get("gpt_sovits", "api_0706", "prompt_text"), placeholder='Text of the reference audio').style("width:200px;")
                             select_gpt_sovits_api_0706_prompt_language = ui.select(
-                                label='参考音频的语种', 
-                                options={'Chinese':'Chinese', 'Japanese':'Japanese', 'English':'English'}, 
+                                label='Language of the reference audio', 
+                                options={'中文': 'Chinese', '日文': 'Japanese', '英文': 'English'}, 
                                 value=config.get("gpt_sovits", "api_0706", "prompt_language")
                             ).style("width:150px;")
                             select_gpt_sovits_api_0706_text_language = ui.select(
-                                label='需要合成的语种', 
-                                options={
-                                    'Auto detect':'Auto detect', 
-                                    'Chinese':'Chinese', 
-                                    'Japanese':'Japanese', 
-                                    'English':'English', 
-                                    '中英混合': '中英混合',
-                                    '日英混合': '日英混合',
-                                    '多语种混合': '多语种混合',
-                                }, 
+                                label='Language to synthesize', 
+                                options={'Auto detect': 'Auto detect', '中文': 'Chinese', '日文': 'Japanese', '英文': 'English', '中英混合': 'Chinese + English mixed', '日英混合': 'Japanese + English mixed', '多语种混合': 'Multilingual mixed'}, 
                                 value=config.get("gpt_sovits", "api_0706", "text_language")
                             ).style("width:150px;")
-                            input_gpt_sovits_api_0706_cut_punc = ui.input(label='文本切分', value=config.get("gpt_sovits", "api_0706", "cut_punc"), placeholder='文本切分符号设定, 符号范围,.;?!、，。？！；：…').style("width:200px;")
+                            input_gpt_sovits_api_0706_cut_punc = ui.input(label='Text splitting', value=config.get("gpt_sovits", "api_0706", "cut_punc"), placeholder='Text split symbol setting, symbol range: ,.;?!…').style("width:200px;")
                     
                     with ui.card().style(card_css):
                         ui.label("v2_api_0821")
                         with ui.row():
-                            input_gpt_sovits_v2_api_0821_ref_audio_path = ui.input(label='参考音频路径', value=config.get("gpt_sovits", "v2_api_0821", "ref_audio_path"), placeholder='参考音频路径，建议填绝对路径').style("width:300px;")
-                            input_gpt_sovits_v2_api_0821_prompt_text = ui.input(label='参考音频的文本', value=config.get("gpt_sovits", "v2_api_0821", "prompt_text"), placeholder='参考音频的文本').style("width:200px;")
+                            input_gpt_sovits_v2_api_0821_ref_audio_path = ui.input(label='Reference audio path', value=config.get("gpt_sovits", "v2_api_0821", "ref_audio_path"), placeholder='Reference audio path, an absolute path is recommended').style("width:300px;")
+                            input_gpt_sovits_v2_api_0821_prompt_text = ui.input(label='Text of the reference audio', value=config.get("gpt_sovits", "v2_api_0821", "prompt_text"), placeholder='Text of the reference audio').style("width:200px;")
                             select_gpt_sovits_v2_api_0821_prompt_lang = ui.select(
-                                label='参考音频的语种', 
+                                label='Language of the reference audio', 
                                 options={'zh':'Chinese', 'ja':'Japanese', 'en':'English'}, 
                                 value=config.get("gpt_sovits", "v2_api_0821", "prompt_lang")
                             ).style("width:150px;")
                             select_gpt_sovits_v2_api_0821_text_lang = ui.select(
-                                label='需要合成的语种', 
+                                label='Language to synthesize', 
                                 options={
                                     "all_zh": "Chinese",
-                                    "all_yue": "粤语",
+                                    "all_yue": "Cantonese",
                                     "en": "English",
                                     "all_ja": "Japanese",
-                                    "all_ko": "韩文",
-                                    "zh": "中英混合",
-                                    "yue": "粤英混合",
-                                    "ja": "日英混合",
-                                    "ko": "韩英混合",
-                                    "auto": "多语种混合",    #多语种启动切分识别语种
-                                    "auto_yue": "多语种混合(粤语)",
+                                    "all_ko": "Korean",
+                                    "zh": "Chinese-English mix",
+                                    "yue": "Cantonese-English mix",
+                                    "ja": "Japanese-English mix",
+                                    "ko": "Korean-English mix",
+                                    "auto": "Multilingual mix",    #Multilingual startup split recognition language
+                                    "auto_yue": "Multilingual mix (Cantonese)",
                                 }, 
                                 value=config.get("gpt_sovits", "v2_api_0821", "text_lang")
                             ).style("width:150px;")
                             select_gpt_sovits_v2_api_0821_text_split_method = ui.select(
-                                label='语句切分', 
+                                label='Sentence splitting', 
                                 options={
-                                    'cut0':'不切', 
-                                    'cut1':'Split every four sentences', 
-                                    'cut2':'凑50字一切', 
-                                    'cut3':'按Chinese句号。切', 
-                                    'cut4':'按English句号.切',
-                                    'cut5':'按标点符号切'
+                                    'cut0':'No split', 
+                                    'cut1':'Split every 4 sentences', 
+                                    'cut2':'Split every 50 characters', 
+                                    'cut3':'Split at Chinese periods', 
+                                    'cut4':'Split at English periods',
+                                    'cut5':'Split at punctuation'
                                 }, 
                                 value=config.get("gpt_sovits", "v2_api_0821", "text_split_method")
                             ).style("width:200px;")
@@ -5633,7 +5603,7 @@ def goto_func_page():
                             input_gpt_sovits_v2_api_0821_batch_threshold = ui.input(label='batch_threshold', value=config.get("gpt_sovits", "v2_api_0821", "batch_threshold"), placeholder='batch_threshold').style("width:100px;")
                             switch_gpt_sovits_v2_api_0821_split_bucket = ui.switch('split_bucket', value=config.get("gpt_sovits", "v2_api_0821", "split_bucket")).style(switch_internal_css)
                             input_gpt_sovits_v2_api_0821_speed_factor = ui.input(label='speed_factor', value=config.get("gpt_sovits", "v2_api_0821", "speed_factor"), placeholder='speed_factor').style("width:100px;")
-                            input_gpt_sovits_v2_api_0821_fragment_interval = ui.input(label='分段间隔(秒)', value=config.get("gpt_sovits", "v2_api_0821", "fragment_interval"), placeholder='fragment_interval').style("width:100px;")
+                            input_gpt_sovits_v2_api_0821_fragment_interval = ui.input(label='Segment interval (seconds)', value=config.get("gpt_sovits", "v2_api_0821", "fragment_interval"), placeholder='fragment_interval').style("width:100px;")
                             input_gpt_sovits_v2_api_0821_seed = ui.input(label='seed', value=config.get("gpt_sovits", "v2_api_0821", "seed"), placeholder='seed').style("width:100px;")
                             input_gpt_sovits_v2_api_0821_media_type = ui.input(label='media_type', value=config.get("gpt_sovits", "v2_api_0821", "media_type"), placeholder='media_type').style("width:100px;")
                             switch_gpt_sovits_v2_api_0821_parallel_infer = ui.switch('parallel_infer', value=config.get("gpt_sovits", "v2_api_0821", "parallel_infer")).style(switch_internal_css)
@@ -5641,10 +5611,10 @@ def goto_func_page():
                             
 
                     with ui.card().style(card_css):
-                        ui.label("WebTTS相关配置")
+                        ui.label("WebTTSRelated configuration")
                         with ui.row():
                             select_gpt_sovits_webtts_version = ui.select(
-                                label='版本', 
+                                label='Version', 
                                 options={
                                     '1':'1', 
                                     '1.4':'1.4', 
@@ -5652,10 +5622,10 @@ def goto_func_page():
                                 }, 
                                 value=config.get("gpt_sovits", "webtts", "version")
                             ).style("width:80px;")
-                            input_gpt_sovits_webtts_api_ip_port = ui.input(label='API address', value=config.get("gpt_sovits", "webtts", "api_ip_port"), placeholder='API监听地址').style("width:200px;")
-                            input_gpt_sovits_webtts_spk = ui.input(label='音色', value=config.get("gpt_sovits", "webtts", "spk"), placeholder='音色').style("width:100px;")
+                            input_gpt_sovits_webtts_api_ip_port = ui.input(label='API address', value=config.get("gpt_sovits", "webtts", "api_ip_port"), placeholder='APIListen address').style("width:200px;")
+                            input_gpt_sovits_webtts_spk = ui.input(label='Timbre', value=config.get("gpt_sovits", "webtts", "spk"), placeholder='Timbre').style("width:100px;")
                             select_gpt_sovits_webtts_lang = ui.select(
-                                label='语言', 
+                                label='Language', 
                                 options={
                                     'zh':'Chinese', 
                                     'en':'English', 
@@ -5663,17 +5633,17 @@ def goto_func_page():
                                 }, 
                                 value=config.get("gpt_sovits", "webtts", "lang")
                             ).style("width:100px;")
-                            input_gpt_sovits_webtts_speed = ui.input(label='语速', value=config.get("gpt_sovits", "webtts", "speed"), placeholder='语速').style("width:100px;")
-                            input_gpt_sovits_webtts_emotion = ui.input(label='情感', value=config.get("gpt_sovits", "webtts", "emotion"), placeholder='情感').style("width:100px;")
+                            input_gpt_sovits_webtts_speed = ui.input(label='Speech rate', value=config.get("gpt_sovits", "webtts", "speed"), placeholder='Speech rate').style("width:100px;")
+                            input_gpt_sovits_webtts_emotion = ui.input(label='Emotion', value=config.get("gpt_sovits", "webtts", "emotion"), placeholder='Emotion').style("width:100px;")
         
             
             if config.get("webui", "show_card", "tts", "azure_tts"): 
                 with ui.card().style(card_css):
                     ui.label("azure_tts")
                     with ui.row():
-                        input_azure_tts_subscription_key = ui.input(label='密钥', value=config.get("azure_tts", "subscription_key"), placeholder='申请开通服务后，自然就看见了').style("width:200px;")
-                        input_azure_tts_region = ui.input(label='区域', value=config.get("azure_tts", "region"), placeholder='申请开通服务后，自然就看见了').style("width:200px;")
-                        input_azure_tts_voice_name = ui.input(label='说话人名', value=config.get("azure_tts", "voice_name"), placeholder='Speech StudioPlatform试听获取说话人名').style("width:200px;")
+                        input_azure_tts_subscription_key = ui.input(label='Key', value=config.get("azure_tts", "subscription_key"), placeholder='After applying to activate the service, you will naturally see it').style("width:200px;")
+                        input_azure_tts_region = ui.input(label='Region', value=config.get("azure_tts", "region"), placeholder='After applying to activate the service, you will naturally see it').style("width:200px;")
+                        input_azure_tts_voice_name = ui.input(label='Speaker name', value=config.get("azure_tts", "voice_name"), placeholder='Speech StudioPlatformPreview and get the speaker names').style("width:200px;")
             
             
             if config.get("webui", "show_card", "tts", "cosyvoice"): 
@@ -5684,49 +5654,49 @@ def goto_func_page():
                             label='Type', 
                             options={"api_0819": "api_0819", "gradio_0707": "gradio_0707"}, 
                             value=config.get("cosyvoice", "type")
-                        ).style("width:150px").tooltip("对接的APIType")
+                        ).style("width:150px").tooltip("ConnectedAPIType")
                         input_cosyvoice_gradio_ip_port = ui.input(
                             label='Gradio API address', 
                             value=config.get("cosyvoice", "gradio_ip_port"), 
-                            placeholder='官方webui程序启动后gradio监听的地址',
+                            placeholder='Address gradio listens on after the official webui program starts',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
-                        ).style("width:200px;").tooltip("对接webui的gradio接口，填webui的地址")
+                        ).style("width:200px;").tooltip("To connect the webui gradio interface, fill in the webui address")
                         input_cosyvoice_api_ip_port = ui.input(
                             label='HTTP API address', 
                             value=config.get("cosyvoice", "api_ip_port"), 
-                            placeholder='API程序启动后，API请求地址',
+                            placeholder='APIAPI request address after the program starts',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
-                        ).style("width:200px;").tooltip("对接api接口，填api端点地址")
+                        ).style("width:200px;").tooltip("To connect the api interface, fill in the api endpoint address")
                     
                     with ui.row():
                         with ui.card().style(card_css):
                             ui.label("gradio_0707")
                             with ui.row():
                                 select_cosyvoice_gradio_0707_mode_checkbox_group = ui.select(
-                                    label='推理模式', 
+                                    label='Inference mode', 
                                     options={'预训练音色': '预训练音色', '3s极速复刻': '3s极速复刻', '跨语种复刻': '跨语种复刻', '自然语言控制': '自然语言控制'}, 
                                     value=config.get("cosyvoice", "gradio_0707", "mode_checkbox_group")
                                 ).style("width:200px;")
                                 select_cosyvoice_gradio_0707_sft_dropdown = ui.select(
-                                    label='预训练音色', 
-                                    options={'Chinese女': 'Chinese女', 'Chinese男': 'Chinese男', '日语男': '日语男', '粤语女': '粤语女', 'English女': 'English女', 'English男': 'English男', '韩语女': '韩语女'}, 
+                                    label='Pretrained voice', 
+                                    options={'中文女': 'Chinese female', '中文男': 'Chinese male', '日语男': 'Japanese male', '粤语女': 'Cantonese female', '英文女': 'English female', '英文男': 'English male', '韩语女': 'Korean female'}, 
                                     value=config.get("cosyvoice", "gradio_0707", "sft_dropdown")
                                 ).style("width:100px;")
-                                input_cosyvoice_gradio_0707_prompt_text = ui.input(label='prompt文本', value=config.get("cosyvoice", "gradio_0707", "prompt_text"), placeholder='').style("width:200px;").tooltip("不用就留空")
-                                input_cosyvoice_gradio_0707_prompt_wav_upload = ui.input(label='prompt音频路径', value=config.get("cosyvoice", "gradio_0707", "prompt_wav_upload"), placeholder='For example:E:\\1.wav').style("width:200px;").tooltip("不用就留空，For example:E:\\1.wav")
-                                input_cosyvoice_gradio_0707_instruct_text = ui.input(label='instruct文本', value=config.get("cosyvoice", "gradio_0707", "instruct_text"), placeholder='').style("width:200px;").tooltip("不用就留空")
-                                input_cosyvoice_gradio_0707_seed = ui.input(label='随机推理种子', value=config.get("cosyvoice", "gradio_0707", "seed"), placeholder='默认：0').style("width:100px;").tooltip("随机推理种子")
+                                input_cosyvoice_gradio_0707_prompt_text = ui.input(label='promptText', value=config.get("cosyvoice", "gradio_0707", "prompt_text"), placeholder='').style("width:200px;").tooltip("Leave empty if unused")
+                                input_cosyvoice_gradio_0707_prompt_wav_upload = ui.input(label='promptAudio path', value=config.get("cosyvoice", "gradio_0707", "prompt_wav_upload"), placeholder='For example:E:\\1.wav').style("width:200px;").tooltip("Leave empty if unused,For example:E:\\1.wav")
+                                input_cosyvoice_gradio_0707_instruct_text = ui.input(label='instructText', value=config.get("cosyvoice", "gradio_0707", "instruct_text"), placeholder='').style("width:200px;").tooltip("Leave empty if unused")
+                                input_cosyvoice_gradio_0707_seed = ui.input(label='Random inference seed', value=config.get("cosyvoice", "gradio_0707", "seed"), placeholder='Default:0').style("width:100px;").tooltip("Random inference seed")
                     with ui.row():
                         with ui.card().style(card_css):
                             ui.label("api_0819")
                             with ui.row():
-                                input_cosyvoice_api_0819_speaker = ui.input(label='说话人', value=config.get("cosyvoice", "api_0819", "speaker"), placeholder='').style("width:200px;").tooltip("自行查看")
-                                input_cosyvoice_api_0819_new = ui.input(label='new', value=config.get("cosyvoice", "api_0819", "new"), placeholder='0').style("width:200px;").tooltip("自行查看")
-                                input_cosyvoice_api_0819_speed = ui.input(label='语速', value=config.get("cosyvoice", "api_0819", "speed"), placeholder='1').style("width:200px;").tooltip("语速")
+                                input_cosyvoice_api_0819_speaker = ui.input(label='Speaker', value=config.get("cosyvoice", "api_0819", "speaker"), placeholder='').style("width:200px;").tooltip("Check it yourself")
+                                input_cosyvoice_api_0819_new = ui.input(label='new', value=config.get("cosyvoice", "api_0819", "new"), placeholder='0').style("width:200px;").tooltip("Check it yourself")
+                                input_cosyvoice_api_0819_speed = ui.input(label='Speech rate', value=config.get("cosyvoice", "api_0819", "speed"), placeholder='1').style("width:200px;").tooltip("Speech rate")
             
             if config.get("webui", "show_card", "tts", "f5_tts"): 
                 with ui.card().style(card_css):
@@ -5736,26 +5706,26 @@ def goto_func_page():
                             label='Type', 
                             options={"gradio_1023": "gradio_1023"}, 
                             value=config.get("f5_tts", "type")
-                        ).style("width:150px").tooltip("对接的APIType")
+                        ).style("width:150px").tooltip("ConnectedAPIType")
                         input_f5_tts_gradio_ip_port = ui.input(
                             label='Gradio API address', 
                             value=config.get("f5_tts", "gradio_ip_port"), 
-                            placeholder='官方webui程序启动后gradio监听的地址',
+                            placeholder='Address gradio listens on after the official webui program starts',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
-                        ).style("width:200px;").tooltip("对接webui的gradio接口，填webui的地址")
+                        ).style("width:200px;").tooltip("To connect the webui gradio interface, fill in the webui address")
 
                         select_f5_tts_model = ui.select(
-                            label='模型', 
+                            label='Model', 
                             options={'F5-TTS': 'F5-TTS', 'E2-TTS': 'E2-TTS'}, 
                             value=config.get("f5_tts", "model")
                         ).style("width:100px;")
-                        input_f5_tts_ref_audio_orig = ui.input(label='参考音频路径', value=config.get("f5_tts", "ref_audio_orig"), placeholder='For example:E:\\1.wav').style("width:200px;").tooltip("参考音频路径")
-                        input_f5_tts_ref_text = ui.input(label='参考文本', value=config.get("f5_tts", "ref_text"), placeholder='音频的文本').style("width:200px;").tooltip("参考文本，For example:E:\\1.wav")
+                        input_f5_tts_ref_audio_orig = ui.input(label='Reference audio path', value=config.get("f5_tts", "ref_audio_orig"), placeholder='For example:E:\\1.wav').style("width:200px;").tooltip("Reference audio path")
+                        input_f5_tts_ref_text = ui.input(label='Reference text', value=config.get("f5_tts", "ref_text"), placeholder='Audio text').style("width:200px;").tooltip("Reference text,For example:E:\\1.wav")
                         switch_f5_tts_remove_silence = ui.switch('remove_silence', value=config.get("f5_tts", "remove_silence")).style(switch_internal_css)
                         input_f5_tts_cross_fade_duration = ui.input(label='cross_fade_duration', value=config.get("f5_tts", "cross_fade_duration"), placeholder='0.15').style("width:100px;").tooltip("cross_fade_duration")
-                        input_f5_tts_speed = ui.input(label='语速', value=config.get("f5_tts", "speed"), placeholder='语速').style("width:100px;").tooltip("语速，默认：1")
+                        input_f5_tts_speed = ui.input(label='Speech rate', value=config.get("f5_tts", "speed"), placeholder='Speech rate').style("width:100px;").tooltip("Speech rate, default:1")
 
             if config.get("webui", "show_card", "tts", "multitts"): 
                 with ui.card().style(card_css):
@@ -5764,15 +5734,15 @@ def goto_func_page():
                         input_multitts_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("multitts", "api_ip_port"), 
-                            placeholder='MultiTTS所在设备的IP address以及Port号',
+                            placeholder='MultiTTSIP address and Port number of the device it runs on',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
-                        ).style("width:200px;").tooltip("MultiTTS所在设备的IP address以及Port号")
-                        input_multitts_speed = ui.input(label='语速', value=config.get("multitts", "speed"), placeholder='0-100').style("width:100px;").tooltip("语速，默认：1")
-                        input_multitts_volume = ui.input(label='音量', value=config.get("multitts", "volume"), placeholder='0-100').style("width:100px;").tooltip("音量：默认50")
-                        input_multitts_pitch = ui.input(label='音调', value=config.get("multitts", "pitch"), placeholder='0-100').style("width:100px;").tooltip("音调：默认50")
-                        input_multitts_voice = ui.input(label='声音ID', value=config.get("multitts", "voice"), placeholder='默认不填就是默认选中的发言人').style("width:200px;").tooltip("默认不填就是默认选中的发言人")
+                        ).style("width:200px;").tooltip("MultiTTSIP address and Port number of the device it runs on")
+                        input_multitts_speed = ui.input(label='Speech rate', value=config.get("multitts", "speed"), placeholder='0-100').style("width:100px;").tooltip("Speech rate, default:1")
+                        input_multitts_volume = ui.input(label='Volume', value=config.get("multitts", "volume"), placeholder='0-100').style("width:100px;").tooltip("Volume: default50")
+                        input_multitts_pitch = ui.input(label='Pitch', value=config.get("multitts", "pitch"), placeholder='0-100').style("width:100px;").tooltip("Pitch: default50")
+                        input_multitts_voice = ui.input(label='VoiceID', value=config.get("multitts", "voice"), placeholder='Leave empty to use the default selected speaker').style("width:200px;").tooltip("Leave empty to use the default selected speaker")
             if config.get("webui", "show_card", "tts", "melotts"): 
                 with ui.card().style(card_css):
                     ui.label("MeloTTS")
@@ -5780,25 +5750,25 @@ def goto_func_page():
                         input_melotts_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("melotts", "api_ip_port"), 
-                            placeholder='MeloTTS API程序所在设备的IP address以及Port号',
+                            placeholder='MeloTTS APIIP address and Port number of the device the program runs on',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
-                        ).style("width:200px;").tooltip("MeloTTS API程序所在设备的IP address以及Port号")
-                        input_melotts_language = ui.input(label='语言', value=config.get("melotts", "language"), placeholder='0-100').style("width:100px;").tooltip("语速，默认：1")
+                        ).style("width:200px;").tooltip("MeloTTS APIIP address and Port number of the device the program runs on")
+                        input_melotts_language = ui.input(label='Language', value=config.get("melotts", "language"), placeholder='0-100').style("width:100px;").tooltip("Speech rate, default:1")
                         select_melotts_device = ui.select(
                             label='device', 
                             options={'auto': 'auto', 'cuda': 'cuda', 'cpu': 'cpu'}, 
                             value=config.get("melotts", "device")
                         ).style("width:100px;")
-                        switch_melotts_use_hf = ui.switch('使用HF默认模型', value=config.get("melotts", "use_hf")).style(switch_internal_css)
-                        input_melotts_config_path = ui.input(label='Config file path', value=config.get("melotts", "config_path"), placeholder='config.json路径').style("width:200px;").tooltip("config.json路径")
-                        input_melotts_ckpt_path = ui.input(label='模型路径', value=config.get("melotts", "ckpt_path"), placeholder='G_*.pth模型路径').style("width:200px;").tooltip("G_*.pth模型路径")
+                        switch_melotts_use_hf = ui.switch('Use the HF default model', value=config.get("melotts", "use_hf")).style(switch_internal_css)
+                        input_melotts_config_path = ui.input(label='Config file path', value=config.get("melotts", "config_path"), placeholder='config.jsonPath').style("width:200px;").tooltip("config.jsonPath")
+                        input_melotts_ckpt_path = ui.input(label='Model path', value=config.get("melotts", "ckpt_path"), placeholder='G_*.pthModel path').style("width:200px;").tooltip("G_*.pthModel path")
                         
                         async def melotts_load_model(data):
                             import aiohttp
 
-                            ui.notify(position="top", type="info", message='MeloTTS 准备加载模型')
+                            ui.notify(position="top", type="info", message='MeloTTS Preparing to load the model')
 
                             API_URL = urljoin(data["api_ip_port"], '/init')
 
@@ -5813,31 +5783,31 @@ def goto_func_page():
                                             ret = await response.json()
                                             logger.debug(ret)
 
-                                            logger.info('MeloTTS模型loaded successfully')
-                                            ui.notify(position="top", type="positive", message='MeloTTS模型loaded successfully')
+                                            logger.info('MeloTTSModelloaded successfully')
+                                            ui.notify(position="top", type="positive", message='MeloTTS model loaded successfully')
                                             return ret
                                         else: 
-                                            logger.error('MeloTTS模型加载Failure')
-                                            ui.notify(position="top", type="negative", message='MeloTTS模型加载Failure')
+                                            logger.error('MeloTTSModel loadingFailure')
+                                            ui.notify(position="top", type="negative", message='MeloTTSModel loadingFailure')
                                             return None
 
                             except aiohttp.ClientError as e:
-                                logger.error(f'MeloTTS请求Failure: {e}')
-                                ui.notify(position="top", type="negative", message=f'MeloTTS请求Failure: {e}')
+                                logger.error(f'MeloTTSRequestFailure: {e}')
+                                ui.notify(position="top", type="negative", message=f'MeloTTSRequestFailure: {e}')
                             except Exception as e:
-                                logger.error(f'MeloTTS未知错误: {e}')
-                                ui.notify(position="top", type="negative", message=f'MeloTTS未知错误: {e}')
+                                logger.error(f'MeloTTSUnknown error: {e}')
+                                ui.notify(position="top", type="negative", message=f'MeloTTSUnknown error: {e}')
                             
                             return None
 
-                        button_melotts_load_model = ui.button('加载模型', on_click=lambda: melotts_load_model(config.get("melotts")), color=button_internal_color).style(button_internal_css)
+                        button_melotts_load_model = ui.button('Load model', on_click=lambda: melotts_load_model(config.get("melotts")), color=button_internal_color).style(button_internal_css)
                     
                     with ui.row():
-                        input_melotts_speaker_id = ui.input(label='说话人ID', value=config.get("melotts", "speaker_id"), placeholder='从0开始的整数，默认为0').style("width:100px;").tooltip("从0开始的整数，默认为0")
+                        input_melotts_speaker_id = ui.input(label='SpeakerID', value=config.get("melotts", "speaker_id"), placeholder='Integer starting from 0, default:0').style("width:100px;").tooltip("Integer starting from 0, default:0")
                         input_melotts_sdp_ratio = ui.input(label='sdp_ratio', value=config.get("melotts", "sdp_ratio"), placeholder='sdp_ratio').style("width:100px;").tooltip("sdp_ratio")
                         input_melotts_noise_scale = ui.input(label='noise_scale', value=config.get("melotts", "noise_scale"), placeholder='noise_scale').style("width:100px;").tooltip("noise_scale")
                         input_melotts_noise_scale_w = ui.input(label='noise_scale_w', value=config.get("melotts", "noise_scale_w"), placeholder='noise_scale_w').style("width:100px;").tooltip("noise_scale_w")
-                        input_melotts_speed = ui.input(label='语速', value=config.get("melotts", "speed"), placeholder='0-10，默认：1').style("width:100px;").tooltip("语速，默认：1")
+                        input_melotts_speed = ui.input(label='Speech rate', value=config.get("melotts", "speed"), placeholder='0-10, default:1').style("width:100px;").tooltip("Speech rate, default:1")
             if config.get("webui", "show_card", "tts", "index_tts"): 
                 with ui.card().style(card_css):
                     ui.label("Index-TTS")
@@ -5845,12 +5815,12 @@ def goto_func_page():
                         input_index_tts_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("index_tts", "api_ip_port"), 
-                            placeholder='Index-TTS API程序所在设备的IP address以及Port号',
+                            placeholder='Index-TTS APIIP address and Port number of the device the program runs on',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
-                        ).style("width:200px;").tooltip("Index-TTS API程序所在设备的IP address以及Port号")
-                        input_index_tts_prompt_audio = ui.input(label='prompt音频路径', value=config.get("index_tts", "prompt_audio"), placeholder='For example:E:\\1.wav').style("width:200px;").tooltip("prompt音频路径")
+                        ).style("width:200px;").tooltip("Index-TTS APIIP address and Port number of the device the program runs on")
+                        input_index_tts_prompt_audio = ui.input(label='promptAudio path', value=config.get("index_tts", "prompt_audio"), placeholder='For example:E:\\1.wav').style("width:200px;").tooltip("promptAudio path")
                         input_index_tts_temperature = ui.input(label='temperature', value=config.get("index_tts", "temperature"), placeholder='temperature').style("width:200px;").tooltip("temperature")
                         
         with ui.tab_panel(svc_page).style(tab_panel_css):
@@ -5859,27 +5829,27 @@ def goto_func_page():
                     ui.label("DDSP-SVC")
                     with ui.row():
                         switch_ddsp_svc_enable = ui.switch('Enable', value=config.get("ddsp_svc", "enable")).style(switch_internal_css)
-                        input_ddsp_svc_config_path = ui.input(label='Config file path', placeholder='模型配置文件config.yaml的路径(此处可以不配置，暂时没有用到)', value=config.get("ddsp_svc", "config_path"))
+                        input_ddsp_svc_config_path = ui.input(label='Config file path', placeholder='Path of the model configuration file config.yaml (can be left unconfigured here, not used for now)', value=config.get("ddsp_svc", "config_path"))
                         input_ddsp_svc_config_path.style("width:400px")
 
                         input_ddsp_svc_api_ip_port = ui.input(
                             label='API address', 
-                            placeholder='flask_api服务Run的ipPort，For example:http://127.0.0.1:6844', 
+                            placeholder='flask_apiThe ip and Port the service Runs on,For example:http://127.0.0.1:6844', 
                             value=config.get("ddsp_svc", "api_ip_port"),
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         )
                         input_ddsp_svc_api_ip_port.style("width:400px")
-                        input_ddsp_svc_fSafePrefixPadLength = ui.input(label='安全前缀填充长度', placeholder='安全前缀填充长度，不知道干啥用，默认为0', value=config.get("ddsp_svc", "fSafePrefixPadLength"))
+                        input_ddsp_svc_fSafePrefixPadLength = ui.input(label='Safety prefix padding length', placeholder='Safety prefix padding length, unknown purpose, default:0', value=config.get("ddsp_svc", "fSafePrefixPadLength"))
                         input_ddsp_svc_fSafePrefixPadLength.style("width:300px")
                     with ui.row():
-                        input_ddsp_svc_fPitchChange = ui.input(label='变调', placeholder='音调设置，默认为0', value=config.get("ddsp_svc", "fPitchChange"))
+                        input_ddsp_svc_fPitchChange = ui.input(label='Pitch shift', placeholder='Pitch setting, default:0', value=config.get("ddsp_svc", "fPitchChange"))
                         input_ddsp_svc_fPitchChange.style("width:300px")
-                        input_ddsp_svc_sSpeakId = ui.input(label='说话人ID', placeholder='说话人ID，需要和模型数据对应，默认为0', value=config.get("ddsp_svc", "sSpeakId"))
+                        input_ddsp_svc_sSpeakId = ui.input(label='SpeakerID', placeholder='Speaker ID, must correspond to the model data, default:0', value=config.get("ddsp_svc", "sSpeakId"))
                         input_ddsp_svc_sSpeakId.style("width:400px")
 
-                        input_ddsp_svc_sampleRate = ui.input(label='采样率', placeholder='DAW所需的采样率，默认为44100', value=config.get("ddsp_svc", "sampleRate"))
+                        input_ddsp_svc_sampleRate = ui.input(label='Sampling rate', placeholder='DAWRequired sampling rate, default:44100', value=config.get("ddsp_svc", "sampleRate"))
                         input_ddsp_svc_sampleRate.style("width:300px")
             
             if config.get("webui", "show_card", "svc", "so_vits_svc"):
@@ -5887,23 +5857,23 @@ def goto_func_page():
                     ui.label("SO-VITS-SVC")
                     with ui.row():
                         switch_so_vits_svc_enable = ui.switch('Enable', value=config.get("so_vits_svc", "enable")).style(switch_internal_css)
-                        input_so_vits_svc_config_path = ui.input(label='Config file path', placeholder='模型配置文件config.json的路径', value=config.get("so_vits_svc", "config_path"))
+                        input_so_vits_svc_config_path = ui.input(label='Config file path', placeholder='Path of the model configuration file config.json', value=config.get("so_vits_svc", "config_path"))
                         input_so_vits_svc_config_path.style("width:400px")
                     with ui.grid(columns=2):
                         input_so_vits_svc_api_ip_port = ui.input(
                             label='API address', 
-                            placeholder='flask_api_full_song服务Run的ipPort，For example:http://127.0.0.1:1145', 
+                            placeholder='flask_api_full_songThe ip and Port the service Runs on,For example:http://127.0.0.1:1145', 
                             value=config.get("so_vits_svc", "api_ip_port"),
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         )
                         input_so_vits_svc_api_ip_port.style("width:400px")
-                        input_so_vits_svc_spk = ui.input(label='说话人', placeholder='说话人，需要和配置文件内容对应', value=config.get("so_vits_svc", "spk"))
+                        input_so_vits_svc_spk = ui.input(label='Speaker', placeholder='Speaker, must correspond to the configuration file content', value=config.get("so_vits_svc", "spk"))
                         input_so_vits_svc_spk.style("width:400px") 
-                        input_so_vits_svc_tran = ui.input(label='音调', placeholder='音调设置，默认为1', value=config.get("so_vits_svc", "tran"))
+                        input_so_vits_svc_tran = ui.input(label='Pitch', placeholder='Pitch setting, default:1', value=config.get("so_vits_svc", "tran"))
                         input_so_vits_svc_tran.style("width:300px")
-                        input_so_vits_svc_wav_format = ui.input(label='输出音频格式', placeholder='音频合成后输出的格式', value=config.get("so_vits_svc", "wav_format"))
+                        input_so_vits_svc_wav_format = ui.input(label='Output audio format', placeholder='Output format after audio synthesis', value=config.get("so_vits_svc", "wav_format"))
                         input_so_vits_svc_wav_format.style("width:300px") 
         with ui.tab_panel(visual_body_page).style(tab_panel_css):
             if config.get("webui", "show_card", "visual_body", "live2d"):
@@ -5911,18 +5881,18 @@ def goto_func_page():
                     ui.label("Live2D")
                     with ui.row():
                         switch_live2d_enable = ui.switch('Enable', value=config.get("live2d", "enable")).style(switch_internal_css)
-                        input_live2d_port = ui.input(label='Port', value=config.get("live2d", "port"), placeholder='webPort the service runs on号，默认：12345，范围:0-65535，没事不要乱改就好')
-                        # input_live2d_name = ui.input(label='模型名', value=config.get("live2d", "name"), placeholder='模型名称，模型存放于Live2D\live2d-model路径下，请注意路径和模型内容是否匹配')
+                        input_live2d_port = ui.input(label='Port', value=config.get("live2d", "port"), placeholder='webPort the service runs onPort, default: 12345, range: 0-65535, do not change it casually if nothing is wrong')
+                        # input_live2d_name = ui.input(label='Model name', value=config.get("live2d", "name"), placeholder='Model name; models are stored under the Live2D\live2d-model path, please make sure the path matches the model content')
 
-                        live2d_names = common.get_folder_names("Live2D/live2d-model") # 路径写死
-                        logger.info(f"本地Live2D模型名列表：{live2d_names}")
+                        live2d_names = common.get_folder_names("Live2D/live2d-model") # Hard-coded path
+                        logger.info(f"List of local Live2D model names:{live2d_names}")
 
                         data_json = {}
                         for line in live2d_names:
                             data_json[line] = line
-                        # live2d_model_name = common.get_live2d_model_name("Live2D/js/model_name.js") # 路径写死
+                        # live2d_model_name = common.get_live2d_model_name("Live2D/js/model_name.js") # Hard-coded path
                         select_live2d_name = ui.select(
-                            label='模型名', 
+                            label='Model name', 
                             options=data_json, 
                             value=config.get("live2d", "name")
                         ).style("width:150px") 
@@ -5934,7 +5904,7 @@ def goto_func_page():
                         input_EasyAIVtuber_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("EasyAIVtuber", "api_ip_port"), 
-                            placeholder='对接EasyAIVtuber应用监听的ip和Port',
+                            placeholder='The ip and port the EasyAIVtuber app connection listens onPort',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
@@ -5958,7 +5928,7 @@ def goto_func_page():
                         input_digital_human_video_player_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("digital_human_video_player", "api_ip_port"), 
-                            placeholder='对接 Digital Human Video Player 监听的ip和Port',
+                            placeholder='The ip and port the Digital Human Video Player connection listens onPort',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
@@ -5976,7 +5946,7 @@ def goto_func_page():
                         input_metahuman_stream_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("metahuman_stream", "api_ip_port"), 
-                            placeholder='metahuman_stream应用启动API后，监听的ip和Port',
+                            placeholder='metahuman_streamThe ip and port to listen on after the app starts the APIPort',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
@@ -5989,7 +5959,7 @@ def goto_func_page():
                         input_live2d_TTS_LLM_GPT_SoVITS_Vtuber_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("live2d_TTS_LLM_GPT_SoVITS_Vtuber", "api_ip_port"), 
-                            placeholder='live2d_TTS_LLM_GPT_SoVITS_Vtuber应用启动API后，监听的ip和Port',
+                            placeholder='live2d_TTS_LLM_GPT_SoVITS_VtuberThe ip and port to listen on after the app starts the APIPort',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
@@ -6002,7 +5972,7 @@ def goto_func_page():
                         input_xuniren_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("xuniren", "api_ip_port"), 
-                            placeholder='xuniren应用启动API后，监听的ip和Port',
+                            placeholder='xunirenThe ip and port to listen on after the app starts the APIPort',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
@@ -6016,20 +5986,20 @@ def goto_func_page():
                         input_unity_api_ip_port = ui.input(
                             label='API address', 
                             value=config.get("unity", "api_ip_port"), 
-                            placeholder='对接Unity应用使用的HTTP中转站监听的ip和Port',
+                            placeholder='The ip and port the HTTP relay used to connect the Unity app listens onPort',
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         )
-                        input_unity_password = ui.input(label='Password', value=config.get("unity", "password"), placeholder='对接Unity应用使用的HTTP中转站的Password')
+                        input_unity_password = ui.input(label='Password', value=config.get("unity", "password"), placeholder='Port of the HTTP relay used to connect the Unity appPassword')
 
 
         with ui.tab_panel(copywriting_page).style(tab_panel_css):
             with ui.row():
-                switch_copywriting_auto_play = ui.switch('自动播放', value=config.get("copywriting", "auto_play")).style(switch_internal_css)
-                switch_copywriting_random_play = ui.switch('音频Random play', value=config.get("copywriting", "random_play")).style(switch_internal_css)
-                input_copywriting_audio_interval = ui.input(label='Audio playback间隔', value=config.get("copywriting", "audio_interval"), placeholder='CopywritingAudio playback之间的间隔时间。就是前一个Copywriting播放完成后，到后一个Copywriting开始播放之间的间隔时间。').tooltip('CopywritingAudio playback之间的间隔时间。就是前一个Copywriting播放完成后，到后一个Copywriting开始播放之间的间隔时间。')
-                input_copywriting_switching_interval = ui.input(label='音频切换间隔', value=config.get("copywriting", "switching_interval"), placeholder='Copywriting音频切换到Danmaku音频的切换间隔时间（反之一样）。\n就是在播放Copywriting时，有Danmaku触发并合成完毕，此时会暂停Copywriting播放，然后等待这个间隔时间后，再播放Danmaku reply音频。').tooltip('n就是在播放Copywriting时，有Danmaku触发并合成完毕，此时会暂停Copywriting播放，然后等待这个间隔时间后，再播放Danmaku reply音频。')
+                switch_copywriting_auto_play = ui.switch('Auto play', value=config.get("copywriting", "auto_play")).style(switch_internal_css)
+                switch_copywriting_random_play = ui.switch('Random audio playback', value=config.get("copywriting", "random_play")).style(switch_internal_css)
+                input_copywriting_audio_interval = ui.input(label='Audio playbackInterval', value=config.get("copywriting", "audio_interval"), placeholder='CopywritingAudio playbackInterval between them. That is, the interval between the end of playback of the previous Copywriting and the start of playback of the next Copywriting.').tooltip('CopywritingAudio playbackInterval between them. That is, the interval between the end of playback of the previous Copywriting and the start of playback of the next Copywriting.')
+                input_copywriting_switching_interval = ui.input(label='Audio switching interval', value=config.get("copywriting", "switching_interval"), placeholder='CopywritingSwitching interval between audio and Danmaku audio (and vice versa).\nThat is, while Copywriting is playing, if a Danmaku is triggered and synthesized, Copywriting playback is paused, then after waiting this interval, the Danmaku reply audio is played.').tooltip('nThat is, while Copywriting is playing, if a Danmaku is triggered and synthesized, Copywriting playback is paused, then after waiting this interval, the Danmaku reply audio is played.')
             with ui.row():
                 input_copywriting_index = ui.input(label='Copywriting index', value="", placeholder='Order number of the copywriting group, i.e. the first group is 1, the second is 2, and so on. Please enter a plain integer')
                 button_copywriting_add = ui.button('Add copywriting group', on_click=copywriting_add, color=button_internal_color).style(button_internal_css)
@@ -6047,150 +6017,150 @@ def goto_func_page():
                         copywriting_config_var[str(5 * index + 4)] = ui.textarea(label=f"Play list#{index + 1}", value=textarea_data_change(copywriting_config["play_list"]), placeholder='Enter the full names of the audio files to play here, then click Save Config. Copy the full file names from the audio list, separated by line breaks; do not fill in arbitrarily').style("width:500px;").tooltip('Enter the full names of the audio files to play here, then click Save Config. Copy the full file names from the audio list, separated by line breaks; do not fill in arbitrarily')
 
             with ui.card().style(card_css):
-                ui.label("Copywriting音频合成")
+                ui.label("CopywritingAudio synthesis")
                 with ui.row():
-                    input_copywriting_text_path = ui.input(label='Copywriting文本路径', value=config.get("copywriting", "text_path"), placeholder='待合成的Copywriting文本文件的路径').style("width:250px;").tooltip('待合成的Copywriting文本文件的路径')
-                    button_copywriting_text_load = ui.button('加载文本', on_click=copywriting_text_load, color=button_internal_color).style(button_internal_css)
-                    input_copywriting_audio_save_path = ui.input(label='Audio storage path', value=config.get("copywriting", "audio_save_path"), placeholder='音频合成后存储的路径').style("width:250px;").tooltip('音频合成后存储的路径')
-                    # input_copywriting_chunking_stop_time = ui.input(label='断句停顿时长', value=config.get("copywriting", "chunking_stop_time"), placeholder='自动根据标点断句后，2个句子之间的无声时长').style("width:150px;")
+                    input_copywriting_text_path = ui.input(label='CopywritingText path', value=config.get("copywriting", "text_path"), placeholder='Path of the Copywriting text file to be synthesized').style("width:250px;").tooltip('Path of the Copywriting text file to be synthesized')
+                    button_copywriting_text_load = ui.button('Load text', on_click=copywriting_text_load, color=button_internal_color).style(button_internal_css)
+                    input_copywriting_audio_save_path = ui.input(label='Audio storage path', value=config.get("copywriting", "audio_save_path"), placeholder='Path where the audio is stored after synthesis').style("width:250px;").tooltip('Path where the audio is stored after synthesis')
+                    # input_copywriting_chunking_stop_time = ui.input(label='Sentence pause duration', value=config.get("copywriting", "chunking_stop_time"), placeholder='After automatically splitting sentences by punctuation, the silent duration between 2 sentences').style("width:150px;")
                     select_copywriting_audio_synthesis_type = ui.select(
                         label='Speech synthesis', 
                         options=audio_synthesis_type_options, 
                         value=config.get("copywriting", "audio_synthesis_type")
                     ).style("width:200px;")
                 with ui.row():
-                    textarea_copywriting_text = ui.textarea(label='Copywriting文本', value='', placeholder='此处对需要合成Copywriting音频的文本内容进行编辑。Copywriting会自动根据逻辑进行切分，然后根据配置合成完整的一个音频文件。').style("width:1000px;").tooltip('此处对需要合成Copywriting音频的文本内容进行编辑。Copywriting会自动根据逻辑进行切分，然后根据配置合成完整的一个音频文件。')
+                    textarea_copywriting_text = ui.textarea(label='CopywritingText', value='', placeholder='Edit the text content of the Copywriting audio to be synthesized here. The Copywriting is automatically split according to the logic, then a complete audio file is synthesized according to the configuration.').style("width:1000px;").tooltip('Edit the text content of the Copywriting audio to be synthesized here. The Copywriting is automatically split according to the logic, then a complete audio file is synthesized according to the configuration.')
                 with ui.row():
-                    button_copywriting_save_text = ui.button('保存Copywriting', on_click=copywriting_save_text, color=button_internal_color).style(button_internal_css)
-                    button_copywriting_audio_synthesis = ui.button('合成音频', on_click=lambda: copywriting_audio_synthesis(), color=button_internal_color).style(button_internal_css)
+                    button_copywriting_save_text = ui.button('SaveCopywriting', on_click=copywriting_save_text, color=button_internal_color).style(button_internal_css)
+                    button_copywriting_audio_synthesis = ui.button('Synthesize audio', on_click=lambda: copywriting_audio_synthesis(), color=button_internal_color).style(button_internal_css)
                 copywriting_audio_card = ui.card()
                 with copywriting_audio_card.style(card_css):
                     with ui.row():
-                        ui.label("此处显示生成的Copywriting音频，仅显示最新合成的Copywriting音频，可以在此操作删除合成的音频")
+                        ui.label("The generated Copywriting audio is shown here, only the most recently synthesized Copywriting audio is shown, and you can delete the synthesized audio here")
         with ui.tab_panel(integral_page).style(tab_panel_css):
             with ui.card().style(card_css):
-                ui.label("通用")
+                ui.label("General")
                 with ui.grid(columns=3):
                     switch_integral_enable = ui.switch('Enable', value=config.get("integral", "enable")).style(switch_internal_css)
             with ui.card().style(card_css):
-                ui.label("签到")
+                ui.label("Check-in")
                 with ui.grid(columns=3):
                     switch_integral_sign_enable = ui.switch('Enable', value=config.get("integral", "sign", "enable")).style(switch_internal_css)
-                    input_integral_sign_get_integral = ui.input(label='获得Points数', value=config.get("integral", "sign", "get_integral"), placeholder='签到Success可以获得的Points数，请填写正整数！')
-                    textarea_integral_sign_cmd = ui.textarea(label='命令', value=textarea_data_change(config.get("integral", "sign", "cmd")), placeholder='DanmakuSend以下命令可以触发签到功能，换行分隔命令')
+                    input_integral_sign_get_integral = ui.input(label='Points earned', value=config.get("integral", "sign", "get_integral"), placeholder='Points earned for a successful check-in, please enter a positive integer!')
+                    textarea_integral_sign_cmd = ui.textarea(label='Command', value=textarea_data_change(config.get("integral", "sign", "cmd")), placeholder='DanmakuSendThe following commands can trigger the check-in function, separate commands with line breaks')
                 with ui.card().style(card_css):
                     ui.label("Copywriting")
                     integral_sign_copywriting_var = {}
                     for index, integral_sign_copywriting in enumerate(config.get("integral", "sign", "copywriting")):
                         with ui.grid(columns=2):
-                            integral_sign_copywriting_var[str(2 * index)] = ui.input(label=f"签到数区间#{index}", value=integral_sign_copywriting["sign_num_interval"], placeholder='限制在此区间内的签到数来触发对应的Copywriting，用-号来进行区间划分，包含边界值')
-                            integral_sign_copywriting_var[str(2 * index + 1)] = ui.textarea(label=f"Copywriting#{index}", value=textarea_data_change(integral_sign_copywriting["copywriting"]), placeholder='在此签到区间内，触发的Copywriting内容，换行分隔').style("width:400px;")
+                            integral_sign_copywriting_var[str(2 * index)] = ui.input(label=f"Check-in count interval#{index}", value=integral_sign_copywriting["sign_num_interval"], placeholder='Limit the number of check-ins within this interval to trigger the corresponding Copywriting, use the - sign to split the interval, boundary values included')
+                            integral_sign_copywriting_var[str(2 * index + 1)] = ui.textarea(label=f"Copywriting#{index}", value=textarea_data_change(integral_sign_copywriting["copywriting"]), placeholder='Copywriting content triggered within this check-in interval, separated by line breaks').style("width:400px;")
             with ui.card().style(card_css):
                 ui.label("Gift")
                 with ui.grid(columns=3):
                     switch_integral_gift_enable = ui.switch('Enable', value=config.get("integral", "gift", "enable")).style(switch_internal_css)
-                    input_integral_gift_get_integral_proportion = ui.input(label='获得Points比例', value=config.get("integral", "gift", "get_integral_proportion"), placeholder='此比例和Gift真实金额（元）挂钩，默认就是1元=10Points')
+                    input_integral_gift_get_integral_proportion = ui.input(label='Points earning ratio', value=config.get("integral", "gift", "get_integral_proportion"), placeholder='This ratio is tied to the real Gift amount (in yuan), the default is 1 yuan=10Points')
                 with ui.card().style(card_css):
                     ui.label("Copywriting")
                     integral_gift_copywriting_var = {}
                     for index, integral_gift_copywriting in enumerate(config.get("integral", "gift", "copywriting")):
                         with ui.grid(columns=2):
-                            integral_gift_copywriting_var[str(2 * index)] = ui.input(label=f"Gift价格区间#{index}", value=integral_gift_copywriting["gift_price_interval"], placeholder='限制在此区间内的Gift价格来触发对应的Copywriting，用-号来进行区间划分，包含边界值')
-                            integral_gift_copywriting_var[str(2 * index + 1)] = ui.textarea(label=f"Copywriting#{index}", value=textarea_data_change(integral_gift_copywriting["copywriting"]), placeholder='在此Gift区间内，触发的Copywriting内容，换行分隔').style("width:400px;")
+                            integral_gift_copywriting_var[str(2 * index)] = ui.input(label=f"GiftPrice range#{index}", value=integral_gift_copywriting["gift_price_interval"], placeholder='Limit the Gift price within this interval to trigger the corresponding Copywriting, use the - sign to split the interval, boundary values included')
+                            integral_gift_copywriting_var[str(2 * index + 1)] = ui.textarea(label=f"Copywriting#{index}", value=textarea_data_change(integral_gift_copywriting["copywriting"]), placeholder='Copywriting content triggered within this Gift interval, separated by line breaks').style("width:400px;")
             with ui.card().style(card_css):
                 ui.label("Entrance")
                 with ui.grid(columns=3):
                     switch_integral_entrance_enable = ui.switch('Enable', value=config.get("integral", "entrance", "enable")).style(switch_internal_css)
-                    input_integral_entrance_get_integral = ui.input(label='获得Points数', value=config.get("integral", "entrance", "get_integral"), placeholder='签到Success可以获得的Points数，请填写正整数！')
+                    input_integral_entrance_get_integral = ui.input(label='Points earned', value=config.get("integral", "entrance", "get_integral"), placeholder='Points earned for a successful check-in, please enter a positive integer!')
                 with ui.card().style(card_css):
                     ui.label("Copywriting")
                     integral_entrance_copywriting_var = {}
                     for index, integral_entrance_copywriting in enumerate(config.get("integral", "entrance", "copywriting")):
                         with ui.grid(columns=2):
-                            integral_entrance_copywriting_var[str(2 * index)] = ui.input(label=f"Entrance数区间#{index}", value=integral_entrance_copywriting["entrance_num_interval"], placeholder='限制在此区间内的Entrance数来触发对应的Copywriting，用-号来进行区间划分，包含边界值')
-                            integral_entrance_copywriting_var[str(2 * index + 1)] = ui.textarea(label=f"Copywriting#{index}", value=textarea_data_change(integral_entrance_copywriting["copywriting"]), placeholder='在此Entrance区间内，触发的Copywriting内容，换行分隔').style("width:400px;")
+                            integral_entrance_copywriting_var[str(2 * index)] = ui.input(label=f"EntranceCount interval#{index}", value=integral_entrance_copywriting["entrance_num_interval"], placeholder='Limit the number of Entrance within this interval to trigger the corresponding Copywriting, use the - sign to split the interval, boundary values included')
+                            integral_entrance_copywriting_var[str(2 * index + 1)] = ui.textarea(label=f"Copywriting#{index}", value=textarea_data_change(integral_entrance_copywriting["copywriting"]), placeholder='Copywriting content triggered within this Entrance interval, separated by line breaks').style("width:400px;")
             with ui.card().style(card_css):
-                ui.label("增删改查")
+                ui.label("CRUD")
                 with ui.card().style(card_css):
-                    ui.label("查询")
+                    ui.label("Query")
                     with ui.grid(columns=3):
                         switch_integral_crud_query_enable = ui.switch('Enable', value=config.get("integral", "crud", "query", "enable")).style(switch_internal_css)
-                        textarea_integral_crud_query_cmd = ui.textarea(label="命令", value=textarea_data_change(config.get("integral", "crud", "query", "cmd")), placeholder='DanmakuSend以下命令可以触发查询功能，换行分隔命令')
-                        textarea_integral_crud_query_copywriting = ui.textarea(label="Copywriting", value=textarea_data_change(config.get("integral", "crud", "query", "copywriting")), placeholder='触发查询功能后返回的Copywriting内容，换行分隔命令').style("width:400px;")
+                        textarea_integral_crud_query_cmd = ui.textarea(label="Command", value=textarea_data_change(config.get("integral", "crud", "query", "cmd")), placeholder='DanmakuSendThe following commands can trigger the query function, separate commands with line breaks')
+                        textarea_integral_crud_query_copywriting = ui.textarea(label="Copywriting", value=textarea_data_change(config.get("integral", "crud", "query", "copywriting")), placeholder='Copywriting content returned after the query function is triggered, separate commands with line breaks').style("width:400px;")
 
         with ui.tab_panel(talk_page).style(tab_panel_css): 
             with ui.row().style("position:fixed; top: 100px; right: 20px;"):
-                with ui.expansion('Chat记录', icon="question_answer", value=True):
+                with ui.expansion('ChatRecord', icon="question_answer", value=True):
                     scroll_area_chat_box = ui.scroll_area().style("width:500px; height:700px;")
                 
 
             with ui.row():
-                switch_talk_key_listener_enable = ui.switch('Enable按键监听', value=config.get("talk", "key_listener_enable")).style(switch_internal_css).tooltip("Enable后，可以通过键盘单击下放配置的录音按键，启动语音识别对话功能")
-                switch_talk_direct_run_talk = ui.switch('直接语音对话', value=config.get("talk", "direct_run_talk")).style(switch_internal_css).tooltip("如果Enable了，将在首次Run时直接进行语音识别，而不需手动点击开始按键。针对有些系统按键无法触发的情况下，配合连续对话和唤醒词使用")
+                switch_talk_key_listener_enable = ui.switch('EnableKey listener', value=config.get("talk", "key_listener_enable")).style(switch_internal_css).tooltip("EnableAfter that, you can click the configured record key on the keyboard to start the voice recognition conversation function")
+                switch_talk_direct_run_talk = ui.switch('Direct voice conversation', value=config.get("talk", "direct_run_talk")).style(switch_internal_css).tooltip("If Enabled, speech recognition starts directly on the first Run without manually clicking the start button. For systems where key presses cannot be triggered, use it together with continuous conversation and wake words")
                 
                 audio_device_info_list = common.get_all_audio_device_info("in")
-                logger.info(f"声卡输入设备={audio_device_info_list}")
+                logger.info(f"Sound card input device={audio_device_info_list}")
                 audio_device_info_dict = {str(device['device_index']): device['device_info'] for device in audio_device_info_list}
 
-                logger.debug(f"声卡输入设备={audio_device_info_dict}")
+                logger.debug(f"Sound card input device={audio_device_info_dict}")
 
                 select_talk_device_index = ui.select(
-                    label='声卡输入设备', 
+                    label='Sound card input device', 
                     options=audio_device_info_dict, 
                     value=config.get("talk", "device_index")
-                ).style("width:300px;").tooltip('这就是语言对话输入的声卡（麦克风），选择你对应的麦克风即可，如果需要监听电脑声卡可以配合虚拟声卡来实现')
+                ).style("width:300px;").tooltip('This is the sound card (microphone) for voice conversation input; just select your corresponding microphone. If you need to listen to the computer sound card, you can use a virtual sound card')
                 
-                switch_talk_no_recording_during_playback = ui.switch('播放中不进行录音', value=config.get("talk", "no_recording_during_playback")).style(switch_internal_css).tooltip('AI在播放音频的过程中不进行录音，从而防止麦克风和扬声器太近导致的循环录音的Question')
-                input_talk_no_recording_during_playback_sleep_interval = ui.input(label='播放中不进行录音的检测间隔(秒)', value=config.get("talk", "no_recording_during_playback_sleep_interval"), placeholder='这个值设置正常不需要太大，因为在Enable了“播放中不进行录音”时，不会出现录音到AI说的话的情况，设置太大会导致恢复录音的时间变慢').style("width:200px;").tooltip('这个值设置正常不需要太大，因为不会出现录音到AI说的话的情况')
+                switch_talk_no_recording_during_playback = ui.switch('Do not record during playback', value=config.get("talk", "no_recording_during_playback")).style(switch_internal_css).tooltip('AIDo not record while audio is playing, to prevent circular recording caused by the microphone being too close to the speakerQuestion')
+                input_talk_no_recording_during_playback_sleep_interval = ui.input(label='Detection interval (seconds) for not recording during playback)', value=config.get("talk", "no_recording_during_playback_sleep_interval"), placeholder='This value normally does not need to be large, because when “Do not record during playback” is Enabled, the own speech of the AI will not be recorded; setting it too large slows down the time to resume recording').style("width:200px;").tooltip('This value normally does not need to be large, because the own speech of the AI will not be recorded')
                 
-                input_talk_username = ui.input(label='你的名字', value=config.get("talk", "username"), placeholder='Log中你的名字，暂时没有实质作用').style("width:200px;")
-                switch_talk_continuous_talk = ui.switch('连续对话', value=config.get("talk", "continuous_talk")).style(switch_internal_css).tooltip('仅需按一次录音按键，后续就不需要按了，会自动根据沉默阈值切分等待后，继续录音')
+                input_talk_username = ui.input(label='Your name', value=config.get("talk", "username"), placeholder='LogYour name in it, currently has no practical effect').style("width:200px;")
+                switch_talk_continuous_talk = ui.switch('Continuous conversation', value=config.get("talk", "continuous_talk")).style(switch_internal_css).tooltip('Press the record key only once; afterwards there is no need to press it again, recording will automatically continue after splitting and waiting based on the silence threshold')
             with ui.row():
                 data_json = {}
                 for line in ["google", "baidu", "faster_whisper", "sensevoice"]:
                     data_json[line] = line
                 select_talk_type = ui.select(
-                    label='录音Type', 
+                    label='RecordingType', 
                     options=data_json, 
                     value=config.get("talk", "type")
-                ).style("width:200px;").tooltip('选择使用的STTType')
+                ).style("width:200px;").tooltip('Select the one to useSTTType')
 
                 with open('data/keyboard.txt', 'r') as file:
                     file_content = file.read()
-                # 按行分割内容，并去除每行末尾的换行符
+                # Split content by line and remove the line break at the end of each line
                 lines = file_content.strip().split('\n')
                 data_json = {}
                 for line in lines:
                     data_json[line] = line
                 select_talk_trigger_key = ui.select(
-                    label='录音按键', 
+                    label='Record key', 
                     options=data_json, 
                     value=config.get("talk", "trigger_key"),
                     with_input=True,
                     clearable=True
-                ).style("width:200px;").tooltip('按压此按键就可以触发录音了，按一次就行了')
+                ).style("width:200px;").tooltip('Press this key to trigger recording, just press it once')
                 select_talk_stop_trigger_key = ui.select(
-                    label='停录按键', 
+                    label='Stop-recording key', 
                     options=data_json, 
                     value=config.get("talk", "stop_trigger_key"),
                     with_input=True,
                     clearable=True
-                ).style("width:200px;").tooltip('按压此按键就可以Stop录音了，按一次就行了')
+                ).style("width:200px;").tooltip('Press this key to Stop recording, just press it once')
 
-                input_talk_volume_threshold = ui.input(label='音量阈值', value=config.get("talk", "volume_threshold"), placeholder='音量阈值，指的是触发录音的起始音量值，请根据自己的麦克风进行微调到最佳').style("width:100px;").tooltip('音量阈值，指的是触发录音的起始音量值，请根据自己的麦克风进行微调到最佳')
-                input_talk_silence_threshold = ui.input(label='停录计数', value=config.get("talk", "silence_threshold"), placeholder='停录计数，指的是音量低于起始值的计数，这个值越大，切分音频越慢，即需要等待更长时间才会Stop录音，但也不能太小，不然说一半就停了').style("width:100px;").tooltip('沉默阈值，指的是触发Stop路径的最低音量值，请根据自己的麦克风进行微调到最佳')
-                input_talk_silence_CHANNELS = ui.input(label='CHANNELS', value=config.get("talk", "CHANNELS"), placeholder='录音用的参数').style("width:100px;")
-                input_talk_silence_RATE = ui.input(label='RATE', value=config.get("talk", "RATE"), placeholder='录音用的参数').style("width:100px;")
-                switch_talk_show_chat_log = ui.switch('Chat记录', value=config.get("talk", "show_chat_log")).style(switch_internal_css)
+                input_talk_volume_threshold = ui.input(label='Volume threshold', value=config.get("talk", "volume_threshold"), placeholder='Volume threshold, the starting volume value that triggers recording, please fine-tune it to the best value for your microphone').style("width:100px;").tooltip('Volume threshold, the starting volume value that triggers recording, please fine-tune it to the best value for your microphone')
+                input_talk_silence_threshold = ui.input(label='Stop-recording count', value=config.get("talk", "silence_threshold"), placeholder='Stop-recording count refers to the count of volume below the start value; the larger this value, the slower the audio is split, i.e. it waits longer before Stopping recording, but it should not be too small, otherwise recording stops halfway through speaking').style("width:100px;").tooltip('Silence threshold, the minimum volume value that triggers the Stop path, please fine-tune it to the best value for your microphone')
+                input_talk_silence_CHANNELS = ui.input(label='CHANNELS', value=config.get("talk", "CHANNELS"), placeholder='Parameters used for recording').style("width:100px;")
+                input_talk_silence_RATE = ui.input(label='RATE', value=config.get("talk", "RATE"), placeholder='Parameters used for recording').style("width:100px;")
+                switch_talk_show_chat_log = ui.switch('ChatRecord', value=config.get("talk", "show_chat_log")).style(switch_internal_css)
             
             with ui.row():
-                textarea_talk_chat_box = ui.textarea(label='Chat框-和AI对话', value="", placeholder='此处填写对话内容可以直接进行对话（前面配置好Chat Mode，记得Run先）').style("width:500px;").tooltip("此处填写对话内容可以直接进行对话（前面配置好Chat Mode，记得Run先）")
+                textarea_talk_chat_box = ui.textarea(label='ChatBox - chat with the AI', value="", placeholder='Fill in the conversation content here to chat directly (configure Chat Mode beforehand, remember to Run first)').style("width:500px;").tooltip("Fill in the conversation content here to chat directly (configure Chat Mode beforehand, remember to Run first)")
                 
                 '''
-                    Chat页相关的函数
+                    ChatPage-related functions
                 '''
 
-                # Send Chat框内容
+                # Send ChatBox content
                 async def talk_chat_box_send():
                     global running_flag
                     
@@ -6198,11 +6168,11 @@ def goto_func_page():
                         ui.notify(position="top", type="info", message="Please click “Run” first, then chat")
                         return
 
-                    # 获取Username和文本内容
+                    # Get the Username and text content
                     username = input_talk_username.value
                     content = textarea_talk_chat_box.value
 
-                    # 清空Chat框
+                    # Clear the Chat box
                     textarea_talk_chat_box.value = ""
 
                     data = {
@@ -6221,7 +6191,7 @@ def goto_func_page():
                     await common.send_async_request(f'http://{main_api_ip}:{config.get("api_port")}/send', "POST", data)
 
 
-                # Send Chat框内容 进行Repeat
+                # Send ChatBox content to carry outRepeat
                 async def talk_chat_box_reread(insert_index=-1, type="reread"):
                     global running_flag
 
@@ -6229,11 +6199,11 @@ def goto_func_page():
                         ui.notify(position="top", type="warning", message="Please click “Run” first, then chat")
                         return
                     
-                    # 获取Username和文本内容
+                    # Get the Username and text content
                     username = input_talk_username.value
                     content = textarea_talk_chat_box.value
 
-                    # 清空Chat框
+                    # Clear the Chat box
                     textarea_talk_chat_box.value = ""
 
                     if insert_index == -1:
@@ -6273,7 +6243,7 @@ def goto_func_page():
                     main_api_ip = "127.0.0.1" if config.get("api_ip") == "0.0.0.0" else config.get("api_ip")
                     await common.send_async_request(f'http://{main_api_ip}:{config.get("api_port")}/send', "POST", data)
 
-                # Send Chat框内容 进行LLM的调教
+                # Send ChatBox content to carry out LLM tuning
                 async def talk_chat_box_tuning():
                     global running_flag
 
@@ -6281,11 +6251,11 @@ def goto_func_page():
                         ui.notify(position="top", type="warning", message="Please click “Run” first, then chat")
                         return
                     
-                    # 获取Username和文本内容
+                    # Get the Username and text content
                     username = input_talk_username.value
                     content = textarea_talk_chat_box.value
 
-                    # 清空Chat框
+                    # Clear the Chat box
                     textarea_talk_chat_box.value = ""
 
                     data = {
@@ -6300,22 +6270,22 @@ def goto_func_page():
                     main_api_ip = "127.0.0.1" if config.get("api_ip") == "0.0.0.0" else config.get("api_ip")
                     await common.send_async_request(f'http://{main_api_ip}:{config.get("api_port")}/send', "POST", data)
 
-                button_talk_chat_box_send = ui.button('Send', on_click=lambda: talk_chat_box_send(), color=button_internal_color).style(button_internal_css).tooltip("Send文本给LLM，模拟Danmaku触发操作")
-                button_talk_chat_box_reread = ui.button('直接Repeat', on_click=lambda: talk_chat_box_reread(), color=button_internal_color).style(button_internal_css).tooltip("Send文本给内部机制，触发TTS RepeatType的消息")
-                button_talk_chat_box_tuning = ui.button('调教', on_click=lambda: talk_chat_box_tuning(), color=button_internal_color).style(button_internal_css).tooltip("Send文本给LLM，但不会进行TTS等操作")
-                button_talk_chat_box_reread_first = ui.button('直接Repeat-插队首', on_click=lambda: talk_chat_box_reread(0, "reread_top_priority"), color=button_internal_color).style(button_internal_css).tooltip("最高优先级 Send文本给内部机制，触发TTS 直接RepeatType的消息")
+                button_talk_chat_box_send = ui.button('Send', on_click=lambda: talk_chat_box_send(), color=button_internal_color).style(button_internal_css).tooltip("SendText to the LLM, simulating a Danmaku-triggered operation")
+                button_talk_chat_box_reread = ui.button('DirectRepeat', on_click=lambda: talk_chat_box_reread(), color=button_internal_color).style(button_internal_css).tooltip("SendText to the internal mechanism, triggers a TTS Repeat Type message")
+                button_talk_chat_box_tuning = ui.button('Tuning', on_click=lambda: talk_chat_box_tuning(), color=button_internal_color).style(button_internal_css).tooltip("SendText to the LLM, but no TTS or other operations are performed")
+                button_talk_chat_box_reread_first = ui.button('Direct Repeat - jump the queue', on_click=lambda: talk_chat_box_reread(0, "reread_top_priority"), color=button_internal_color).style(button_internal_css).tooltip("Highest priority, Send text to the internal mechanism, triggers a TTS direct Repeat Type message")
         
-            with ui.expansion('对话打断', icon="settings", value=True).classes('w-2/3'):
+            with ui.expansion('Conversation interruption', icon="settings", value=True).classes('w-2/3'):
                 with ui.row():
                     switch_talk_interrupt_talk_enable = ui.switch('Enable', value=config.get("talk", "interrupt_talk", "enable")).style(switch_internal_css)
                     textarea_talk_interrupt_talk_keywords = ui.textarea(
-                        label='打断Keywords', 
-                        placeholder='如：等一下、住嘴 多个请换行分隔', 
+                        label='InterruptKeywords', 
+                        placeholder='E.g.: wait a moment, shut up. Separate multiple entries with line breaks', 
                         value=textarea_data_change(config.get("talk", "interrupt_talk", "keywords"))
-                    ).style("width:200px;").tooltip("打断Keywords，当语句中包含出现这些词时，会中断对话，具体清除内容根据清除Type自定义")
+                    ).style("width:200px;").tooltip("Interrupt Keywords; when a sentence contains these words, the conversation is interrupted; what exactly is cleared is customized according to the clear Type")
                     
                     with ui.card().style(card_css):
-                        ui.label("清除Type")
+                        ui.label("ClearType")
                         with ui.row(): 
                             talk_interrupt_clean_type_list = [
                                 "message_queue", 
@@ -6323,9 +6293,9 @@ def goto_func_page():
                                 "audio_play"
                             ]
                             talk_interrupt_clean_type_mapping = {
-                                "message_queue": "待合成消息队列",
-                                "voice_tmp_path_queue": "待播放音频队列",
-                                "audio_play": "正在播放中的音频",
+                                "message_queue": "Message queue awaiting synthesis",
+                                "voice_tmp_path_queue": "Audio queue awaiting playback",
+                                "audio_play": "Audio currently playing",
                             }
                             talk_interrupt_clean_type_var = {}
                             
@@ -6340,34 +6310,34 @@ def goto_func_page():
                                         text=talk_interrupt_clean_type_mapping[talk_interrupt_clean_type], 
                                         value=False
                                     ) 
-            with ui.expansion('语音唤醒与睡眠', icon="settings", value=True).classes('w-2/3'):
+            with ui.expansion('Voice wake-up and sleep', icon="settings", value=True).classes('w-2/3'):
                 with ui.row():
                     switch_talk_wakeup_sleep_enable = ui.switch('Enable', value=config.get("talk", "wakeup_sleep", "enable")).style(switch_internal_css)
                     select_talk_wakeup_sleep_mode = ui.select(
-                        label='唤醒模式', 
-                        options={"长期唤醒": "长期唤醒", "单次唤醒": "单次唤醒"}, 
+                        label='Wake-up mode', 
+                        options={"Persistent wake-up": "Persistent wake-up", "Single wake-up": "Single wake-up"}, 
                         value=config.get("talk", "wakeup_sleep", "mode")
-                    ).style("width:100px").tooltip("长期唤醒：说完唤醒词后，会触发提示语，后期对话不需要唤醒词；单次唤醒：每次对话都需要携带唤醒词，否则默认保持睡眠，且不会触发提示语")
-                    textarea_talk_wakeup_sleep_wakeup_word = ui.textarea(label='唤醒词', placeholder='如：管家 多个请换行分隔', value=textarea_data_change(config.get("talk", "wakeup_sleep", "wakeup_word"))).style("width:200px;")
-                    textarea_talk_wakeup_sleep_sleep_word = ui.textarea(label='睡眠词', placeholder='如：关机 多个请换行分隔', value=textarea_data_change(config.get("talk", "wakeup_sleep", "sleep_word"))).style("width:200px;")
-                    textarea_talk_wakeup_sleep_wakeup_copywriting = ui.textarea(label='唤醒提示语', placeholder='如：在的 多个请换行分隔', value=textarea_data_change(config.get("talk", "wakeup_sleep", "wakeup_copywriting"))).style("width:300px;")
-                    textarea_talk_wakeup_sleep_sleep_copywriting = ui.textarea(label='睡眠提示语', placeholder='如：晚安 多个请换行分隔', value=textarea_data_change(config.get("talk", "wakeup_sleep", "sleep_copywriting"))).style("width:300px;")
+                    ).style("width:100px").tooltip("Long-term wake-up: after saying the wake word, the prompt is triggered, and later conversation does not need the wake word; single wake-up: every conversation must include the wake word, otherwise it stays asleep by default and the prompt is not triggered")
+                    textarea_talk_wakeup_sleep_wakeup_word = ui.textarea(label='Wake word', placeholder='E.g.: butler. Separate multiple entries with line breaks', value=textarea_data_change(config.get("talk", "wakeup_sleep", "wakeup_word"))).style("width:200px;")
+                    textarea_talk_wakeup_sleep_sleep_word = ui.textarea(label='Sleep word', placeholder='E.g.: shutdown. Separate multiple entries with line breaks', value=textarea_data_change(config.get("talk", "wakeup_sleep", "sleep_word"))).style("width:200px;")
+                    textarea_talk_wakeup_sleep_wakeup_copywriting = ui.textarea(label='Wake-up prompt', placeholder='E.g.: are you there. Separate multiple entries with line breaks', value=textarea_data_change(config.get("talk", "wakeup_sleep", "wakeup_copywriting"))).style("width:300px;")
+                    textarea_talk_wakeup_sleep_sleep_copywriting = ui.textarea(label='Sleep prompt', placeholder='E.g.: good night. Separate multiple entries with line breaks', value=textarea_data_change(config.get("talk", "wakeup_sleep", "sleep_copywriting"))).style("width:300px;")
 
-            with ui.expansion('谷歌', icon="settings", value=False).classes('w-2/3'):
+            with ui.expansion('Google', icon="settings", value=False).classes('w-2/3'):
                 with ui.grid(columns=1):
                     data_json = {}
                     for line in ["zh-CN", "en-US", "ja-JP"]:
                         data_json[line] = line
                     select_talk_google_tgt_lang = ui.select(
-                        label='目标Translation语言', 
+                        label='Target Translation language', 
                         options=data_json, 
                         value=config.get("talk", "google", "tgt_lang")
                     ).style("width:200px")
-            with ui.expansion('百度', icon="settings", value=False).classes('w-2/3'):
+            with ui.expansion('Baidu', icon="settings", value=False).classes('w-2/3'):
                 with ui.grid(columns=3):    
-                    input_talk_baidu_app_id = ui.input(label='AppID', value=config.get("talk", "baidu", "app_id"), placeholder='百度云 语音识别应用的 AppID')
-                    input_talk_baidu_api_key = ui.input(label='API Key', value=config.get("talk", "baidu", "api_key"), placeholder='百度云 语音识别应用的 API Key')
-                    input_talk_baidu_secret_key = ui.input(label='Secret Key', value=config.get("talk", "baidu", "secret_key"), placeholder='百度云 语音识别应用的 Secret Key')
+                    input_talk_baidu_app_id = ui.input(label='AppID', value=config.get("talk", "baidu", "app_id"), placeholder='Baidu Cloud speech recognition application AppID')
+                    input_talk_baidu_api_key = ui.input(label='API Key', value=config.get("talk", "baidu", "api_key"), placeholder='Baidu Cloud speech recognition application API Key')
+                    input_talk_baidu_secret_key = ui.input(label='Secret Key', value=config.get("talk", "baidu", "secret_key"), placeholder='Baidu Cloud speech recognition application Secret Key')
             with ui.expansion('faster_whisper', icon="settings", value=False).classes('w-2/3'):
                 with ui.row():    
                     input_faster_whisper_model_size = ui.input(label='model_size', value=config.get("talk", "faster_whisper", "model_size"), placeholder='Size of the model to use')
@@ -6375,7 +6345,7 @@ def goto_func_page():
                     for line in ["Auto detect", 'af', 'am', 'ar', 'as', 'az', 'ba', 'be', 'bg', 'bn', 'bo', 'br', 'bs', 'ca', 'cs', 'cy', 'da', 'de', 'el', 'en', 'es', 'et', 'eu', 'fa', 'fi', 'fo', 'fr', 'gl', 'gu', 'ha', 'haw', 'he', 'hi', 'hr', 'ht', 'hu', 'hy', 'id', 'is', 'it', 'ja', 'jw', 'ka', 'kk', 'km', 'kn', 'ko', 'la', 'lb', 'ln', 'lo', 'lt', 'lv', 'mg', 'mi', 'mk', 'ml', 'mn', 'mr', 'ms', 'mt', 'my', 'ne', 'nl', 'nn', 'no', 'oc', 'pa', 'pl', 'ps', 'pt', 'ro', 'ru', 'sa', 'sd', 'si', 'sk', 'sl', 'sn', 'so', 'sq', 'sr', 'su', 'sv', 'sw', 'ta', 'te', 'tg', 'th', 'tk', 'tl', 'tr', 'tt', 'uk', 'ur', 'uz', 'vi', 'yi', 'yo', 'zh', 'yue']:
                         data_json[line] = line
                     select_faster_whisper_language = ui.select(
-                        label='识别语言', 
+                        label='Recognition language', 
                         options=data_json, 
                         value=config.get("talk", "faster_whisper", "language")
                     ).style("width:200px")
@@ -6395,20 +6365,20 @@ def goto_func_page():
                         options=data_json, 
                         value=config.get("talk", "faster_whisper", "compute_type")
                     ).style("width:200px")
-                    input_faster_whisper_download_root = ui.input(label='download_root', value=config.get("talk", "faster_whisper", "download_root"), placeholder='模型下载路径')
-                    input_faster_whisper_beam_size = ui.input(label='beam_size', value=config.get("talk", "faster_whisper", "beam_size"), placeholder='系统在每个步骤中要考虑的最可能的候选序列数。具有较大的beam_size将使系统产生更准确的结果，但可能需要更多的计算资源；较小的beam_size会减少计算需求，但可能降低结果的准确性。')
+                    input_faster_whisper_download_root = ui.input(label='download_root', value=config.get("talk", "faster_whisper", "download_root"), placeholder='Model download path')
+                    input_faster_whisper_beam_size = ui.input(label='beam_size', value=config.get("talk", "faster_whisper", "beam_size"), placeholder='Number of most likely candidate sequences the system considers at each step. A larger beam_size makes the system produce more accurate results but may need more computing resources; a smaller beam_size reduces computing needs but may lower accuracy.')
             with ui.expansion('SenseVoice', icon="settings", value=False).classes('w-2/3'):
                 with ui.row():    
-                    input_sensevoice_asr_model_path = ui.input(label='ASR 模型路径', value=config.get("talk", "sensevoice", "asr_model_path"), placeholder='ASR模型路径').tooltip("ASR模型路径")
-                    input_sensevoice_vad_model_path = ui.input(label='VAD 模型路径', value=config.get("talk", "sensevoice", "vad_model_path"), placeholder='VAD模型路径').tooltip("VAD模型路径")
-                    input_sensevoice_vad_max_single_segment_time = ui.input(label='VAD 模型路径', value=config.get("talk", "sensevoice", "vad_max_single_segment_time"), placeholder='VAD单段最大语音时间').tooltip("VAD单段最大语音时间")
-                    input_sensevoice_vad_device = ui.input(label='device', value=config.get("talk", "sensevoice", "device"), placeholder='使用设备device').tooltip("使用设备device")
+                    input_sensevoice_asr_model_path = ui.input(label='ASR Model path', value=config.get("talk", "sensevoice", "asr_model_path"), placeholder='ASRModel path').tooltip("ASRModel path")
+                    input_sensevoice_vad_model_path = ui.input(label='VAD Model path', value=config.get("talk", "sensevoice", "vad_model_path"), placeholder='VADModel path').tooltip("VADModel path")
+                    input_sensevoice_vad_max_single_segment_time = ui.input(label='VAD Model path', value=config.get("talk", "sensevoice", "vad_max_single_segment_time"), placeholder='VADMaximum duration of a single speech segment').tooltip("VADMaximum duration of a single speech segment")
+                    input_sensevoice_vad_device = ui.input(label='device', value=config.get("talk", "sensevoice", "device"), placeholder='Device to usedevice').tooltip("Device to usedevice")
                     
                     data_json = {}
                     for line in ['zh', 'en', 'jp']:
                         data_json[line] = line
                     select_sensevoice_language = ui.select(
-                        label='识别语言', 
+                        label='Recognition language', 
                         options=data_json, 
                         value=config.get("talk", "sensevoice", "language")
                     ).style("width:100px")
@@ -6475,24 +6445,24 @@ def goto_func_page():
                             ui.notify(position="top", type="warning", message="Please click “Run” first, then do screenshot recognition")
                             return
                         
-                        logger.info(f"触发截图识别")
+                        logger.info(f"Trigger screenshot recognition")
 
-                        # 根据窗口名截图
+                        # Take a screenshot by window name
                         screenshot_path = common.capture_window_by_title(input_image_recognition_img_save_path.value, select_image_recognition_screenshot_window_title.value)
 
                         data = await get_llm_resp(screenshot_path)
 
                         
                     if loop_screenshot_timer_running:
-                        # 如果定时器已经在Run，则Stop它
+                        # If the timer is already Running, Stop it
                         loop_screenshot_timer.cancel()
                     else:
-                        # 如果定时器未在Run，则启动它
-                        loop_screenshot_timer = ui.timer(interval=interval_time, callback=lambda: image_recognition_screenshot_and_send())  # 设置定时器，每秒执行一次perform_task函数
+                        # If the timer is not Running, start it
+                        loop_screenshot_timer = ui.timer(interval=interval_time, callback=lambda: image_recognition_screenshot_and_send())  # Set a timer that executes the perform_task function once per second
                         loop_screenshot_timer.activate()
-                    loop_screenshot_timer_running = not loop_screenshot_timer_running  # 更新定时器Run状态
+                    loop_screenshot_timer_running = not loop_screenshot_timer_running  # Update the timer Run status
 
-                # 截图并SendLLM
+                # Take a screenshot andSendLLM
                 async def image_recognition_screenshot_and_send(sleep_time: float):
                     global running_flag
 
@@ -6500,16 +6470,16 @@ def goto_func_page():
                         ui.notify(position="top", type="warning", message="Please click “Run” first, then do screenshot recognition")
                         return
                     
-                    logger.info(f"{input_image_recognition_screenshot_delay.value}后触发截图识别")
-                    ui.notify(position="top", type="positive", message=f"{input_image_recognition_screenshot_delay.value}后触发截图识别")
+                    logger.info(f"{input_image_recognition_screenshot_delay.value}Trigger screenshot recognition after")
+                    ui.notify(position="top", type="positive", message=f"{input_image_recognition_screenshot_delay.value}Trigger screenshot recognition after")
                     
                     await asyncio.sleep(sleep_time)
 
-                    # 根据窗口名截图
+                    # Take a screenshot by window name
                     screenshot_path = common.capture_window_by_title(input_image_recognition_img_save_path.value, select_image_recognition_screenshot_window_title.value)
                     data = await get_llm_resp(screenshot_path)
 
-                # 摄像头截图并SendLLM
+                # Camera screenshot andSendLLM
                 async def image_recognition_cam_screenshot_and_send(sleep_time: float):
                     global running_flag
 
@@ -6517,49 +6487,49 @@ def goto_func_page():
                         ui.notify(position="top", type="warning", message="Please click “Run” first, then do screenshot recognition")
                         return
                     
-                    logger.info(f"{input_image_recognition_cam_screenshot_delay.value}后触发摄像头截图识别")
-                    ui.notify(position="top", type="positive", message=f"{input_image_recognition_screenshot_delay.value}后触发摄像头截图识别")
+                    logger.info(f"{input_image_recognition_cam_screenshot_delay.value}Trigger camera screenshot recognition after")
+                    ui.notify(position="top", type="positive", message=f"{input_image_recognition_screenshot_delay.value}Trigger camera screenshot recognition after")
                     
                     await asyncio.sleep(sleep_time)
 
-                    # 根据摄像头索引截图
+                    # Take a screenshot by camera index
                     screenshot_path = common.capture_image(input_image_recognition_img_save_path.value, int(select_image_recognition_cam_index.value))
                     data = await get_llm_resp(screenshot_path)
 
 
-                ui.label("通用")
+                ui.label("General")
                 with ui.row():
                     button_image_recognition_enable = ui.switch('Enable', value=config.get("image_recognition", "enable")).style(switch_internal_css)
                     select_image_recognition_model = ui.select(
-                        label='模型', 
+                        label='Model', 
                         options={'gemini': 'gemini', 'zhipu': 'Zhipu AI'}, 
                         value=config.get("image_recognition", "model")
                     ).style("width:150px")
                     
-                    input_image_recognition_img_save_path = ui.input(label='截图保存路径', value=config.get("image_recognition", "img_save_path"), placeholder='截图保存路径，支持绝对或相对路径')
-                    input_image_recognition_prompt = ui.input(label='携带的提示词', value=config.get("image_recognition", "prompt"), placeholder='图片识别时附带的提示词，协同图片获取Answer')
+                    input_image_recognition_img_save_path = ui.input(label='Screenshot save path', value=config.get("image_recognition", "img_save_path"), placeholder='Screenshot save path, supports absolute or relative paths')
+                    input_image_recognition_prompt = ui.input(label='Prompt carried along', value=config.get("image_recognition", "prompt"), placeholder='Prompt attached during image recognition, used together with image acquisitionAnswer')
                     
                     
                 with ui.card().style(card_css):
-                    ui.label("电脑截图")
+                    ui.label("Computer screenshot")
                     with ui.row():
                         window_titles = common.list_visible_windows()
                         data_json = {}
                         for line in window_titles:
                             data_json[line] = line
                         select_image_recognition_screenshot_window_title = ui.select(
-                            label='截图窗口标题', 
+                            label='Screenshot window title', 
                             options=data_json, 
                             value=config.get("image_recognition", "screenshot_window_title")
                         ).style("width:300px")
-                        input_image_recognition_screenshot_delay = ui.input(label='N秒后进行截图', value=config.get("image_recognition", "screenshot_delay"), placeholder='截图延迟，方便用户打开对应窗口').style("width:100px")
-                        button_image_recognition_screenshot_and_send = ui.button('截图并Send', on_click=lambda: image_recognition_screenshot_and_send(float(input_image_recognition_screenshot_delay.value)), color=button_internal_color).style(button_internal_css)
+                        input_image_recognition_screenshot_delay = ui.input(label='NTake a screenshot after seconds', value=config.get("image_recognition", "screenshot_delay"), placeholder='Screenshot delay, so the user can open the corresponding window').style("width:100px")
+                        button_image_recognition_screenshot_and_send = ui.button('Take a screenshot andSend', on_click=lambda: image_recognition_screenshot_and_send(float(input_image_recognition_screenshot_delay.value)), color=button_internal_color).style(button_internal_css)
                     
-                        switch_image_recognition_loop_screenshot_enable = ui.switch('循环截图并Send', value=config.get("image_recognition", "loop_screenshot_enable")).style(switch_internal_css)
-                        input_image_recognition_loop_screenshot_delay = ui.input(label='N秒后自动截图', value=config.get("image_recognition", "loop_screenshot_delay"), placeholder='自动截图延迟，用户在玩游戏或者看视频等情况下，可以自动触发Image Recognition').style("width:100px")
-                        # button_image_recognition_loop_screenshot_and_send = ui.button('循环截图并Send', on_click=lambda: loop_screenshot_toggle_timer(float(input_image_recognition_screenshot_delay.value)), color=button_internal_color).style(button_internal_css)
+                        switch_image_recognition_loop_screenshot_enable = ui.switch('Loop screenshots andSend', value=config.get("image_recognition", "loop_screenshot_enable")).style(switch_internal_css)
+                        input_image_recognition_loop_screenshot_delay = ui.input(label='NAutomatically take a screenshot after seconds', value=config.get("image_recognition", "loop_screenshot_delay"), placeholder='Auto screenshot delay, can be triggered automatically when the user is playing a game or watching a videoImage Recognition').style("width:100px")
+                        # button_image_recognition_loop_screenshot_and_send = ui.button('Loop screenshots andSend', on_click=lambda: loop_screenshot_toggle_timer(float(input_image_recognition_screenshot_delay.value)), color=button_internal_color).style(button_internal_css)
                 with ui.card().style(card_css):
-                    ui.label("摄像头截图")
+                    ui.label("Camera screenshot")
                     with ui.row():
                         switch_image_recognition_cam_screenshot_enable = ui.switch('Enable', value=config.get("image_recognition", "cam_screenshot_enable")).style(switch_internal_css)
                         
@@ -6571,42 +6541,42 @@ def goto_func_page():
                         for line in cam_indexs:
                             data_json[line] = line
                         select_image_recognition_cam_index = ui.select(
-                            label='摄像头索引', 
+                            label='Camera index', 
                             options=data_json, 
                             value=config.get("image_recognition", "cam_index")
                         ).style("width:100px")
-                        input_image_recognition_cam_screenshot_delay = ui.input(label='N秒后进行截图', value=config.get("image_recognition", "cam_screenshot_delay"), placeholder='截图延迟，方便用户调整摄像头').style("width:100px")
-                        button_image_recognition_cam_screenshot_and_send = ui.button('截图并Send', on_click=lambda: image_recognition_cam_screenshot_and_send(float(input_image_recognition_cam_screenshot_delay.value)), color=button_internal_color).style(button_internal_css)
+                        input_image_recognition_cam_screenshot_delay = ui.input(label='NTake a screenshot after seconds', value=config.get("image_recognition", "cam_screenshot_delay"), placeholder='Screenshot delay, so the user can adjust the camera').style("width:100px")
+                        button_image_recognition_cam_screenshot_and_send = ui.button('Take a screenshot andSend', on_click=lambda: image_recognition_cam_screenshot_and_send(float(input_image_recognition_cam_screenshot_delay.value)), color=button_internal_color).style(button_internal_css)
                     
-                        switch_image_recognition_loop_cam_screenshot_enable = ui.switch('循环截图并Send', value=config.get("image_recognition", "loop_cam_screenshot_enable")).style(switch_internal_css)
-                        input_image_recognition_loop_cam_screenshot_delay = ui.input(label='N秒后自动截图', value=config.get("image_recognition", "loop_cam_screenshot_delay"), placeholder='自动截图延迟，可以自动触发Image Recognition').style("width:100px")
+                        switch_image_recognition_loop_cam_screenshot_enable = ui.switch('Loop screenshots andSend', value=config.get("image_recognition", "loop_cam_screenshot_enable")).style(switch_internal_css)
+                        input_image_recognition_loop_cam_screenshot_delay = ui.input(label='NAutomatically take a screenshot after seconds', value=config.get("image_recognition", "loop_cam_screenshot_delay"), placeholder='Auto screenshot delay, can be triggered automaticallyImage Recognition').style("width:100px")
                         
             with ui.card().style(card_css):
                 ui.label("Gemini")
                 with ui.row():
                     select_image_recognition_gemini_model = ui.select(
-                        label='模型', 
+                        label='Model', 
                         options={'gemini-pro-vision': 'gemini-pro-vision'}, 
                         value=config.get("image_recognition", "gemini", "model")
                     ).style("width:150px")
                     input_image_recognition_gemini_api_key = ui.input(label='API Key', value=config.get("image_recognition", "gemini", "api_key"), placeholder='Gemini API KEY')
-                    input_image_recognition_gemini_http_proxy = ui.input(label='HTTP proxy address', value=config.get("image_recognition", "gemini", "http_proxy"), placeholder='http代理地址，需要魔法才能使用，所以需要配置此项。').style("width:200px;")
-                    input_image_recognition_gemini_https_proxy = ui.input(label='HTTPS proxy address', value=config.get("image_recognition", "gemini", "https_proxy"), placeholder='https代理地址，需要魔法才能使用，所以需要配置此项。').style("width:200px;")
+                    input_image_recognition_gemini_http_proxy = ui.input(label='HTTP proxy address', value=config.get("image_recognition", "gemini", "http_proxy"), placeholder='httpProxy address; a VPN is required to use it, so this must be configured.').style("width:200px;")
+                    input_image_recognition_gemini_https_proxy = ui.input(label='HTTPS proxy address', value=config.get("image_recognition", "gemini", "https_proxy"), placeholder='httpsProxy address; a VPN is required to use it, so this must be configured.').style("width:200px;")
 
             with ui.card().style(card_css):
                 ui.label("Zhipu AI")
                 with ui.row():
                     select_image_recognition_zhipu_model = ui.select(
-                        label='模型', 
+                        label='Model', 
                         options={'glm-4v': 'glm-4v'}, 
                         value=config.get("image_recognition", "zhipu", "model")
                     ).style("width:150px")
-                    input_image_recognition_zhipu_api_key = ui.input(label='API Key', value=config.get("image_recognition", "zhipu", "api_key"), placeholder='智谱 API KEY')
+                    input_image_recognition_zhipu_api_key = ui.input(label='API Key', value=config.get("image_recognition", "zhipu", "api_key"), placeholder='Zhipu API KEY')
 
         with ui.tab_panel(assistant_anchor_page).style(tab_panel_css):
             with ui.row():
                 switch_assistant_anchor_enable = ui.switch('Enable', value=config.get("assistant_anchor", "enable")).style(switch_internal_css)
-                input_assistant_anchor_username = ui.input(label='Assistant Streamer名', value=config.get("assistant_anchor", "username"), placeholder='Assistant Streamer的Username，暂时没啥用')
+                input_assistant_anchor_username = ui.input(label='Assistant StreamerName', value=config.get("assistant_anchor", "username"), placeholder='Assistant StreamerUsername of it, not very useful for now')
                 select_assistant_anchor_audio_synthesis_type = ui.select(
                     label='Speech synthesis', 
                     options=audio_synthesis_type_options, 
@@ -6620,16 +6590,16 @@ def goto_func_page():
                                                   "entrance", "follow", "idle_time_task", "reread_top_priority", "schedule", 
                                                   "image_recognition_schedule", "key_mapping", "integral"]
                     assistant_anchor_type_mapping = {
-                        "comment": "Danmaku",
-                        "local_qa_audio": "Local Q&A-音频",
-                        "song": "点歌",
+                        "comment": "Comment",
+                        "local_qa_audio": "Local Q&A - Audio",
+                        "song": "Song request",
                         "reread": "Repeat",
                         "read_comment": "Read danmaku",
                         "gift": "Gift",
                         "entrance": "Entrance",
                         "follow": "Follow",
                         "idle_time_task": "Idle-time task",
-                        "reread_top_priority": "最高优先级-Repeat",
+                        "reread_top_priority": "Highest priority-Repeat",
                         "schedule": "Scheduled tasks",
                         "image_recognition_schedule": "Image RecognitionScheduled tasks",
                         "key_mapping": "Key mapping",
@@ -6645,7 +6615,7 @@ def goto_func_page():
             with ui.grid(columns=4):
                 switch_assistant_anchor_local_qa_text_enable = ui.switch('Enable text matching', value=config.get("assistant_anchor", "local_qa", "text", "enable")).style(switch_internal_css)
                 select_assistant_anchor_local_qa_text_format = ui.select(
-                    label='存储格式',
+                    label='Storage format',
                     options={'json': 'Custom json', 'text': 'One question, one answer'},
                     value=config.get("assistant_anchor", "local_qa", "text", "format")
                 )
@@ -6654,8 +6624,8 @@ def goto_func_page():
             with ui.grid(columns=4):
                 switch_assistant_anchor_local_qa_audio_enable = ui.switch('Enable audio matching', value=config.get("assistant_anchor", "local_qa", "audio", "enable")).style(switch_internal_css)
                 select_assistant_anchor_local_qa_audio_type = ui.select(
-                    label='匹配算法',
-                    options={'包含关系': '包含关系', '相似度匹配': '相似度匹配'},
+                    label='Matching algorithm',
+                    options={'Contains': 'Contains', 'Similarity match': 'Similarity match'},
                     value=config.get("assistant_anchor", "local_qa", "audio", "type")
                 )
                 input_assistant_anchor_local_qa_audio_file_path = ui.input(label='Audio storage path', value=config.get("assistant_anchor", "local_qa", "audio", "file_path"), placeholder='Local Q&A audio file storage path').style("width:200px;")
@@ -6671,52 +6641,52 @@ def goto_func_page():
                     ).style("width:100px;")
                 select_translate_trans_type = ui.select(
                         label='Translation type', 
-                        options={'Danmaku': 'Danmaku', 'Reply': 'Reply', 'Danmaku + Reply': 'Danmaku + Reply'}, 
+                        options={'Comment': 'Comment', 'Reply': 'Reply', 'Comment + Reply': 'Comment + Reply'}, 
                         value=config.get("translate", "trans_type")
                     ).style("width:150px;")
             with ui.card().style(card_css):
                 ui.label("Baidu Translate")
                 with ui.row():
-                    input_translate_baidu_appid = ui.input(label='APP ID', value=config.get("translate", "baidu", "appid"), placeholder='TranslationOpen platform 开发者中心 APP ID')
-                    input_translate_baidu_appkey = ui.input(label='密钥', value=config.get("translate", "baidu", "appkey"), placeholder='TranslationOpen platform 开发者中心 密钥')
+                    input_translate_baidu_appid = ui.input(label='APP ID', value=config.get("translate", "baidu", "appid"), placeholder='TranslationOpen platform Developer Center APP ID')
+                    input_translate_baidu_appkey = ui.input(label='Key', value=config.get("translate", "baidu", "appkey"), placeholder='TranslationOpen platform Developer Center key')
                     select_translate_baidu_from_lang = ui.select(
-                        label='源语言', 
-                        options={'auto': '自动检测', 'zh': 'Chinese', 'cht': '繁体Chinese', 'en': 'English', 'jp': 'Japanese', 'kor': '韩文', 'yue': '粤语', 'wyw': '文言文'}, 
+                        label='Source language', 
+                        options={'auto': 'Auto detect', 'zh': 'Chinese', 'cht': 'Traditional Chinese', 'en': 'English', 'jp': 'Japanese', 'kor': 'Korean', 'yue': 'Cantonese', 'wyw': 'Classical Chinese'}, 
                         value=config.get("translate", "baidu", "from_lang")
                     ).style("width:100px;")
                     select_translate_baidu_to_lang = ui.select(
-                        label='目标语言', 
-                        options={'zh': 'Chinese', 'cht': '繁体Chinese', 'en': 'English', 'jp': 'Japanese', 'kor': '韩文', 'yue': '粤语', 'wyw': '文言文'}, 
+                        label='Target language', 
+                        options={'zh': 'Chinese', 'cht': 'Traditional Chinese', 'en': 'English', 'jp': 'Japanese', 'kor': 'Korean', 'yue': 'Cantonese', 'wyw': 'Classical Chinese'}, 
                         value=config.get("translate", "baidu", "to_lang")
                     ).style("width:100px;")
             with ui.card().style(card_css):
                 ui.label("Google Translate")
                 with ui.row():
-                    input_translate_google_proxy = ui.input(label='代理地址', value=config.get("translate", "google", "proxy"), placeholder='代理的完整地址，请携带协议')
+                    input_translate_google_proxy = ui.input(label='Proxy address', value=config.get("translate", "google", "proxy"), placeholder='Full address of the proxy, please include the protocol')
                     select_translate_google_src_lang = ui.select(
-                        label='源语言', 
-                        options={'auto': '自动', 'zh-CN': 'Chinese', 'en': 'English', 'ja': 'Japanese'}, 
+                        label='Source language', 
+                        options={'auto': 'Auto', 'zh-CN': 'Chinese', 'en': 'English', 'ja': 'Japanese'}, 
                         value=config.get("translate", "google", "src_lang")
                     ).style("width:100px;")
                     select_translate_google_tgt_lang = ui.select(
-                        label='目标语言', 
+                        label='Target language', 
                         options={'zh-CN': 'Chinese', 'en': 'English', 'ja': 'Japanese'}, 
                         value=config.get("translate", "google", "tgt_lang")
                     ).style("width:100px;")
 
         with ui.tab_panel(serial_page).style(tab_panel_css):
             with ui.element('div').classes('p-2 bg-blue-100'):
-                ui.label("此页完成Serial port配置后，可以在“Common Config”的 Serial port映射配置功能\n 注意！！！此处连接测试完成后，请 Close serial port，因为程序是跨进程使用的，所以不关掉会占用Serial port，导致无法正常使用！")
+                ui.label("After completing the Serial port configuration on this page, you can use the Serial port mapping configuration function in “Common Config”\n Note!!! After the connection test here is complete, please Close the serial port; because the program is used across processes, not closing it will occupy the Serial port and prevent normal use!")
                         
             with ui.row():
                 input_serial_config_index = ui.input(label='Serial portConfig index', value="", placeholder='Serial portOrder number of the config group, i.e. the first group is 1, the second is 2, and so on. Please enter a plain integer')
-                button_serial_config_add = ui.button('增加Serial port配置组', on_click=serial_config_add, color=button_internal_color).style(button_internal_css)
-                button_serial_config_del = ui.button('删除Serial port配置组', on_click=lambda: serial_config_del(input_serial_config_index.value), color=button_internal_color).style(button_internal_css)
+                button_serial_config_add = ui.button('Add a Serial port configuration group', on_click=serial_config_add, color=button_internal_color).style(button_internal_css)
+                button_serial_config_del = ui.button('Delete the Serial port configuration group', on_click=lambda: serial_config_del(input_serial_config_index.value), color=button_internal_color).style(button_internal_css)
 
             serial_config_var = {}
             serial_config_card = ui.card()
 
-            # Refresh serial ports列表
+            # Refresh serial portsList
             async def refresh_serial(index: int):
                 logger.warning(index)
                 try:
@@ -6725,8 +6695,8 @@ def goto_func_page():
                     serial_manager = get_serial_manager()
 
                     list_ports = await serial_manager.list_ports()
-                    logger.info(f"搜索到的Serial port：{list_ports}")
-                    ui.notify(position="top", type="positive", message=f"搜索到的Serial port：{list_ports}")
+                    logger.info(f"Serial ports found:{list_ports}")
+                    ui.notify(position="top", type="positive", message=f"Serial ports found:{list_ports}")
                     serial_config_var[str(8 * index)].set_options(list_ports)
                 except Exception as e:
                     logger.error(traceback.format_exc())
@@ -6797,7 +6767,7 @@ def goto_func_page():
                             options={'9600': '9600', '19200': '19200', '38400': '38400', '115200': '115200'}
                         ).style("width:200px;").tooltip('Baud rate')
 
-                        # TODO:这里的传参一直是0，index值有Question，bug待定位
+                        # TODO:The parameter passed here is always 0, the index value has a Question, bug yet to be located
                         serial_config_var[str(8 * index + 2)] = ui.button('Refresh serial ports', on_click=lambda idx=index: refresh_serial(idx))
                         serial_config_var[str(8 * index + 3)] = ui.button('Open serial port', on_click=lambda idx=index: connect_serial(idx))
                         serial_config_var[str(8 * index + 4)] = ui.button('Close serial port', on_click=lambda idx=index: disconnect_serial(idx))
@@ -6818,14 +6788,14 @@ def goto_func_page():
                 ).style(echart_css)
         
                 with ui.row():
-                    input_data_analysis_comment_word_cloud_top_num = ui.input(label='前N个Keywords', value=config.get("data_analysis", "comment_word_cloud", "top_num"), placeholder='筛选前N个DanmakuKeywords做为词云数据')
+                    input_data_analysis_comment_word_cloud_top_num = ui.input(label='Top NKeywords', value=config.get("data_analysis", "comment_word_cloud", "top_num"), placeholder='Select the top N DanmakuKeywords as word cloud data')
                     def update_echart_comment_word_cloud():
                         data_analysis_comment_word_cloud_card.remove(0)
                         echart_comment_word_cloud = ui.echart(data_analysis.get_comment_word_cloud_option(
                             int(input_data_analysis_comment_word_cloud_top_num.value))
                         ).style(echart_css)
                         echart_comment_word_cloud.move(data_analysis_comment_word_cloud_card, 0)
-                    ui.button('更新数据', on_click=lambda: update_echart_comment_word_cloud())
+                    ui.button('Update data', on_click=lambda: update_echart_comment_word_cloud())
             
             data_analysis_integral_card = ui.card()
             with data_analysis_integral_card.style("width:100%;"):
@@ -6834,7 +6804,7 @@ def goto_func_page():
                 ).style(echart_css)
         
                 with ui.row():
-                    input_data_analysis_integral_top_num = ui.input(label='Top N个数据', value=config.get("data_analysis", "integral", "top_num"), placeholder='筛选Top N个数据')
+                    input_data_analysis_integral_top_num = ui.input(label='Top Nitems of data', value=config.get("data_analysis", "integral", "top_num"), placeholder='Filter the Top N data')
                     def update_echart_integral(type):
                         data_analysis_integral_card.remove(0)
                         echart_integral = ui.echart(data_analysis.get_integral_option(
@@ -6842,34 +6812,34 @@ def goto_func_page():
                             int(input_data_analysis_integral_top_num.value))
                         ).style(echart_css)
                         echart_integral.move(data_analysis_integral_card, 0)
-                    ui.button('获取Points榜', on_click=lambda: update_echart_integral('integral'))
-                    ui.button('获取观看榜', on_click=lambda: update_echart_integral('view_num'))
-                    ui.button('获取签到榜', on_click=lambda: update_echart_integral('sign_num'))
-                    ui.button('获取金额榜', on_click=lambda: update_echart_integral('total_price'))
+                    ui.button('Get the Points leaderboard', on_click=lambda: update_echart_integral('integral'))
+                    ui.button('Get the viewing leaderboard', on_click=lambda: update_echart_integral('view_num'))
+                    ui.button('Get the check-in leaderboard', on_click=lambda: update_echart_integral('sign_num'))
+                    ui.button('Get the amount leaderboard', on_click=lambda: update_echart_integral('total_price'))
             data_analysis_gift_card = ui.card()
             with data_analysis_gift_card.style("width:100%;"):
                 echart_gift = ui.echart(data_analysis.get_gift_option(int(config.get("data_analysis", "gift", "top_num")))).style(echart_css)
         
                 with ui.row():
-                    input_data_analysis_gift_top_num = ui.input(label='Top N个数据', value=config.get("data_analysis", "gift", "top_num"), placeholder='筛选Top N个数据')
+                    input_data_analysis_gift_top_num = ui.input(label='Top Nitems of data', value=config.get("data_analysis", "gift", "top_num"), placeholder='Filter the Top N data')
                     def update_echart_gift():
                         data_analysis_gift_card.remove(0)
                         echart_gift = ui.echart(data_analysis.get_gift_option(
                             int(input_data_analysis_gift_top_num.value))
                         ).style(echart_css)
                         echart_gift.move(data_analysis_gift_card, 0)
-                    ui.button('更新数据', on_click=lambda: update_echart_gift())
+                    ui.button('Update data', on_click=lambda: update_echart_gift())
         with ui.tab_panel(web_page).style(tab_panel_css):
             with ui.card().style(card_css):
-                ui.label("webui配置")
+                ui.label("webuiConfiguration")
                 with ui.row():
-                    input_webui_title = ui.input(label='标题', placeholder='webui的标题', value=config.get("webui", "title")).style("width:250px;")
-                    input_webui_ip = ui.input(label='IP address', placeholder='webui监听的IP address', value=config.get("webui", "ip")).style("width:150px;")
-                    input_webui_port = ui.input(label='Port', placeholder='webui监听的Port', value=config.get("webui", "port")).style("width:100px;")
-                    switch_webui_auto_run = ui.switch('自动Run', value=config.get("webui", "auto_run")).style(switch_internal_css)
+                    input_webui_title = ui.input(label='Title', placeholder='webuiTitle of it', value=config.get("webui", "title")).style("width:250px;")
+                    input_webui_ip = ui.input(label='IP address', placeholder='webuiListeningIP address', value=config.get("webui", "ip")).style("width:150px;")
+                    input_webui_port = ui.input(label='Port', placeholder='webuiListeningPort', value=config.get("webui", "port")).style("width:100px;")
+                    switch_webui_auto_run = ui.switch('Auto run', value=config.get("webui", "auto_run")).style(switch_internal_css)
             
             with ui.card().style(card_css):
-                ui.label("本地路径指定URL路径访问")
+                ui.label("Local path to be accessed via the specified URL path")
                 with ui.row():
                     input_webui_local_dir_to_endpoint_index = ui.input(label='Config index', value="", placeholder='Order number of the config group, i.e. the first group is 1, the second is 2, and so on. Please enter a plain integer')
                     button_webui_local_dir_to_endpoint_add = ui.button('Add config group', on_click=webui_local_dir_to_endpoint_add, color=button_internal_color).style(button_internal_css)
@@ -6895,21 +6865,21 @@ def goto_func_page():
                     for line in theme_list:
                         data_json[line] = line
                     select_webui_theme_choose = ui.select(
-                        label='主题', 
+                        label='Topic', 
                         options=data_json, 
                         value=config.get("webui", "theme", "choose")
                     )
 
             with ui.card().style(card_css):
-                ui.label("配置模板")
+                ui.label("Configuration template")
                 with ui.row():
-                    # 获取指定路径下指定拓展名的文件名列表
+                    # Get the list of file names with the specified extension under the specified path
                     config_template_paths = common.get_specify_extension_names_in_folder("./", "*.json")
                     data_json = {}
                     for line in config_template_paths:
                         data_json[line] = line
                     select_config_template_path = ui.select(
-                        label='配置模板路径', 
+                        label='Configuration template path', 
                         options=data_json, 
                         value="",
                         with_input=True,
@@ -6917,13 +6887,13 @@ def goto_func_page():
                         clearable=True
                     )
 
-                    button_config_template_save = ui.button('保存webui配置到文件', on_click=lambda: config_template_save(select_config_template_path.value), color=button_internal_color).style(button_internal_css)
-                    button_config_template_load = ui.button('读取模板到本地（慎点）', on_click=lambda: config_template_load(select_config_template_path.value), color=button_internal_color).style(button_internal_css)
+                    button_config_template_save = ui.button('Save the webui configuration to a file', on_click=lambda: config_template_save(select_config_template_path.value), color=button_internal_color).style(button_internal_css)
+                    button_config_template_load = ui.button('Read the template to local (click with caution)', on_click=lambda: config_template_load(select_config_template_path.value), color=button_internal_color).style(button_internal_css)
                     
 
 
             with ui.card().style(card_css):
-                ui.label("板块显示/隐藏")
+                ui.label("Show/hide panel")
                 
                 with ui.card().style(card_css):
                     ui.label("Common Config")
@@ -6932,7 +6902,7 @@ def goto_func_page():
                         switch_webui_show_card_common_config_filter = ui.switch('Filter', value=config.get("webui", "show_card", "common_config", "filter")).style(switch_internal_css)
                         switch_webui_show_card_common_config_thanks = ui.switch('Thanks', value=config.get("webui", "show_card", "common_config", "thanks")).style(switch_internal_css)
                         switch_webui_show_card_common_config_local_qa = ui.switch('Local Q&A', value=config.get("webui", "show_card", "common_config", "local_qa")).style(switch_internal_css)
-                        switch_webui_show_card_common_config_choose_song = ui.switch('点歌', value=config.get("webui", "show_card", "common_config", "choose_song")).style(switch_internal_css)
+                        switch_webui_show_card_common_config_choose_song = ui.switch('Song request', value=config.get("webui", "show_card", "common_config", "choose_song")).style(switch_internal_css)
                         switch_webui_show_card_common_config_sd = ui.switch('Stable Diffusion', value=config.get("webui", "show_card", "common_config", "sd")).style(switch_internal_css)
                         switch_webui_show_card_common_config_log = ui.switch('Log', value=config.get("webui", "show_card", "common_config", "log")).style(switch_internal_css)
                         switch_webui_show_card_common_config_schedule = ui.switch('Scheduled tasks', value=config.get("webui", "show_card", "common_config", "schedule")).style(switch_internal_css)
@@ -6952,7 +6922,7 @@ def goto_func_page():
                 with ui.card().style(card_css):
                     ui.label("Large Language Model")
                     with ui.row():
-                        switch_webui_show_card_llm_chatgpt = ui.switch('ChatGPT/闻达', value=config.get("webui", "show_card", "llm", "chatgpt")).style(switch_internal_css)
+                        switch_webui_show_card_llm_chatgpt = ui.switch('ChatGPT/Wenda', value=config.get("webui", "show_card", "llm", "chatgpt")).style(switch_internal_css)
                         switch_webui_show_card_llm_zhipu = ui.switch('Zhipu AI', value=config.get("webui", "show_card", "llm", "zhipu")).style(switch_internal_css)
                         switch_webui_show_card_llm_chat_with_file = ui.switch('chat_with_file', value=config.get("webui", "show_card", "llm", "chat_with_file")).style(switch_internal_css)
                         switch_webui_show_card_llm_langchain_chatchat = ui.switch('langchain_chatchat', value=config.get("webui", "show_card", "llm", "langchain_chatchat")).style(switch_internal_css)
@@ -6960,9 +6930,9 @@ def goto_func_page():
                         switch_webui_show_card_llm_text_generation_webui = ui.switch('text_generation_webui', value=config.get("webui", "show_card", "llm", "text_generation_webui")).style(switch_internal_css)
                         switch_webui_show_card_llm_sparkdesk = ui.switch('iFlytek Spark', value=config.get("webui", "show_card", "llm", "sparkdesk")).style(switch_internal_css)
                         switch_webui_show_card_llm_bard = ui.switch('bard', value=config.get("webui", "show_card", "llm", "bard")).style(switch_internal_css)
-                        switch_webui_show_card_llm_tongyi = ui.switch('通义千问', value=config.get("webui", "show_card", "llm", "tongyi")).style(switch_internal_css)
+                        switch_webui_show_card_llm_tongyi = ui.switch('Tongyi Qianwen', value=config.get("webui", "show_card", "llm", "tongyi")).style(switch_internal_css)
                         switch_webui_show_card_llm_tongyixingchen = ui.switch('Tongyi Xingchen', value=config.get("webui", "show_card", "llm", "tongyixingchen")).style(switch_internal_css)
-                        switch_webui_show_card_llm_my_wenxinworkshop = ui.switch('Qianfan Large Model', value=config.get("webui", "show_card", "llm", "my_wenxinworkshop")).style(switch_internal_css)
+                        switch_webui_show_card_llm_my_wenxinworkshop = ui.switch('Qianfan', value=config.get("webui", "show_card", "llm", "my_wenxinworkshop")).style(switch_internal_css)
                         switch_webui_show_card_llm_gemini = ui.switch('gemini', value=config.get("webui", "show_card", "llm", "gemini")).style(switch_internal_css)
                         switch_webui_show_card_llm_koboldcpp = ui.switch('koboldcpp', value=config.get("webui", "show_card", "llm", "koboldcpp")).style(switch_internal_css)
                         switch_webui_show_card_llm_anythingllm = ui.switch('AnythingLLM', value=config.get("webui", "show_card", "llm", "anythingllm")).style(switch_internal_css)
@@ -7010,65 +6980,65 @@ def goto_func_page():
                     
             
             with ui.card().style(card_css):
-                ui.label("Account管理")
+                ui.label("AccountManage")
                 with ui.row():
-                    switch_login_enable = ui.switch('登录功能', value=config.get("login", "enable")).style(switch_internal_css)
-                    input_login_username = ui.input(label='Username', placeholder='您的Account喵，配置在config.json中', value=config.get("login", "username")).style("width:250px;")
-                    input_login_password = ui.input(label='Password', password=True, placeholder='您的Password喵，配置在config.json中', value=config.get("login", "password")).style("width:250px;")
+                    switch_login_enable = ui.switch('Login function', value=config.get("login", "enable")).style(switch_internal_css)
+                    input_login_username = ui.input(label='Username', placeholder='Your Account, nya, configured in config.json', value=config.get("login", "username")).style("width:250px;")
+                    input_login_password = ui.input(label='Password', password=True, placeholder='Your Password, nya, configured in config.json', value=config.get("login", "password")).style("width:250px;")
         with ui.tab_panel(docs_page).style(tab_panel_css):
             with ui.row():
-                ui.label('在线文档：')
+                ui.label('Online documentation:')
                 ui.link('https://ikaros521.eu.org/site/', 'https://ikaros521.eu.org/site/', new_tab=True)
-                ui.link('gitee备份文档', 'https://ikaros-521.gitee.io/luna-docs/site/index.html', new_tab=True)
+                ui.link('giteeBackup document', 'https://ikaros-521.gitee.io/luna-docs/site/index.html', new_tab=True)
 
-                ui.label('NiceGUI官方文档：')
+                ui.label('NiceGUIOfficial documentation:')
                 ui.link('nicegui.io/documentation', 'https://nicegui.io/documentation', new_tab=True)
 
-                ui.label('视频教程合集：')
-                ui.link('点我跳转', 'https://space.bilibili.com/3709626/channel/collectiondetail?sid=1422512', new_tab=True)
+                ui.label('Video tutorial collection:')
+                ui.link('Click me to jump', 'https://space.bilibili.com/3709626/channel/collectiondetail?sid=1422512', new_tab=True)
 
-                ui.label('GitHub仓库：')
+                ui.label('GitHubRepository:')
                 ui.link('Ikaros-521/AI-Vtuber', 'https://github.com/Ikaros-521/AI-Vtuber', new_tab=True)
             
-            with ui.expansion('视频教程', icon='movie_filter', value=True).classes('w-full'):
+            with ui.expansion('Video tutorial', icon='movie_filter', value=True).classes('w-full'):
                 ui.html('<iframe src="https://space.bilibili.com/3709626/channel/collectiondetail?sid=1422512" allowfullscreen="true" width="1800" height="800"> </iframe>').style("width:100%")
 
-            with ui.expansion('文档', icon='article', value=True).classes('w-full'):
+            with ui.expansion('Document', icon='article', value=True).classes('w-full'):
                 ui.html('<iframe src="https://ikaros521.eu.org/site/" width="1800" height="800"></iframe>').style("width:100%")
         with ui.tab_panel(about_page).style(tab_panel_css):
             with ui.card().style(card_css):
-                ui.label('介绍').style("font-size:24px;")
-                ui.label('AI Vtuber 是一款结合了最先进技术的虚拟AI主播。它的核心是一系列高效的人工智能模型，包括 ChatterBot、GPT、Claude、langchain、chatglm、text-generation-webui、iFlytek Spark、Zhipu AI、谷歌Bard、文心一言 和 Tongyi Xingchen。这些模型既可以在本地Run，也可以通过云端服务提供支持。')
-                ui.label('AI Vtuber 的外观由 Live2D、Vtube Studio、xuniren 和 UE5 结合 Audio2Face 技术打造，为用户提供了一个生动、互动的虚拟形象。这使得 AI Vtuber 能够在各大直播Platform，如 Bilibili、Douyin、Kuaishou、Douyu、YouTube 和 Twitch，进行实时互动直播。当然，它也可以在本地环境中与您进行个性化对话。')
-                ui.label('为了使交流更加自然，AI Vtuber 使用了先进的自然语言处理技术，结合Text-to-Speech系统，如 Edge-TTS、VITS-Fast、elevenlabs、VALL-E-X、睿声AI、 tts.ai-lab.top和GPT-SoVITS。这不仅让它能够生成流畅的Answer，还可以通过 so-vits-svc 和 DDSP-SVC 实现声音的变化，以适应不同的场景和角色。')
-                ui.label('此外，AI Vtuber 还能够通过特定指令与 Stable Diffusion 协作，展示画作。用户还可以自定义Copywriting，让 AI Vtuber 循环播放，以满足不同场合的需求。')
+                ui.label('Introduction').style("font-size:24px;")
+                ui.label('AI Vtuber is a virtual AI streamer that combines state-of-the-art technologies. At its core is a series of efficient AI models, including ChatterBot, GPT, Claude, langchain, chatglm, text-generation-webui, iFlytek Spark, Zhipu AI, Google Bard, ERNIE Bot and Tongyi Xingchen. These models can either Run locally or be supported through cloud services.')
+                ui.label('AI Vtuber Its appearance is built with Live2D, Vtube Studio, xuniren and UE5 combined with Audio2Face technology, giving users a lively, interactive virtual avatar. This lets AI Vtuber do real-time interactive livestreams on major streaming Platforms such as Bilibili, Douyin, Kuaishou, Douyu, YouTube and Twitch. Of course, it can also hold personalized conversations with you in a local environment.')
+                ui.label('To make communication more natural, AI Vtuber uses advanced natural language processing technology combined with Text-to-Speech systems such as Edge-TTS, VITS-Fast, elevenlabs, VALL-E-X, Ruisheng AI, tts.ai-lab.top and GPT-SoVITS. This not only lets it generate fluent Answers, but also vary the voice through so-vits-svc and DDSP-SVC to suit different scenes and characters.')
+                ui.label('In addition, AI Vtuber can also collaborate with Stable Diffusion through specific commands to show artwork. Users can also customize Copywriting for the AI Vtuber to play in a loop, to meet the needs of different occasions.')
             with ui.card().style(card_css):
-                ui.label('许可证').style("font-size:24px;")
-                ui.label('这个项目采用 GNU通用公共许可证（GPL） 进行许可。有关详细信息，请参阅 LICENSE 文件。')
+                ui.label('License').style("font-size:24px;")
+                ui.label('This project is licensed under the GNU General Public License (GPL). See the LICENSE file for details.')
             with ui.card().style(card_css):
-                ui.label('注意').style("font-size:24px;")
-                ui.label('严禁将此项目用于一切违反《中华人民共和国宪法》，《中华人民共和国刑法》，《中华人民共和国治安管理处罚法》和《中华人民共和国民法典》之用途。')
-                ui.label('严禁用于任何政治相关用途。')
+                ui.label('Note').style("font-size:24px;")
+                ui.label('It is strictly forbidden to use this project for any purpose that violates the Constitution of the People Republic of China, the Criminal Law, the Public Security Administration Punishments Law, or the Civil Code.')
+                ui.label('Any political use is strictly forbidden.')
             ui.image('./docs/xmind.png').style("width:1000px;")
     with ui.row().classes('bottom-bar items-center no-wrap'):
-        button_save = ui.button('Save Config', icon='save', on_click=lambda: save_config(), color=button_bottom_color).style(button_bottom_css).tooltip("保存webui的配置到本地文件，有些配置保存后需要Restart生效")
+        button_save = ui.button('Save Config', icon='save', on_click=lambda: save_config(), color=button_bottom_color).style(button_bottom_css).tooltip("Save the webui configuration to a local file; some configurations need a Restart to take effect after saving")
         button_run = ui.button('Start Run', icon='play_arrow', on_click=lambda: run_external_program(), color=button_bottom_color).style(button_bottom_css).tooltip("Runmain.py")
         button_stop = ui.button('Stop Run', icon='stop', on_click=lambda: stop_external_program(), color='negative').style(button_bottom_css).tooltip("StopRunmain.py")
         button_light = ui.button('Lights Off', icon='dark_mode', on_click=lambda: change_light_status(), color=button_bottom_color).style(button_bottom_css)
-        button_restart = ui.button('Restart', icon='restart_alt', on_click=lambda: restart_application(), color=button_bottom_color).style(button_bottom_css).tooltip("StopRunmain.py并Restart webui")
+        button_restart = ui.button('Restart', icon='restart_alt', on_click=lambda: restart_application(), color=button_bottom_color).style(button_bottom_css).tooltip("StopRunmain.pyandRestart webui")
 
     with ui.row().style("position:fixed; bottom: 20px; right: 20px;"):
         ui.button('⇧', on_click=lambda: scroll_to_top(), color=button_bottom_color).style(button_bottom_css)
 
-    # 是否Enable自动Run功能
+    # Whether to Enable the auto-Run function
     if config.get("webui", "auto_run"):
-        logger.info("自动Run 已Enable")
+        logger.info("Auto Run isEnable")
         run_external_program(type="api")
 
-# Send心跳包
+# SendHeartbeat packet
 ui.timer(9 * 60, lambda: common.send_heartbeat())
 
-# 是否Enable登录功能（暂不合理）
+# Whether to Enable the login function (not reasonable for now)
 if config.get("login", "enable"):
 
     def my_login():
@@ -7079,7 +7049,7 @@ if config.get("login", "enable"):
             password = input_login_password.value
 
             if username == "" or password == "":
-                ui.notify(position="top", type="info", message="Username或Password不能为空")
+                ui.notify(position="top", type="info", message="UsernameOr the Password cannot be empty")
                 return
 
             API_URL = urljoin(config.get("login", "ums_api"), '/auth/login')
@@ -7087,16 +7057,16 @@ if config.get("login", "enable"):
             resp_json = common.check_login(API_URL, username, password)
 
             if resp_json is None:
-                ui.notify(position="top", type="negative", message="登录Failure")
+                ui.notify(position="top", type="negative", message="LoginFailure")
                 return
 
             if "data" not in resp_json or "success" not in resp_json:
-                ui.notify(position="top", type="negative", message="Username或Password不正确")
+                ui.notify(position="top", type="negative", message="UsernameOr the Password is incorrect")
                 return
 
             if not resp_json["success"]:
                 remainder = common.time_difference_in_seconds(resp_json["data"]["expiration_ts"])
-                ui.notify(position="top", type="warning", message=f'Account expiration time:{resp_json["data"]["expiration_ts"]}，已到期，请联系管理员续费')
+                ui.notify(position="top", type="warning", message=f'Account expiration time:{resp_json["data"]["expiration_ts"]}, expired, please contact the administrator to renew')
                 return
 
             user_info = resp_json["data"]
@@ -7104,10 +7074,10 @@ if config.get("login", "enable"):
 
             remainder = common.time_difference_in_seconds(expiration_ts)
             if remainder < 0:
-                ui.notify(position="top", type="warning", message=f"Account已过期：{remainder}seconds ago, please contact the administrator to renew")
+                ui.notify(position="top", type="warning", message=f"AccountExpired:{remainder}seconds ago, please contact the administrator to renew")
                 return
 
-            ui.notify(position="top", type="info", message=f'登录Success，Account到期时间：{resp_json["data"]["expiration_ts"]}，剩余时长：{remainder}秒')
+            ui.notify(position="top", type="info", message=f'Login Success, Account expiration time:{resp_json["data"]["expiration_ts"]}, remaining time: {remainder} seconds')
 
             label_login.delete()
             input_login_username.delete()
@@ -7127,7 +7097,7 @@ if config.get("login", "enable"):
 
     # @ui.page('/forget_password')
     def forget_password():
-        ui.notify(position="top", type="info", message="请联系管理员修改Password！")
+        ui.notify(position="top", type="info", message="Please contact the administrator to change the Password!")
 
 
     login_column = ui.column().style("width:100%;text-align: center;")
@@ -7135,11 +7105,11 @@ if config.get("login", "enable"):
         login_card = ui.card().style(config.get("webui", "theme", "list", theme_choose, "login_card"))
         with login_card:
             label_login = ui.label('AI    Vtuber').style("font-size: 30px;letter-spacing: 5px;color: #3b3838;")
-            input_login_username = ui.input(label='Username', placeholder='您的Account，请找管理员申请', value="").style("width:250px;")
-            input_login_password = ui.input(label='Password', password=True, placeholder='您的Password，请找管理员申请', value="").style("width:250px;")
-            button_login = ui.button('登录', on_click=lambda: my_login()).style("width:250px;")
-            button_login_forget_password = ui.button('忘记Account/Password怎么办？', on_click=lambda: forget_password()).style("width:250px;")
-            # link_login_forget_password = ui.link('忘记AccountPassword怎么办？', forget_password)
+            input_login_username = ui.input(label='Username', placeholder='Your Account, please ask the administrator to apply for one', value="").style("width:250px;")
+            input_login_password = ui.input(label='Password', password=True, placeholder='Your Password, please ask the administrator to apply for one', value="").style("width:250px;")
+            button_login = ui.button('Login', on_click=lambda: my_login()).style("width:250px;")
+            button_login_forget_password = ui.button('What if you forget your Account/Password?', on_click=lambda: forget_password()).style("width:250px;")
+            # link_login_forget_password = ui.link('What if you forget your Account Password?', forget_password)
 
 else:
     login_column = ui.column().style("width:100%;text-align: center;")

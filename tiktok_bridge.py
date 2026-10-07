@@ -111,7 +111,7 @@ def make_client(user: str, gifts: bool, joins: bool, state: dict) -> TikTokLiveC
             if nick in IGNORE:
                 return
             log(f"[join] {nick}")
-            await send("entrance", {"username": nick, "content": "进入直播间"})
+            await send("entrance", {"username": nick, "content": "entered the live room"})
 
     if gifts:
         @client.on(GiftEvent)

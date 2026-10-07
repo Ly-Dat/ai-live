@@ -16,7 +16,7 @@ async def download_audio(type: str, file_url: str, timeout: int=30, request_type
                             file.write(content)
                         return voice_tmp_path
                     else:
-                        logging.error(f'{type} 下载音频失败: {response.status}')
+                        logging.error(f'{type} Failed to download audio: {response.status}')
                         return None
             else:
                 async with session.post(file_url, data=data, json=json_data, timeout=timeout) as response:
@@ -27,10 +27,10 @@ async def download_audio(type: str, file_url: str, timeout: int=30, request_type
                             file.write(content)
                         return voice_tmp_path
                     else:
-                        logging.error(f'{type} 下载音频失败: {response.status}')
+                        logging.error(f'{type} Failed to download audio: {response.status}')
                         return None
         except asyncio.TimeoutError:
-            logging.error("{type} 下载音频超时")
+            logging.error("{type} Audio download timed out")
             return None
             
 async def cosyvoice_api(text):
@@ -52,7 +52,7 @@ async def cosyvoice_api(text):
         return audio_path
     except Exception as e:
         logging.error(traceback.format_exc())
-        logging.error(f'cosyvoice未知错误: {e}')
+        logging.error(f'cosyvoiceUnknown error: {e}')
     
     return None
 

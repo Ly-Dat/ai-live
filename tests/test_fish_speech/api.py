@@ -13,15 +13,15 @@ async def fish_speech_load_model(data):
                     print(ret)
 
                     if ret["name"] == data["model_name"]:
-                        print(f'fish_speech模型加载成功: {ret["name"]}')
+                        print(f'fish_speechModel loaded successfully: {ret["name"]}')
                         return ret
                 else: 
                     return None
 
     except aiohttp.ClientError as e:
-        print(f'fish_speech请求失败: {e}')
+        print(f'fish_speechRequest failed: {e}')
     except Exception as e:
-        print(f'fish_speech未知错误: {e}')
+        print(f'fish_speechUnknown error: {e}')
     
     return None
 
@@ -56,12 +56,12 @@ async def fish_speech_api(data):
 
                     return voice_tmp_path
                 else:
-                    print(f'fish_speech下载音频失败: {response.status}')
+                    print(f'fish_speechFailed to download audio: {response.status}')
                     return None
     except aiohttp.ClientError as e:
-        print(f'fish_speech请求失败: {e}')
+        print(f'fish_speechRequest failed: {e}')
     except Exception as e:
-        print(f'fish_speech未知错误: {e}')
+        print(f'fish_speechUnknown error: {e}')
     
     return None
     

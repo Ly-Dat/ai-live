@@ -8,7 +8,7 @@ top_p = 0.7
 temperature = 0.95
 
 
-# 调用chatglm接口，获取返回内容
+# Call the chatglm API and get the returned content
 def get_resp(prompt, history=[]):
     data_json = {
         "prompt": prompt, 
@@ -20,7 +20,7 @@ def get_resp(prompt, history=[]):
 
     try:
         response = requests.post(url=api_ip_port, json=data_json)
-        response.raise_for_status()  # 检查响应的状态码
+        response.raise_for_status()  # Check the response status code
 
         result = response.content
         ret = json.loads(result)
@@ -35,4 +35,4 @@ def get_resp(prompt, history=[]):
         return None
     
 
-print(get_resp("你好"))
+print(get_resp("Hello"))

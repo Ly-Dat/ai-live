@@ -7,7 +7,7 @@ from utils.my_log import logger
 import utils.my_global as my_global
 
 def start_listen(config, common, my_handle, platform: str):
-    # 初始化已获取的commentId集合
+    # Initialize the set of already fetched commentIds
     comment_set = set()
 
     def fetch_comments():
@@ -34,11 +34,11 @@ def start_listen(config, common, my_handle, platform: str):
 
                         my_handle.process_data(data, "comment")
             else:
-                logger.error("获取弹幕数据失败。。。")
+                logger.error("Failed to get danmaku data...")
         except Exception as e:
             logger.error(traceback.format_exc())
             my_handle.abnormal_alarm_handle("platform")
 
     while True:
         fetch_comments()
-        time.sleep(3)  # 每隔3秒轮询一次
+        time.sleep(3)  # Poll every 3 seconds

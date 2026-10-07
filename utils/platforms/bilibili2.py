@@ -18,9 +18,9 @@ import utils.my_global as my_global
 session: Optional[aiohttp.ClientSession] = None
 
 def start_listen(config, common, my_handle, platform: str):
-    # 直播间ID的取值看直播间URL
+    # For the live room ID value, see the live roomURL
     TEST_ROOM_IDS = [my_handle.get_room_id()]
-    # 这里填一个已登录账号的cookie。不填cookie也可以连接，但是收到弹幕的用户名会打码，UID会变成0
+    # Fill in the cookie of a logged-in account here. You can also connect without a cookie, but the usernames in received danmaku will be masked and the UID will become0
     SESSDATA = ""
 
     try:
@@ -29,14 +29,14 @@ def start_listen(config, common, my_handle, platform: str):
             SESSDATA = common.parse_cookie_data(bilibili_cookie, "SESSDATA")
             # logger.info(f"SESSDATA={SESSDATA}")
         elif config.get("bilibili", "login_type") == "open_live":
-            # 在开放平台申请的开发者密钥 https://open-live.bilibili.com/open-manage
+            # Developer key applied for on the open platform https://open-live.bilibili.com/open-manage
             ACCESS_KEY_ID = config.get("bilibili", "open_live", "ACCESS_KEY_ID")
             ACCESS_KEY_SECRET = config.get(
                 "bilibili", "open_live", "ACCESS_KEY_SECRET"
             )
-            # 在开放平台创建的项目ID
+            # Project created on the open platformID
             APP_ID = config.get("bilibili", "open_live", "APP_ID")
-            # 主播身份码 直播中心获取
+            # Streamer identity code, obtained from the live streaming center
             ROOM_OWNER_AUTH_CODE = config.get(
                 "bilibili", "open_live", "ROOM_OWNER_AUTH_CODE"
             )
@@ -76,7 +76,7 @@ def start_listen(config, common, my_handle, platform: str):
 
     async def run_single_client():
         """
-        演示监听一个直播间
+        Demo of listening to one live room
         """
         global session
         
@@ -87,7 +87,7 @@ def start_listen(config, common, my_handle, platform: str):
 
         client.start()
         try:
-            # 演示5秒后停止
+            # Demo stops after 5 seconds
             await asyncio.sleep(5)
             client.stop()
 
@@ -97,7 +97,7 @@ def start_listen(config, common, my_handle, platform: str):
 
     async def run_single_client2():
         """
-        演示监听一个直播间 开放平台
+        Demo of listening to one live room on the open platform
         """
         client = blivedm.OpenLiveClient(
             access_key_id=ACCESS_KEY_ID,
@@ -110,7 +110,7 @@ def start_listen(config, common, my_handle, platform: str):
 
         client.start()
         try:
-            # 演示70秒后停止
+            # Demo stops after 70 seconds
             # await asyncio.sleep(70)
             # client.stop()
 
@@ -120,7 +120,7 @@ def start_listen(config, common, my_handle, platform: str):
 
     async def run_multi_clients():
         """
-        演示同时监听多个直播间
+        Demo of listening to multiple live rooms at the same time
         """
         global session
         
@@ -139,10 +139,10 @@ def start_listen(config, common, my_handle, platform: str):
             await asyncio.gather(*(client.stop_and_close() for client in clients))
 
     class MyHandler(blivedm.BaseHandler):
-        # 演示如何添加自定义回调
+        # Demo of how to add a custom callback
         _CMD_CALLBACK_DICT = blivedm.BaseHandler._CMD_CALLBACK_DICT.copy()
 
-        # 入场消息回调
+        # Entrance message callback
         def __interact_word_callback(
             self, client: blivedm.BLiveClient, command: dict
         ):
@@ -154,15 +154,15 @@ def start_listen(config, common, my_handle, platform: str):
 
             username = command["data"]["uname"]
 
-            logger.info(f"用户：{username} 进入直播间")
+            logger.info(f"User: {username} entered the live room")
 
-            # 添加用户名到最新的用户名列表
+            # Add the username to the latest username list
             my_global.add_username_to_last_username_list(username)
 
             data = {
                 "platform": platform,
                 "username": username,
-                "content": "进入直播间",
+                "content": "entered the live room",
             }
 
             my_handle.process_data(data, "entrance")
@@ -172,18 +172,18 @@ def start_listen(config, common, my_handle, platform: str):
         def _on_heartbeat(
             self, client: blivedm.BLiveClient, message: web_models.HeartbeatMessage
         ):
-            logger.debug(f"[{client.room_id}] 心跳")
+            logger.debug(f"[{client.room_id}] Heartbeat")
 
         def _on_danmaku(
             self, client: blivedm.BLiveClient, message: web_models.DanmakuMessage
         ):
-            # 闲时计数清零
+            # Reset the idle count
             my_global.idle_time_auto_clear(config, "comment")
 
-            # logger.info(f'[{client.room_id}] {message.uname}：{message.msg}')
-            content = message.msg  # 获取弹幕内容
-            username = message.uname  # 获取发送弹幕的用户昵称
-            # 检查是否存在 face 属性
+            # logger.info(f'[{client.room_id}] {message.uname}:{message.msg}')
+            content = message.msg  # Get the danmaku content
+            username = message.uname  # Get the nickname of the user who sent the danmaku
+            # Check whether the face attribute exists
             user_face = message.face if hasattr(message, "face") else None
 
             logger.info(f"[{username}]: {content}")
@@ -200,22 +200,22 @@ def start_listen(config, common, my_handle, platform: str):
         def _on_gift(
             self, client: blivedm.BLiveClient, message: web_models.GiftMessage
         ):
-            # logger.info(f'[{client.room_id}] {message.uname} 赠送{message.gift_name}x{message.num}'
-            #     f' （{message.coin_type}瓜子x{message.total_coin}）')
+            # logger.info(f'[{client.room_id}] {message.uname} Gift{message.gift_name}x{message.num}'
+            #     f' ({message.coin_type} silver melon seeds x{message.total_coin})')
             my_global.idle_time_auto_clear(config, "gift")
 
             gift_name = message.gift_name
             username = message.uname
-            # 检查是否存在 face 属性
+            # Check whether the face attribute exists
             user_face = message.face if hasattr(message, "face") else None
 
-            # 礼物数量
+            # Gift quantity
             combo_num = message.num
-            # 总金额
+            # Total amount
             combo_total_coin = message.total_coin
 
             logger.info(
-                f"用户：{username} 赠送 {combo_num} 个 {gift_name}，总计 {combo_total_coin}电池"
+                f"User: {username} gifted {combo_num} x {gift_name}, total {combo_total_coin} batteries"
             )
 
             data = {
@@ -234,22 +234,22 @@ def start_listen(config, common, my_handle, platform: str):
             self, client: blivedm.BLiveClient, message: web_models.GuardBuyMessage
         ):
             logger.info(
-                f"[{client.room_id}] {message.username} 购买{message.gift_name}"
+                f"[{client.room_id}] {message.username} Purchase{message.gift_name}"
             )
 
         def _on_super_chat(
             self, client: blivedm.BLiveClient, message: web_models.SuperChatMessage
         ):
-            # logger.info(f'[{client.room_id}] 醒目留言 ¥{message.price} {message.uname}：{message.message}')
+            # logger.info(f'[{client.room_id}] Super Chat ¥{message.price} {message.uname}:{message.message}')
             my_global.idle_time_auto_clear(config, "gift")
 
             message = message.message
             uname = message.uname
-            # 检查是否存在 face 属性
+            # Check whether the face attribute exists
             user_face = message.face if hasattr(message, "face") else None
             price = message.price
 
-            logger.info(f"用户：{uname} 发送 {price}元 SC：{message}")
+            logger.info(f"User: {uname} sent a {price} yuan SC:{message}")
 
             data = {
                 "platform": platform,
@@ -270,23 +270,23 @@ def start_listen(config, common, my_handle, platform: str):
         def _on_heartbeat(
             self, client: blivedm.BLiveClient, message: web_models.HeartbeatMessage
         ):
-            logger.debug(f"[{client.room_id}] 心跳")
+            logger.debug(f"[{client.room_id}] Heartbeat")
 
         def _on_open_live_danmaku(
             self,
             client: blivedm.OpenLiveClient,
             message: open_models.DanmakuMessage,
         ):
-            # 闲时计数清零
+            # Reset the idle count
             my_global.idle_time_auto_clear(config, "comment")
 
-            # logger.info(f'[{client.room_id}] {message.uname}：{message.msg}')
-            content = message.msg  # 获取弹幕内容
-            username = message.uname  # 获取发送弹幕的用户昵称
-            # 检查是否存在 face 属性
+            # logger.info(f'[{client.room_id}] {message.uname}:{message.msg}')
+            content = message.msg  # Get the danmaku content
+            username = message.uname  # Get the nickname of the user who sent the danmaku
+            # Check whether the face attribute exists
             user_face = message.face if hasattr(message, "face") else None
 
-            logger.debug(f"用户：{username} 头像：{user_face}")
+            logger.debug(f"User: {username} avatar:{user_face}")
 
             logger.info(f"[{username}]: {content}")
 
@@ -306,15 +306,15 @@ def start_listen(config, common, my_handle, platform: str):
 
             gift_name = message.gift_name
             username = message.uname
-            # 检查是否存在 face 属性
+            # Check whether the face attribute exists
             user_face = message.face if hasattr(message, "face") else None
-            # 礼物数量
+            # Gift quantity
             combo_num = message.gift_num
-            # 总金额
+            # Total amount
             combo_total_coin = message.price * message.gift_num
 
             logger.info(
-                f"用户：{username} 赠送 {combo_num} 个 {gift_name}，总计 {combo_total_coin}电池"
+                f"User: {username} gifted {combo_num} x {gift_name}, total {combo_total_coin} batteries"
             )
 
             data = {
@@ -335,7 +335,7 @@ def start_listen(config, common, my_handle, platform: str):
             message: open_models.GuardBuyMessage,
         ):
             logger.info(
-                f"[{client.room_id}] {message.user_info.uname} 购买 大航海等级={message.guard_level}"
+                f"[{client.room_id}] {message.user_info.uname} Purchase Captain level={message.guard_level}"
             )
 
         def _on_open_live_super_chat(
@@ -346,16 +346,16 @@ def start_listen(config, common, my_handle, platform: str):
             my_global.idle_time_auto_clear(config, "gift")
 
             logger.info(
-                f"[{message.room_id}] 醒目留言 ¥{message.rmb} {message.uname}：{message.message}"
+                f"[{message.room_id}] Super Chat ¥{message.rmb} {message.uname}:{message.message}"
             )
 
             message = message.message
             uname = message.uname
-            # 检查是否存在 face 属性
+            # Check whether the face attribute exists
             user_face = message.face if hasattr(message, "face") else None
             price = message.rmb
 
-            logger.info(f"用户：{uname} 发送 {price}元 SC：{message}")
+            logger.info(f"User: {uname} sent a {price} yuan SC:{message}")
 
             data = {
                 "platform": platform,
@@ -378,12 +378,12 @@ def start_listen(config, common, my_handle, platform: str):
             message: open_models.SuperChatDeleteMessage,
         ):
             logger.info(
-                f"[直播间 {message.room_id}] 删除醒目留言 message_ids={message.message_ids}"
+                f"[Live room {message.room_id}] deleted a Super Chat message_ids={message.message_ids}"
             )
 
         def _on_open_live_like(
             self, client: blivedm.OpenLiveClient, message: open_models.LikeMessage
         ):
-            logger.info(f"用户：{message.uname} 点了个赞")
+            logger.info(f"User: {message.uname} liked")
 
     asyncio.run(main_func())

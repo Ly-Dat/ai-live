@@ -1,5 +1,5 @@
 import time
-import jwt  # 确保这是 PyJWT 库
+import jwt  # Make sure this is the PyJWT library
 import requests
 from urllib.parse import urljoin
 
@@ -11,11 +11,11 @@ def generate_token(apikey: str, exp_seconds: int):
 
     payload = {
         "api_key": id,
-        "exp": int(round(time.time())) + exp_seconds,  # PyJWT中exp字段期望的是秒级的时间戳
-        "timestamp": int(round(time.time() * 1000)),  # 如果需要毫秒级时间戳，可以保留这一行
+        "exp": int(round(time.time())) + exp_seconds,  # PyJWTThe exp field in expects a timestamp in seconds
+        "timestamp": int(round(time.time() * 1000)),  # If you need a millisecond timestamp, you can keep this line
     }
 
-    # 使用PyJWT编码payload
+    # Encode with PyJWTpayload
     token = jwt.encode(
         payload,
         secret,
@@ -42,7 +42,7 @@ data = {
     "size": 20
 }
 
-# get请求
+# getRequest
 response = requests.get(url=url, data=data, headers=headers)
 
 print(response.json())

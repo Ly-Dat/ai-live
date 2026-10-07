@@ -20,26 +20,26 @@ class My_Translate:
         self.google_config = self.config.get("translate", "google")
 
 
-    # 重载config
+    # Reloadconfig
     def reload_config(self, config_path):
         self.config = Config(config_path)
 
     def trans(self, text, type=None) -> str:
-        """通用翻译调用此函数
+        """General translation calls this function
 
         Args:
-            text (str): 待翻译的文本
-            type (str): 翻译类型（baidu/google)
+            text (str): Text to be translated
+            type (str): Translation type (baidu/google)
 
         Returns:
-            (str)：翻译后的文本
+            (str): translated text
         """
         if type is None:
             type = self.config_data["type"]
 
-        # 是否启用字幕输出
+        # Whether subtitle output is enabled
         if self.config.get("captions", "enable"):
-            # 输出当前播放的音频文件的文本内容到字幕文件中，就是保存翻译前的原文
+            # Output the text of the audio file currently being played to the subtitle file, that is, save the original text before translation
             self.common.write_content_to_file(self.config.get("captions", "raw_file_path"), text, write_log=False)
 
         if type == "baidu":
@@ -51,13 +51,13 @@ class My_Translate:
         
 
     def baidu_trans(self, text):
-        """百度翻译
+        """Baidu Translate
 
         Args:
-            text (str): 待翻译的文本
+            text (str): Text to be translated
 
         Return:
-            (str)：翻译后的文本
+            (str): translated text
         """
 
         # Set your own appid/appkey.
@@ -88,7 +88,7 @@ class My_Translate:
             r = requests.post(url, params=payload, headers=headers)
             result = r.json()
 
-            logger.info(f"百度翻译结果={result}")
+            logger.info(f"Baidu Translate result={result}")
             translation = result["trans_result"][0]["dst"]
             translation = translation.replace("パパパパ", "パンパカパーン")
             translation = translation.replace("ボンボン", "パンパカパーン")
@@ -112,13 +112,13 @@ class My_Translate:
 
 
     def google_trans(self, text):
-        """谷歌翻译
+        """Google Translate
 
         Args:
-            text (str): 待翻译的文本
+            text (str): Text to be translated
 
         Return:
-            (str)：翻译后的文本
+            (str): translated text
         """
         try:
             if self.config_data['google']['proxy'] != "":
@@ -132,7 +132,7 @@ class My_Translate:
             if src_lang == "auto":
                 src_lang = None
 
-            # 翻译句子
+            # Translate the sentence
             ret = client.translate(text, target=self.config_data['google']['tgt_lang'], source=src_lang)
             logger.debug(ret)
 

@@ -11,5 +11,5 @@ class RunThread(threading.Thread):
         self.result = asyncio.run(self.coro)
     
     def close(self):
-        # 线程相关清理
+        # Thread-related cleanup
         self.join()

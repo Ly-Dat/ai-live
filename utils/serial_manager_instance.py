@@ -9,6 +9,6 @@ class SingletonSerialManager:
             cls._instance = SerialManager()
         return cls._instance
 
-# 使用一个函数返回单例实例
+# Use a function to return the singleton instance
 def get_serial_manager():
     return SingletonSerialManager.get_instance()

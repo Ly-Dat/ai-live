@@ -72,7 +72,7 @@ class EmojiChatMessage(betterproto.Message):
 
 @dataclass
 class ChatMessage(betterproto.Message):
-    """聊天"""
+    """Chat"""
 
     common: "Common" = betterproto.message_field(1)
     user: "User" = betterproto.message_field(2)
@@ -150,7 +150,7 @@ class RoomUserSeqMessageContributor(betterproto.Message):
 
 @dataclass
 class GiftMessage(betterproto.Message):
-    """礼物消息"""
+    """Gift message"""
 
     common: "Common" = betterproto.message_field(1)
     gift_id: int = betterproto.uint64_field(2)
@@ -247,7 +247,7 @@ class TextEffectDetail(betterproto.Message):
 
 @dataclass
 class MemberMessage(betterproto.Message):
-    """成员消息"""
+    """Member message"""
 
     common: "Common" = betterproto.message_field(1)
     user: "User" = betterproto.message_field(2)
@@ -376,7 +376,7 @@ class TextFormat(betterproto.Message):
 
 @dataclass
 class LikeMessage(betterproto.Message):
-    """点赞"""
+    """Like"""
 
     common: "Common" = betterproto.message_field(1)
     count: int = betterproto.uint64_field(2)
@@ -718,7 +718,7 @@ class PreMessage(betterproto.Message):
     inbox_type: int = betterproto.uint32_field(6)
     build_number: str = betterproto.string_field(7)
     send_message_body: "SendMessageBody" = betterproto.message_field(8)
-    # 字段名待定
+    # Field name to be determined
     aa: str = betterproto.string_field(9)
     device_platform: str = betterproto.string_field(11)
     headers: List["HeadersList"] = betterproto.message_field(15)
@@ -785,7 +785,7 @@ class ProductChangeMessage(betterproto.Message):
 class ControlMessage(betterproto.Message):
     """
     from https://github.com/HaoDong108/DouyinBarrageGrab/blob/main/BarrageGrab/
-    proto/message.proto status = 3 下播
+    proto/message.proto status = 3 Stream ended
     """
 
     common: "Common" = betterproto.message_field(1)
@@ -800,7 +800,7 @@ class FansclubMessage(betterproto.Message):
     """
 
     common_info: "Common" = betterproto.message_field(1)
-    # 升级是1，加入是2
+    # Level up is 1, join is2
     type: int = betterproto.int32_field(2)
     content: str = betterproto.string_field(3)
     user: "User" = betterproto.message_field(4)
@@ -810,7 +810,7 @@ class FansclubMessage(betterproto.Message):
 class RoomRankMessage(betterproto.Message):
     """
     from https://github.com/scx567888/live-room-watcher/blob/master/src/main/pr
-    oto/douyin_hack/webcast/im/RoomRankMessage.proto 直播间排行榜
+    oto/douyin_hack/webcast/im/RoomRankMessage.proto Live room ranking
     """
 
     common: "Common" = betterproto.message_field(1)

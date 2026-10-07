@@ -1,18 +1,18 @@
 from nicegui import ui
 
-# 检测是否为纯数字
+# Check whether it is purely digits
 def is_pure_number(text):
-    """检测是否为纯数字
+    """Check whether it is purely digits
 
     Args:
-        text (str): 待检测的文本
+        text (str): Text to detect
 
     Returns:
-        bool: 是否为纯数字
+        bool: Whether it is purely digits
     """
     return text.isdigit()
 
-# 是否是url
+# Whether it isurl
 def is_url_check(url):
     from urllib.parse import urlparse
     try:

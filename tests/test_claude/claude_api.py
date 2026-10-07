@@ -147,7 +147,7 @@ class Client:
 
         #response = self.send_request("POST",url,headers=headers, data=payload, stream=True)
         # decoded_data = response.content.decode("utf-8")
-        # #logger.info("send_message {} decoded_data：".format(decoded_data))
+        # #logger.info("send_message {} decoded_data:".format(decoded_data))
         # decoded_data = re.sub('\n+', '\n', decoded_data).strip()
         # data_strings = decoded_data.split('\n')
         # completions = []
@@ -158,7 +158,7 @@ class Client:
         #         completions.append(data['completion'])
         #
         # answer = ''.join(completions)
-        # logger.info("send_message {} answer：".format(answer))
+        # logger.info("send_message {} answer:".format(answer))
         buffer = BytesIO()
         c = Curl()
         def stream_callback(data):

@@ -5,7 +5,7 @@ from utils.common import Common
 from utils.my_log import logger
 
 def convert_cookies(cookies: list) -> dict:
-    """转换cookies"""
+    """Convertcookies"""
     cookies_dict = {}
     for cookie in cookies:
         cookies_dict[cookie["name"]] = cookie["value"]
@@ -26,13 +26,13 @@ class TongYi:
 
         try:
             if self.config_data["type"] == "web":
-                # 非流式模式
+                # Non-streaming mode
                 import revTongYi.qianwen as qwen
                 
                 with open(self.cookie_path, "r") as f:
                     self.cookies_dict = convert_cookies(json.load(f))
                 self.chatbot = qwen.Chatbot(
-                    cookies=self.cookies_dict  # 以dict形式提供cookies
+                    cookies=self.cookies_dict  # Provided as a dictcookies
                 )
                 
             elif self.config_data["type"] == "api":
@@ -43,14 +43,14 @@ class TongYi:
             logger.error(traceback.format_exc())
 
     def get_resp(self, prompt, stream=False):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            prompt (str): 你的提问
-            stream (bool, optional): 是否流式返回. Defaults to False.
+            prompt (str): Your question
+            stream (bool, optional): Whether to return as a stream. Defaults to False.
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             if self.config_data["type"] == "web":
@@ -61,7 +61,7 @@ class TongYi:
                 
                 # logger.info(ret)
                 
-                # 是否启用上下文记忆
+                # Whether to enable context memory
                 if self.config_data['history_enable']:
                     self.parentId = ret['msgId']
                 resp_content = ret['content'][0]
@@ -73,9 +73,9 @@ class TongYi:
                 from dashscope.api_entities.dashscope_response import Role
                 
                 if self.config_data['history_enable'] is False:
-                    # 预设不能为空
+                    # Preset cannot be empty
                     if self.config_data["preset"] == "":
-                        self.config_data["preset"] = "请做为一个人工智能，回答我的问题"
+                        self.config_data["preset"] = "Please act as an AI and answer my question"
                     messages = [{'role': Role.SYSTEM, 'content': self.config_data["preset"]},
                                     {'role': Role.USER, 'content': prompt}]
                 else:
@@ -101,7 +101,7 @@ class TongYi:
                     return None
                 
                 if stream:
-                    # 返回响应
+                    # Return the response
                     return response
             
                 if response.status_code == HTTPStatus.OK:
@@ -114,9 +114,9 @@ class TongYi:
                         self.history.append({'role': response.output.choices[0]['message']['role'],
                                         'content': resp_content})
                         while True:
-                            # 获取嵌套列表中所有字符串的字符数
+                            # Get the character count of all strings in a nested list
                             total_chars = sum(len(item['content']) for item in self.history if 'content' in item)
-                            # 如果大于限定最大历史数，就剔除第一个元素
+                            # If it exceeds the maximum history limit, remove the first element
                             if total_chars > int(self.config_data["history_max_len"]):
                                 self.history.pop(0)
                                 self.history.pop(0)
@@ -125,26 +125,26 @@ class TongYi:
                         
                     return resp_content
                 else:
-                    logger.error(f'出错，请查看message信息排查问题，已知问题有：输入数据可能包含不适当的内容\nRequest id: {response.request_id}, Status code: {response.status_code}, error code: {response.code}, error message: {response.message}')
+                    logger.error(f'Error, please check the message info to troubleshoot; known issues include: the input data may contain inappropriate content\nRequest id: {response.request_id}, Status code: {response.status_code}, error code: {response.code}, error message: {response.message}')
                     return None
         except Exception as e:
             logger.error(traceback.format_exc())
             return None
 
-    # 添加AI返回消息到会话，用于提供上下文记忆
+    # Add the AI reply message to the session to provide contextual memory
     def add_assistant_msg_to_session(self, prompt: str, message: str):
         try:
             if self.config_data["type"] == "api":
                 from dashscope.api_entities.dashscope_response import Role
 
-                # 启用历史就给我记住！
+                # If history is enabled, remember it for me!
                 if self.config_data['history_enable']:
                     self.history.append({'role': Role.USER, 'content': prompt})
                     self.history.append({'role': Role.ASSISTANT, 'content': message})
                     while True:
-                        # 获取嵌套列表中所有字符串的字符数
+                        # Get the character count of all strings in a nested list
                         total_chars = sum(len(item['content']) for item in self.history if 'content' in item)
-                        # 如果大于限定最大历史数，就剔除第一个元素
+                        # If it exceeds the maximum history limit, remove the first element
                         if total_chars > int(self.config_data["history_max_len"]):
                             self.history.pop(0)
                             self.history.pop(0)
@@ -161,9 +161,9 @@ class TongYi:
             return {"ret": False}
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logger.basicConfig(
-        level=logger.INFO,  # 设置日志级别，可以根据需求调整
+        level=logger.INFO,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -172,7 +172,7 @@ if __name__ == '__main__':
         "cookie_path": 'cookies.json',
         "type": 'api',
         "model": "qwen-max",
-        "preset": "你是一个专业的虚拟主播",
+        "preset": "You are a professional virtual streamer",
         "api_key": "sk-",
         "temperature": 0.9,
         "top_p": 0.9,
@@ -186,6 +186,6 @@ if __name__ == '__main__':
     tongyi = TongYi(data)
 
 
-    logger.info(tongyi.get_resp("你现在叫小伊，是个猫娘，每句话后面加个喵"))
-    logger.info(tongyi.get_resp("早上好，你叫什么"))
+    logger.info(tongyi.get_resp("You are now called Xiaoyi, a catgirl, add meow after every sentence"))
+    logger.info(tongyi.get_resp("Good morning, what is your name"))
     

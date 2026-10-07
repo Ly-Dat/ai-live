@@ -24,41 +24,41 @@ class Dify:
         return text
 
     def get_resp(self, data: dict, stream: bool = False):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            data (dict): 含有提问的json数据
-            stream (bool): 是否流式返回
+            data (dict): JSON data containing the question
+            stream (bool): Whether to return as a stream
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             resp_content = None
 
-            if self.config_data["type"] == "聊天助手":
+            if self.config_data["type"] == "Chat assistant":
                 API_URL = urljoin(self.config_data["api_ip_port"], '/v1/chat-messages')
 
                 if stream:
                     data_json = {
                         "inputs": {},
                         "query": data["prompt"],
-                        # 阻塞模式
+                        # Blocking mode
                         "response_mode": "streaming",
-                        # 会话 ID，需要基于之前的聊天记录继续对话，必须传之前消息的 conversation_id。
+                        # Conversation ID; to continue a conversation based on previous chat history, you must pass the conversation_id of the previous message.
                         "conversation_id": self.conversation_id,
-                        # 用户名是否区分 视情况而定，暂时为了稳定性统一
+                        # Whether the username is case-sensitive depends on the situation; unified for now for stability
                         "user": "test"
                     }
                 else:
                     data_json = {
                         "inputs": {},
                         "query": data["prompt"],
-                        # 阻塞模式
+                        # Blocking mode
                         "response_mode": "blocking",
-                        # 会话 ID，需要基于之前的聊天记录继续对话，必须传之前消息的 conversation_id。
+                        # Conversation ID; to continue a conversation based on previous chat history, you must pass the conversation_id of the previous message.
                         "conversation_id": self.conversation_id,
-                        # 用户名是否区分 视情况而定，暂时为了稳定性统一
+                        # Whether the username is case-sensitive depends on the situation; unified for now for stability
                         "user": "test"
                     }
                 headers = {
@@ -71,7 +71,7 @@ class Dify:
                 if response is None:
                     return None
 
-                # 流式的话 直接返回
+                # If streaming, return directly
                 if stream:
                     return response
 
@@ -82,15 +82,15 @@ class Dify:
                 if "answer" in resp_json:
                     resp_content = resp_json["answer"]
 
-                    # 是否记录历史
+                    # Whether to record history
                     if self.config_data["history_enable"]:
                         self.conversation_id = resp_json["conversation_id"]
                 else:
-                    logger.error(f"[dify] 获取LLM返回失败。{resp_json}")
+                    logger.error(f"[dify] Failed to get the LLM response.{resp_json}")
                     return None
 
                 return resp_content
-            elif self.config_data["type"] == "工作流":
+            elif self.config_data["type"] == "Workflow":
                 API_URL = urljoin(self.config_data["api_ip_port"], '/v1/workflows/run')
 
                 variables = {
@@ -104,17 +104,17 @@ class Dify:
                 if stream:
                     data_json = {
                         "inputs": custom_params,
-                        # 阻塞模式
+                        # Blocking mode
                         "response_mode": "streaming",
-                        # 用户名是否区分 视情况而定，暂时为了稳定性统一
+                        # Whether the username is case-sensitive depends on the situation; unified for now for stability
                         "user": "test"
                     }
                 else:
                     data_json = {
                         "inputs": custom_params,
-                        # 阻塞模式
+                        # Blocking mode
                         "response_mode": "blocking",
-                        # 用户名是否区分 视情况而定，暂时为了稳定性统一
+                        # Whether the username is case-sensitive depends on the situation; unified for now for stability
                         "user": "test"
                     }
                     logger.debug(f"[dify] data_json={data_json}")
@@ -128,7 +128,7 @@ class Dify:
                 if response is None:
                     return None
 
-                # 流式的话 直接返回
+                # If streaming, return directly
                 if stream:
                     return response
                 
@@ -142,7 +142,7 @@ class Dify:
                         if "text" in resp_content_dict:
                             resp_content = resp_content_dict["text"]
                 else:
-                    logger.error(f"[dify] 获取LLM返回失败。{resp_json}")
+                    logger.error(f"[dify] Failed to get the LLM response.{resp_json}")
                     return None
 
                 return resp_content
@@ -151,10 +151,10 @@ class Dify:
 
         return None
     
-    # 添加AI返回消息到会话，用于提供上下文记忆
+    # Add the AI reply message to the session to provide contextual memory
     def add_assistant_msg_to_session(self, conversation_id: str):
         try:
-            # 启用历史就给我记住！
+            # If history is enabled, remember it for me!
             if self.config_data['history_enable']:
                 self.conversation_id = conversation_id
             return {"ret": True}
@@ -165,12 +165,12 @@ class Dify:
 if __name__ == '__main__':
     data = {
         "api_ip_port": "http://172.26.189.21/v1",
-        "type": "聊天助手",
+        "type": "Chat assistant",
         "api_key": "app-64xu0vQjP2kxN4DKR8Ch7ZGY",
         "history_enable": True
     }
 
-    # 实例化并调用
+    # Instantiate and call
     dify = Dify(data)
-    logger.info(dify.get_resp({"prompt": "你可以扮演猫娘吗，每句话后面加个喵"}))
-    logger.info(dify.get_resp({"prompt": "早上好"}))
+    logger.info(dify.get_resp({"prompt": "Can you play a catgirl and add meow after every sentence"}))
+    logger.info(dify.get_resp({"prompt": "Good morning"}))

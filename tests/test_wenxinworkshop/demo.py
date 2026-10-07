@@ -2,12 +2,12 @@ import json, logging, traceback
 from wenxinworkshop import LLMAPI, EmbeddingAPI, PromptTemplateAPI
 from wenxinworkshop import Message, Messages, Texts
 
-# 前往官网：https://cloud.baidu.com/product/wenxinworkshop 申请服务获取
+# Go to the official site: https://cloud.baidu.com/product/wenxinworkshop to apply for the service and get it
 
 class My_WenXinWorkShop:
     def __init__(self, data):
         # self.common = Common()
-        # # 日志文件路径
+        # # Log file path
         # file_path = "./log/log-" + self.common.get_bj_time(1) + ".txt"
         # Configure_logger(file_path)
 
@@ -48,13 +48,13 @@ class My_WenXinWorkShop:
 
 
     def get_resp(self, prompt):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            prompt (str): 你的提问
+            prompt (str): Your question
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             # create messages
@@ -84,12 +84,12 @@ class My_WenXinWorkShop:
                 chunk_size=512
             )
 
-            # 启用历史就给我记住！
+            # If history is enabled, remember it for me!
             if self.config_data["history_enable"]:
                 while True:
-                    # 获取嵌套列表中所有字符串的字符数
+                    # Get the character count of all strings in a nested list
                     total_chars = sum(len(item['content']) for item in self.history if 'content' in item)
-                    # 如果大于限定最大历史数，就剔除第一个元素
+                    # If it exceeds the maximum history limit, remove the first element
                     if total_chars > self.config_data["history_max_len"]:
                         self.history.pop(0)
                         self.history.pop(0)
@@ -107,9 +107,9 @@ class My_WenXinWorkShop:
         return None
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logging.basicConfig(
-        level=logging.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logging.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -125,7 +125,7 @@ if __name__ == '__main__':
         "history_max_len": 300
     }
 
-    # 实例化并调用
+    # Instantiate and call
     my_wenxinworkshop = My_WenXinWorkShop(data)
-    logging.info(my_wenxinworkshop.get_resp("你可以扮演猫娘吗，每句话后面加个喵"))
-    logging.info(my_wenxinworkshop.get_resp("早上好"))
+    logging.info(my_wenxinworkshop.get_resp("Can you play a catgirl and add meow after every sentence"))
+    logging.info(my_wenxinworkshop.get_resp("Good morning"))

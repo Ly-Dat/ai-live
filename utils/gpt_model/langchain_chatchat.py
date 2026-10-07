@@ -6,11 +6,11 @@ import re
 from utils.my_log import logger
 
 def extract_and_parse_json(data_string):
-    # 如果 data_string 是 bytes 或 bytearray，将其解码为字符串
+    # If data_string is bytes or bytearray, decode it to a string
     if isinstance(data_string, (bytes, bytearray)):
         data_string = data_string.decode('utf-8')
 
-    # 使用正则表达式匹配 JSON 部分
+    # Use a regular expression to match the JSON part
     match = re.search(r'{.*}', data_string)
     if match:
         json_string = match.group(0)
@@ -27,7 +27,7 @@ def extract_and_parse_json(data_string):
 class Langchain_ChatChat:
     def __init__(self, data):
         # self.common = Common()
-        # 日志文件路径
+        # Log file path
         # file_path = "./log/log-" + self.common.get_bj_time(1) + ".txt"
         # Configure_logger(file_path)
 
@@ -38,12 +38,12 @@ class Langchain_ChatChat:
         self.history = []
 
 
-    # 获取知识库列表
+    # Get the knowledge base list
     def get_list_knowledge_base(self):
         url = urljoin(self.api_ip_port, "/knowledge_base/list_knowledge_bases")
         try:
             response = requests.get(url)
-            response.raise_for_status()  # 检查响应的状态码
+            response.raise_for_status()  # Check the response status code
 
             result = response.content
             ret = extract_and_parse_json(result)
@@ -54,7 +54,7 @@ class Langchain_ChatChat:
             else:
                 # continue with your code using parsed_json
                 logger.debug(ret)
-                logger.info(f"本地知识库列表：{ret['data']}")
+                logger.info(f"Local knowledge base list:{ret['data']}")
 
             return ret['data']
         except Exception as e:
@@ -63,24 +63,24 @@ class Langchain_ChatChat:
 
 
     def get_resp(self, prompt):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            prompt (str): 你的提问
+            prompt (str): Your question
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
-            if self.chat_type == "模型":
+            if self.chat_type == "Model":
                 data_json = self.config_data["llm"]
                 
                 url = self.api_ip_port + "/chat/chat"
-            elif self.chat_type == "知识库":
+            elif self.chat_type == "Knowledge base":
                 data_json = self.config_data["knowledge_base"]
 
                 url = self.api_ip_port + "/chat/knowledge_base_chat"
-            elif self.chat_type == "搜索引擎":
+            elif self.chat_type == "Search engine":
                 data_json = self.config_data["search_engine"]
 
                 url = self.api_ip_port + "/chat/search_engine_chat"
@@ -92,7 +92,7 @@ class Langchain_ChatChat:
             data_json["history"] = self.history
 
             response = requests.post(url=url, json=data_json)
-            response.raise_for_status()  # 检查响应的状态码
+            response.raise_for_status()  # Check the response status code
 
             result = response.content
             ret = extract_and_parse_json(result)
@@ -103,21 +103,21 @@ class Langchain_ChatChat:
                 # continue with your code using parsed_json
                 logger.debug(ret)
 
-                if self.chat_type == "模型":
+                if self.chat_type == "Model":
                     resp_content = ret["text"]
-                elif self.chat_type == "知识库":
+                elif self.chat_type == "Knowledge base":
                     resp_content = ret["answer"]
-                elif self.chat_type == "搜索引擎":
+                elif self.chat_type == "Search engine":
                     resp_content = ret["answer"]
                 else:
                     resp_content = ret["text"]
 
-                # 启用历史就给我记住！
+                # If history is enabled, remember it for me!
                 if self.config_data["history_enable"]:
                     while True:
-                        # 获取嵌套列表中所有字符串的字符数
+                        # Get the character count of all strings in a nested list
                         total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                        # 如果大于限定最大历史数，就剔除第一个元素
+                        # If it exceeds the maximum history limit, remove the first element
                         if total_chars > self.config_data["history_max_len"]:
                             self.history.pop(0)
                         else:
@@ -132,17 +132,17 @@ class Langchain_ChatChat:
 
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logger.basicConfig(
-        level=logger.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logger.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
     data = {
         "api_ip_port": "http://127.0.0.1:7861",
-        # 模型/知识库/搜索引擎
-        "chat_type": "模型",
+        # Model/knowledge base/search engine
+        "chat_type": "Model",
         "llm": {
             "stream": False,
             "model_name": "openai-api",
@@ -176,15 +176,15 @@ if __name__ == '__main__':
     langchain_chatchat = Langchain_ChatChat(data)
 
 
-    if data["chat_type"] == "模型":
-        logger.info(langchain_chatchat.get_resp("什么是黑洞"))
-        logger.info(langchain_chatchat.get_resp("什么是原初黑洞"))
-    elif data["chat_type"] == "知识库":  
+    if data["chat_type"] == "Model":
+        logger.info(langchain_chatchat.get_resp("What is a black hole"))
+        logger.info(langchain_chatchat.get_resp("What is a primordial black hole"))
+    elif data["chat_type"] == "Knowledge base":  
         langchain_chatchat.get_list_knowledge_base()
-        logger.info(langchain_chatchat.get_resp("什么是黑洞"))
-        logger.info(langchain_chatchat.get_resp("什么是原初黑洞"))
+        logger.info(langchain_chatchat.get_resp("What is a black hole"))
+        logger.info(langchain_chatchat.get_resp("What is a primordial black hole"))
     # please set BING_SUBSCRIPTION_KEY and BING_SEARCH_URL in os ENV
-    elif data["chat_type"] == "搜索引擎":  
-        logger.info(langchain_chatchat.get_resp("伊卡洛斯是谁"))
-        logger.info(langchain_chatchat.get_resp("伊卡洛斯的英文名"))
+    elif data["chat_type"] == "Search engine":  
+        logger.info(langchain_chatchat.get_resp("Who is Icarus"))
+        logger.info(langchain_chatchat.get_resp("The English name of Icarus"))
     

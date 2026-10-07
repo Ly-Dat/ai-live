@@ -1,0 +1,44 @@
+{
+  "_comment": "SAMPLE DATA - replace with the real items in your TikTok Shop cart (same order as the cart: 'order' is the cart number you call out). Keep claims honest; no absolute/medical claims, no phone/Zalo/links.",
+  "shop_name": "Shop Mẫu",
+  "products": [
+    {
+      "id": "P001", "order": 1,
+      "name": "Áo thun cotton basic",
+      "aliases": ["áo thun", "áo cotton", "áo phông"],
+      "price": "129.000đ", "original_price": "199.000đ",
+      "description": "Áo thun cotton mềm, form rộng vừa, dễ phối đồ đi học đi làm.",
+      "highlights": ["Chất cotton thoáng mát", "Đường may chắc chắn", "Có nhiều màu để chọn"],
+      "sizes_colors": "Có size từ S đến XL, các màu trắng, đen, be.",
+      "how_to_use": "Nên giặt nước lạnh, lộn trái khi giặt để giữ màu.",
+      "shipping": "Shop gửi hàng qua TikTok Shop, thời gian giao tuỳ khu vực.",
+      "return_policy": "Được đổi trả theo chính sách của TikTok Shop.",
+      "stock_note": "",
+      "faq": [{"q": "Mặc size nào nếu cao 1m65 nặng 55kg?", "a": "Thường vừa size M, bạn xem bảng size trong trang sản phẩm để chọn chính xác."}]
+    },
+    {
+      "id": "P002", "order": 2,
+      "name": "Bình giữ nhiệt 500ml",
+      "aliases": ["bình giữ nhiệt", "bình nước", "ly giữ nhiệt"],
+      "price": "159.000đ", "original_price": "",
+      "description": "Bình inox 500ml, nắp kín, bỏ vừa balo và ngăn để ly xe.",
+      "highlights": ["Inox 304", "Giữ nóng lạnh nhiều giờ", "Nắp kín chống tràn"],
+      "sizes_colors": "Các màu kem, xanh mint, đen.",
+      "how_to_use": "Tráng bình bằng nước ấm trước khi dùng lần đầu.",
+      "shipping": "", "return_policy": "", "stock_note": "Số lượng có hạn trong phiên live này.",
+      "faq": []
+    },
+    {
+      "id": "P003", "order": 3,
+      "name": "Kem chống nắng dịu nhẹ SPF50",
+      "aliases": ["kem chống nắng", "chống nắng"],
+      "price": "189.000đ", "original_price": "239.000đ",
+      "description": "Kết cấu mỏng nhẹ, dùng hằng ngày, thoa xong ít bết dính.",
+      "highlights": ["SPF50 PA+++", "Kết cấu mỏng nhẹ", "Hợp dùng hằng ngày"],
+      "sizes_colors": "Tuýp 50ml.",
+      "how_to_use": "Thoa đều trước khi ra ngoài khoảng 15 phút và thoa lại sau vài giờ.",
+      "shipping": "", "return_policy": "", "stock_note": "",
+      "faq": [{"q": "Có hợp da nhạy cảm không?", "a": "Mỗi người một loại da, bạn nên thử một vùng nhỏ trước và xem thành phần trong trang sản phẩm."}]
+    }
+  ]
+}

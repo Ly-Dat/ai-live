@@ -18,7 +18,7 @@ class Chatglm:
         self.history = []
 
 
-    # 调用chatglm接口，获取返回内容
+    # Call the chatglm API and get the returned content
     def get_resp(self, prompt):
         data_json = {
             "prompt": prompt, 
@@ -30,7 +30,7 @@ class Chatglm:
 
         try:
             response = requests.post(url=self.api_ip_port, json=data_json)
-            response.raise_for_status()  # 检查响应的状态码
+            response.raise_for_status()  # Check the response status code
 
             result = response.content
             ret = json.loads(result)
@@ -39,12 +39,12 @@ class Chatglm:
 
             resp_content = ret['response']
 
-            # 启用历史就给我记住！
+            # If history is enabled, remember it for me!
             if self.history_enable:
                 while True:
-                    # 获取嵌套列表中所有字符串的字符数
+                    # Get the character count of all strings in a nested list
                     total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                    # 如果大于限定最大历史数，就剔除第一个元素
+                    # If it exceeds the maximum history limit, remove the first element
                     if total_chars > self.history_max_len:
                         self.history.pop(0)
                     else:

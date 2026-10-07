@@ -11,7 +11,7 @@ class Gemini:
             self.config_data = data
 
             self.history = []
-            # 设置代理
+            # Set proxy
             if self.config_data["http_proxy"]:
                 os.environ['http_proxy'] = self.config_data["http_proxy"]
             if self.config_data["https_proxy"]:
@@ -58,12 +58,12 @@ class Gemini:
         try:
             import PIL.Image
 
-            # 检查 img_data 的类型
-            if isinstance(img_data, str):  # 如果是字符串，假定为文件路径
-                # 使用 PIL.Image.open() 打开图片文件
+            # Check the type of img_data
+            if isinstance(img_data, str):  # If it is a string, assume it is a file path
+                # Use PIL.Image.open() to open the image file
                 img = PIL.Image.open(img_data)
-            elif isinstance(img_data, PIL.Image.Image):  # 如果已经是 PIL.Image.Image 对象
-                # 直接返回这个图像对象
+            elif isinstance(img_data, PIL.Image.Image):  # If it is already a PIL.Image.Image object
+                # Return this image object directly
                 img = img_data
             else:
                 img = img_data
@@ -88,18 +88,18 @@ class Gemini:
             return None
 
     def get_resp(self, prompt):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            prompt (str): 你的提问
+            prompt (str): Your question
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             messages = []
 
-            # 载入上下文
+            # Load context
             for history in self.history:
                 messages.append(
                     {
@@ -127,12 +127,12 @@ class Gemini:
             )
             resp_content = response.text
 
-            # 启用历史就给我记住！
+            # If history is enabled, remember it for me!
             if self.config_data["history_enable"]:
                 while True:
-                    # 获取嵌套列表中所有字符串的字符数
+                    # Get the character count of all strings in a nested list
                     total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                    # 如果大于限定最大历史数，就剔除第一个元素
+                    # If it exceeds the maximum history limit, remove the first element
                     if total_chars > self.config_data["history_max_len"]:
                         self.history.pop(0)
                         self.history.pop(0)
@@ -148,9 +148,9 @@ class Gemini:
         
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logging.basicConfig(
-        level=logging.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logging.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -171,9 +171,9 @@ if __name__ == '__main__':
 
     gemini = Gemini(data)
 
-    # logging.info(gemini.get_resp("你可以扮演猫娘吗，每句话后面加个喵"))
-    # logging.info(gemini.get_resp("早上好"))
-    # logging.info(gemini.get_resp("我的眼睛好酸"))
+    # logging.info(gemini.get_resp("Can you play a catgirl and add meow after every sentence"))
+    # logging.info(gemini.get_resp("Good morning"))
+    # logging.info(gemini.get_resp("My eyes are so sore"))
 
-    logging.info(gemini.get_resp_with_img("根据图片内容，猜猜我吃的什么", "1.png"))
+    logging.info(gemini.get_resp_with_img("Guess what I am eating based on the image content", "1.png"))
     

@@ -6,8 +6,8 @@ import soundfile as sf
 
 model_size = "large-v3"
 model = WhisperModel(model_size, device="cuda", compute_type="float16", download_root="E:\\GitHub_pro\\AI-Vtuber\\models")
-samplerate = 16000  # Whisper 支持的采样率
-channels = 1  # 单声道录音
+samplerate = 16000  # Whisper Supported sample rates
+channels = 1  # Mono recording
 
 def callback(indata, frames, time, status):
     global samplerate
@@ -15,12 +15,12 @@ def callback(indata, frames, time, status):
     if status:
         print(status)
 
-    # 将捕获的 NumPy 音频数据转换为音频文件所需的字节流格式
+    # Convert the captured NumPy audio data to the byte stream format an audio file needs
     with io.BytesIO() as buffer:
         sf.write(buffer, indata, samplerate, format='WAV')
         buffer.seek(0)
         
-        # 使用 Whisper 模型进行实时音频转录
+        # Real-time audio transcription with the Whisper model
         segments, info = model.transcribe(buffer, beam_size=5, vad_filter=True)
         
         if segments:
@@ -29,20 +29,20 @@ def callback(indata, frames, time, status):
                 print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
 
 def list_input_devices():
-    devices = sd.query_devices()  # 查询所有设备
-    print("输入麦克风设备列表:")
+    devices = sd.query_devices()  # Query all devices
+    print("Input microphone device list:")
     for idx, device in enumerate(devices):
-        # 如果 max_input_channels 大于 0，则为输入设备
+        # If max_input_channels is greater than 0, it is an input device
         if device['max_input_channels'] > 0:
-            print(f"设备索引: {idx}, 设备名称: {device['name']}, 输入通道数: {device['max_input_channels']}")
+            print(f"Device index: {idx}, device name: {device['name']}, Input channels: {device['max_input_channels']}")
 
-            # 获取设备的默认采样率
+            # Get the device default sample rate
             default_samplerate = int(device['default_samplerate'])
             print(f"Default sample rate: {default_samplerate}")
 
 list_input_devices()
 
-# 开始录音并实时处理
+# Start recording and process in real time
 with sd.InputStream(device=3, callback=callback, channels=channels, samplerate=samplerate, dtype='float32'):
     print("Recording... Press Ctrl+C to stop.")
-    sd.sleep(10000)  # 记录 10 秒，您可以根据需要调整
+    sd.sleep(10000)  # Record for 10 seconds, adjust as needed

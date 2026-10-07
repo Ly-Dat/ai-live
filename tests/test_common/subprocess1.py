@@ -20,66 +20,66 @@ config_json = '''
 }
 '''
 
-# 解析 JSON 配置
+# Parse the JSON config
 config = json.loads(config_json)
 
-# 存储启动的进程
+# Store the started processes
 processes = {}
 
 def start_programs(config):
-    """根据配置启动所有程序。
+    """Start all programs according to the config.
 
     Args:
-        config (dict): 包含程序配置的字典。
+        config (dict): Dict containing the program config.
     """
     for program in config.get("programs", []):
         name = program["name"]
-        python_path = program["path"]  # Python 解释器的路径
-        app_path = program["parameters"][0]  # 假设第一个参数总是 app.py 的路径
+        python_path = program["path"]  # Python Path of the interpreter
+        app_path = program["parameters"][0]  # Assume the first argument is always the app.py path
         
-        # 从 app.py 的路径中提取目录
+        # Extract the directory from the app.py path
         app_dir = os.path.dirname(app_path)
         
-        # 使用 Python 解释器路径和 app.py 路径构建命令
+        # Build the command from the Python interpreter path and the app.py path
         cmd = [python_path, app_path]
 
-        logging.info(f"运行程序: {name} 位于: {app_dir}")
+        logging.info(f"Running program: {name} located at: {app_dir}")
         
-        # 在 app.py 文件所在的目录中启动程序
+        # Start the program in the directory containing app.py
         process = subprocess.Popen(cmd, cwd=app_dir, shell=True)
         processes[name] = process
 
 def stop_program(name):
-    """停止一个正在运行的程序及其所有子进程，兼容 Windows、Linux 和 macOS。
+    """Stop a running program and all its child processes; works on Windows, Linux and macOS.
 
     Args:
-        name (str): 要停止的程序的名称。
+        name (str): Name of the program to stop.
     """
     if name in processes:
-        pid = processes[name].pid  # 获取进程ID
-        logging.info(f"停止程序和它所有的子进程: {name} with PID {pid}")
+        pid = processes[name].pid  # Get the processID
+        logging.info(f"Stop the program and all its child processes: {name} with PID {pid}")
 
         try:
             if os.name == 'nt':  # Windows
                 command = ["taskkill", "/F", "/T", "/PID", str(pid)]
                 subprocess.run(command, check=True)
-            else:  # POSIX系统，如Linux和macOS
+            else:  # POSIXsystems such as Linux andmacOS
                 os.killpg(os.getpgid(pid), signal.SIGKILL)
 
-            logging.info(f"程序 {name} 和 它所有的子进程都被终止.")
+            logging.info(f"Program {name} and all its child processes were terminated.")
         except Exception as e:
-            logging.error(f"终止程序 {name} 失败: {e}")
+            logging.error(f"Failed to terminate program {name}: {e}")
 
-        del processes[name]  # 从进程字典中移除
+        del processes[name]  # Remove from the process dict
     else:
-        logging.warning(f"程序 {name} 没有在运行.")
+        logging.warning(f"Program {name} is not running.")
 
-# 启动所有配置中的程序
+# Start all programs in the config
 start_programs(config)
 
-# ...执行其他任务...
+# ...Do other tasks...
 time.sleep(10)
 
-# 当你想要停止某个程序时
+# When you want to stop a program
 stop_program("captions_logging.infoer")
 stop_program("audio_player")

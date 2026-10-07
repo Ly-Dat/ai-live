@@ -5,11 +5,11 @@ from requests.exceptions import ConnectionError, RequestException
 # from utils.common import Common
 # from utils.logger import Configure_logger
 
-# 原计划对接：https://github.com/zhuweiyou/yiyan-api
+# Originally planned to integrate:https://github.com/zhuweiyou/yiyan-api
 class Yiyan:
     def __init__(self, data):
         # self.common = Common()
-        # # 日志文件路径
+        # # Log file path
         # file_path = "./log/log-" + self.common.get_bj_time(1) + ".txt"
         # Configure_logger(file_path)
 
@@ -21,7 +21,7 @@ class Yiyan:
 
     def get_access_token(self):
         """
-        使用 API Key，Secret Key 获取access_token，替换下列示例中的应用API Key、应用Secret Key
+        Use the API Key and Secret Key to get the access_token, replacing the application API Key and application in the example belowSecret Key
         """
             
         url = f'https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={self.config_data["api"]["api_key"]}&client_secret={self.config_data["api"]["secret_key"]}'
@@ -37,13 +37,13 @@ class Yiyan:
 
 
     def get_resp(self, prompt):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            prompt (str): 你的提问
+            prompt (str): Your question
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             if self.type == "web":
@@ -58,7 +58,7 @@ class Yiyan:
                     url = self.config_data["web"]["api_ip_port"] + "/headless"
 
                     response = requests.post(url=url, data=data_json)
-                    response.raise_for_status()  # 检查响应的状态码
+                    response.raise_for_status()  # Check the response status code
 
                     result = response.content
                     ret = json.loads(result)
@@ -67,12 +67,12 @@ class Yiyan:
 
                     resp_content = ret['text'].replace('\n', '').replace('\\n', '')
 
-                    # 启用历史就给我记住！
+                    # If history is enabled, remember it for me!
                     if self.config_data["history_enable"]:
                         while True:
-                            # 获取嵌套列表中所有字符串的字符数
+                            # Get the character count of all strings in a nested list
                             total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                            # 如果大于限定最大历史数，就剔除第一个元素
+                            # If it exceeds the maximum history limit, remove the first element
                             if total_chars > self.config_data["history_max_len"]:
                                 self.history.pop(0)
                             else:
@@ -82,12 +82,12 @@ class Yiyan:
 
                     return resp_content
                 except ConnectionError as ce:
-                    # 处理连接问题异常
-                    logging.error(f"请检查你是否启动了服务端或配置是否匹配，连接异常:{ce}")
+                    # Handle connection exceptions
+                    logging.error(f"Please check whether you have started the server or whether the config matches; connection exception:{ce}")
 
                 except RequestException as re:
-                    # 处理其他请求异常
-                    logging.error(f"请求异常:{re}")
+                    # Handle other request exceptions
+                    logging.error(f"Request exception:{re}")
                 except Exception as e:
                     logging.error(e)
             else:
@@ -110,12 +110,12 @@ class Yiyan:
 
                 resp_content = json.loads(response.text)["result"]
 
-                # 启用历史就给我记住！
+                # If history is enabled, remember it for me!
                 if self.config_data["history_enable"]:
                     while True:
-                        # 获取嵌套列表中所有字符串的字符数
+                        # Get the character count of all strings in a nested list
                         total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                        # 如果大于限定最大历史数，就剔除第一个元素
+                        # If it exceeds the maximum history limit, remove the first element
                         if total_chars > self.config_data["history_max_len"]:
                             self.history.pop(0)
                         else:
@@ -131,9 +131,9 @@ class Yiyan:
 
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logging.basicConfig(
-        level=logging.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logging.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     yiyan = Yiyan(data)
 
 
-    logging.info(yiyan.get_resp("你可以扮演猫娘吗，每句话后面加个喵"))
+    logging.info(yiyan.get_resp("Can you play a catgirl and add meow after every sentence"))
     time.sleep(1)
-    logging.info(yiyan.get_resp("早上好"))
+    logging.info(yiyan.get_resp("Good morning"))
     

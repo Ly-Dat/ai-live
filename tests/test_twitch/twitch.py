@@ -4,25 +4,25 @@ from emoji import demojize
 server = 'irc.chat.twitch.tv'
 port = 6667
 nickname = '主人'
-token = 'oauth:xxx' # 访问 https://twitchapps.com/tmi/ 获取
-user = 'love_ikaros' # 你的Twitch用户名 Your Twitch username
-channel = '#prettyyjj' # 要从中检索消息的频道，注意#必须携带在头部 The channel you want to retrieve messages from
+token = 'oauth:xxx' # Visit https://twitchapps.com/tmi/ to get it
+user = 'love_ikaros' # Your Twitch username Your Twitch username
+channel = '#prettyyjj' # The channel to retrieve messages from; note that # must be included at the start The channel you want to retrieve messages from
 
-# 代理服务器的地址和端口
+# Address and port of the proxy server
 proxy_server = "127.0.0.1"
 proxy_port = 10809
 
-# 配置代理服务器
+# Configure the proxy server
 socks.set_default_proxy(socks.HTTP, proxy_server, proxy_port)
 
-# 创建socket对象
+# Create the socket object
 sock = socks.socksocket()
 
 try:
     sock.connect((server, port))
-    print("成功连接 Twitch IRC server")
+    print("Connected successfully Twitch IRC server")
 except Exception as e:
-    print(f"连接 Twitch IRC server 失败: {e}")
+    print(f"Failed to connect to the Twitch IRC server: {e}")
 
 
 sock.send(f"PASS {token}\n".encode('utf-8'))
@@ -35,7 +35,7 @@ while True:
     try:
         resp = sock.recv(2048).decode('utf-8')
 
-        # 输出所有接收到的内容，包括PING/PONG
+        # Output all received content, includingPING/PONG
         # print(resp)
 
         if resp.startswith('PING'):

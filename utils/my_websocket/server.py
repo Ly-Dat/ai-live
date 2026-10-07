@@ -12,7 +12,7 @@ class WebSocketServer:
         self.clients.add(websocket)
         try:
             async for message in websocket:
-                # 在这里处理从客户端接收的消息
+                # Handle messages received from the client here
                 print(f"Received message: {message}")
                 await self.broadcast_message(message)
         except websockets.exceptions.ConnectionClosedError:
@@ -33,7 +33,7 @@ class WebSocketServer:
             self.server.close()
 
 if __name__ == "__main__":
-    # 实例化WebSocketServer类
+    # Instantiate the WebSocketServer class
     server = WebSocketServer("localhost", 8765)
     
     try:

@@ -16,13 +16,13 @@ class Koboldcpp:
 
 
     def get_resp(self, data):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            data (dict): 数据
+            data (dict): Data
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             prompt = data["prompt"]
@@ -35,7 +35,7 @@ class Koboldcpp:
             logger.info(f"data_json={data_json}")
 
             response = requests.post(url=url, json=data_json)
-            response.raise_for_status()  # 检查响应的状态码
+            response.raise_for_status()  # Check the response status code
 
             result = response.content
             ret = json.loads(result)
@@ -44,21 +44,21 @@ class Koboldcpp:
 
             resp_content = ret["results"][0]["text"]
 
-            # 启用历史就给我记住！
+            # If history is enabled, remember it for me!
             if self.config_data["history_enable"]:
                 self.history += f'\nYou: {prompt}\nAI: {resp_content}'
                 while True:
                     total_chars = len(self.history)
-                    # 如果大于限定最大历史数，就剔除第一个元素
+                    # If it exceeds the maximum history limit, remove the first element
                     if total_chars > self.config_data["history_max_len"]:
-                        # 假设 self.history 是原始字符串
-                        split_list = self.history.split("\n")  # 分割字符串成列表
+                        # Suppose self.history is the original string
+                        split_list = self.history.split("\n")  # Split the string into a list
 
-                        # 保留第一个元素，跳过第二和第三个元素，然后保留剩下的所有元素
-                        # 注意，列表索引从0开始，所以第二个元素的索引是1，第三个元素的索引是2
+                        # Keep the first element, skip the second and third elements, then keep all the remaining elements
+                        # Note that list indices start at 0, so the index of the second element is 1 and the third is2
                         processed_list = split_list[:1] + split_list[3:]
 
-                        # 将处理后的列表元素合并回字符串
+                        # Merge the processed list elements back into a string
                         self.history = "\n".join(processed_list)
                     else:
                         break
@@ -70,9 +70,9 @@ class Koboldcpp:
 
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logger.basicConfig(
-        level=logger.INFO,  # 设置日志级别，可以根据需求调整
+        level=logger.INFO,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )

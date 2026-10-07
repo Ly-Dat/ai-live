@@ -15,7 +15,7 @@ class Blip:
         self.processor = BlipProcessor.from_pretrained(self.config_data["model"])
         self.model = BlipForConditionalGeneration.from_pretrained(self.config_data["model"]).to("cuda")
 
-        logger.info("Blip 模型加载完毕")
+        logger.info("Blip Model loaded")
 
         #processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
         #model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large")
@@ -39,12 +39,12 @@ class Blip:
 
     def generate_caption(self, img_data: str, prompt: str):
         try:
-            # 检查 img_data 的类型
-            if isinstance(img_data, str):  # 如果是字符串，假定为文件路径
-                # 使用 PIL.Image.open() 打开图片文件
+            # Check the type of img_data
+            if isinstance(img_data, str):  # If it is a string, assume it is a file path
+                # Use PIL.Image.open() to open the image file
                 img = Image.open(img_data)
-            elif isinstance(img_data, Image.Image):  # 如果已经是 PIL.Image.Image 对象
-                # 直接返回这个图像对象
+            elif isinstance(img_data, Image.Image):  # If it is already a PIL.Image.Image object
+                # Return this image object directly
                 img = img_data
             else:
                 img = img_data
@@ -66,29 +66,29 @@ class Blip:
 
     def generate_image_caption(self, img_data, conditional_text=None):
         """
-        从给定的图片生成图像描述。
+        Generate an image description from the given image.
         
-        参数:
-            img_data (str): 图片的路径。
-            conditional_text (str, optional): 条件文本，用于有条件地生成图像描述，默认为None。
+        Parameter:
+            img_data (str): Path of the image.
+            conditional_text (str, optional): Conditional text used to conditionally generate the image description, default is None.
             
-        返回:
-            str: 生成的图像描述。
+        Return:
+            str: The generated image description.
         """
-        # 打开并转换图片
+        # Open and convert the image
         with Image.open(img_data) as img:
             raw_image = img.convert("RGB")
         
-            # 根据是否有条件文本来准备输入
+            # Prepare the input depending on whether conditional text is provided
             if conditional_text:
                 inputs = self.processor(raw_image, conditional_text, return_tensors="pt").to("cuda")
             else:
                 inputs = self.processor(raw_image, return_tensors="pt").to("cuda")
             
-            # 生成图像描述
+            # Generate the image description
             out = self.model.generate(**inputs)
             
-            # 解码输出并返回
+            # Decode the output and return it
             return self.processor.decode(out[0], skip_special_tokens=True)
         return None
 

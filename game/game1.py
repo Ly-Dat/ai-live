@@ -2,25 +2,25 @@ import pyautogui
 import time
 
 
-# 模拟按键按下后释放
+# Simulate pressing then releasing a key
 def simulate_key_press(key):
     pyautogui.keyDown(key)
     time.sleep(0.1)
     pyautogui.keyUp(key)
 
 
-# 模拟按键按下后释放，传入字符串数组
+# Simulate pressing then releasing a key, taking a string array
 def simulate_keys_press(keys, re=1):
-    """模拟按键按下后释放，传入字符串数组
+    """Simulate pressing then releasing a key, taking a string array
 
     Args:
-        keys (list): 按键数组
-        re (int, optional): 按键个数. Defaults to 1.
+        keys (list): Key array
+        re (int, optional): Number of keys. Defaults to 1.
     """
     num = 0
-    # 模拟按下释放按键
+    # Simulate pressing and releasing a key
     for key in keys:
-        # 限制触发的次数
+        # Limit the number of triggers
         if num >= re:
             break
         pyautogui.keyDown(key)
@@ -30,15 +30,15 @@ def simulate_keys_press(keys, re=1):
         num = num + 1
 
 
-# 模拟鼠标点击
+# Simulate a mouse click
 def simulate_mouse_press(x=0, y=0, button="left"):
-    # 模拟鼠标点击
+    # Simulate a mouse click
     pyautogui.click(x=x, y=y, button=button)
 
 
-# 解析字符串，模拟按键/鼠标按压
+# Parse the string and simulate key/mouse press
 def parse_key_and_simulate_key_mouse_press(key):
-    # 删除数组中不需要的其他字符串
+    # Delete other unneeded strings in the array
     # def remove_needless(keys):
     #     for i in range(len(keys)):
     #         if keys[i] not in ['1', '2', 're']:
@@ -57,7 +57,7 @@ def parse_key_and_simulate_key_mouse_press(key):
         key = 'up'
         simulate_key_press(key)
     elif key == 're':
-        # 根据实际情况设置坐标值
+        # Set the coordinate values according to the actual situation
         x = 1076
         y = 771
         simulate_mouse_press(x, y, 'left')
@@ -69,11 +69,11 @@ def parse_key_and_simulate_key_mouse_press(key):
         simulate_mouse_press(x, y, 'left')
 
 
-# 解析字符串数组，根据字符串第一位判断是否需要转换按键后，按压按键
+# Parse the string array; based on the first character of the string, decide whether the key needs converting, then press the key
 def parse_keys_and_simulate_keys_press(keys, re=1):
     # print(f"keys={keys}")
 
-    # 删除数组中非 w a s d 1 2 3 的其他字符串
+    # Delete strings in the array other than w a s d 1 2 3
     def remove_needless(keys):
         for i in range(len(keys)):
             if keys[i] not in ['w', 'a', 's', 'd', '1']:
@@ -86,7 +86,7 @@ def parse_keys_and_simulate_keys_press(keys, re=1):
 
             keys = remove_needless(keys)
 
-            # 遍历数组，将123改为yui
+            # Iterate over the array and change 123 toyui
             for i in range(len(keys)):
                 if keys[i] == '1':
                     keys[i] = 'f'
@@ -99,7 +99,7 @@ def parse_keys_and_simulate_keys_press(keys, re=1):
 
             keys = remove_needless(keys)
             
-            # 遍历数组，将wsad改为上下左右，123改为789
+            # Iterate over the array, change wsad to up/down/left/right and 123 to789
             for i in range(len(keys)):
                 if keys[i] == 'w':
                     keys[i] = 'up'
@@ -116,7 +116,7 @@ def parse_keys_and_simulate_keys_press(keys, re=1):
                 # elif keys[i] == '3':
                 #     keys[i] = '9'
         elif keys[0] == 're':
-            # 鼠标按压的坐标，请手动重新校准坐标以适配
+            # Mouse press coordinates; please recalibrate them manually to fit your setup
             x = 1097
             y = 779
 
@@ -135,26 +135,26 @@ def parse_keys_and_simulate_keys_press(keys, re=1):
 
 
 if __name__ == '__main__':
-    # 测试游戏：醉酒拔河 https://www.4399.com/flash/221542_1.htm
+    # Test game: Drunken Tug of War https://www.4399.com/flash/221542_1.htm
 
-    # 循环获取鼠标当前坐标
+    # Loop to get the current mouse coordinates
     def get_mouse_pos():
-        # 定时获取鼠标坐标的时间间隔（秒）
+        # Interval (seconds) for periodically getting the mouse coordinates
         interval = 1
 
         try:
             while True:
-                # 获取鼠标当前的坐标
+                # Get the current mouse coordinates
                 x, y = pyautogui.position()
                 
-                # 打印坐标信息
-                print(f"当前鼠标坐标：x={x}, y={y}")
+                # Print the coordinate info
+                print(f"Current mouse coordinates: x={x}, y={y}")
                 
-                # 等待一段时间后再次获取坐标
+                # Wait for a while before getting the coordinates again
                 time.sleep(interval)
 
         except KeyboardInterrupt:
-            print("获取鼠标坐标的程序已结束。")
+            print("The program for getting mouse coordinates has finished.")
     
     get_mouse_pos()
 

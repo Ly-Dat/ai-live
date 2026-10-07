@@ -6,16 +6,16 @@ from functools import lru_cache
 
 class SearchEngine:
     """
-    搜索引擎类，用于执行网络搜索并获取结果摘要。
-    支持Google、Bing和Baidu搜索引擎。
+    Search engine class, used to perform web searches and get result summaries.
+    Supports the Google, Bing and Baidu search engines.
     """
 
     def __init__(self, headers: Dict[str, str], proxies: Optional[Dict[str, str]] = None):
         """
-        初始化搜索引擎实例。
+        Initialize the search engine instance.
 
-        :param headers: 请求头，用于模拟浏览器行为
-        :param proxies: 代理设置（可选）
+        :param headers: Request headers, used to simulate browser behavior
+        :param proxies: Proxy settings (optional)
         """
         self.headers = headers
         self.proxies = proxies
@@ -23,12 +23,12 @@ class SearchEngine:
     @lru_cache(maxsize=100)
     def search(self, query: str, engine: str = 'google', engine_id: int = 1) -> List[Dict[str, str]]:
         """
-        执行搜索并返回结果。
+        Perform a search and return the results.
 
-        :param query: 搜索查询
-        :param engine: 搜索引擎名称（google、bing或baidu）
-        :param engine_id: 搜索引擎ID（仅用于Google）
-        :return: 搜索结果列表，每个结果包含标题和链接
+        :param query: Search query
+        :param engine: Search engine name (google, bing or baidu)
+        :param engine_id: Search engine ID (Google only)
+        :return: Search result list, each result contains a title and a link
         """
         search_functions = {
             'google': self._google_search,
@@ -38,12 +38,12 @@ class SearchEngine:
         
         search_function = search_functions.get(engine.lower())
         if not search_function:
-            raise ValueError(f"不支持的搜索引擎：{engine}")
+            raise ValueError(f"Unsupported search engine:{engine}")
         
         return search_function(query, engine_id)
 
     def _google_search(self, query: str, engine_id: int) -> List[Dict[str, str]]:
-        """执行Google搜索"""
+        """Perform a Google search"""
         if engine_id == 1:
             url = f"https://www.google.com/search?q={query}"
             soup = self._get_soup(url)
@@ -54,28 +54,28 @@ class SearchEngine:
             soup = self._get_soup(url, method='post', data=data)
             return self._parse_duckduckgo_results(soup)
         else:
-            raise ValueError(f"不支持的Google搜索引擎ID：{engine_id}")
+            raise ValueError(f"Unsupported Google search engine ID:{engine_id}")
 
     def _bing_search(self, query: str, _: int) -> List[Dict[str, str]]:
-        """执行Bing搜索"""
+        """Perform a Bing search"""
         url = f"https://www.bing.com/search?q={query}"
         soup = self._get_soup(url)
         return self._parse_bing_results(soup)
 
     def _baidu_search(self, query: str, _: int) -> List[Dict[str, str]]:
-        """执行百度搜索"""
+        """Perform a Baidu search"""
         url = f"https://www.baidu.com/s?wd={query}"
         soup = self._get_soup(url)
         return self._parse_baidu_results(soup)
 
     def _get_soup(self, url: str, method: str = 'get', **kwargs) -> BeautifulSoup:
         """
-        获取网页内容并解析为BeautifulSoup对象。
+        Get the web page content and parse it into a BeautifulSoup object.
 
-        :param url: 目标URL
-        :param method: HTTP方法（get或post）
-        :param kwargs: 其他请求参数
-        :return: BeautifulSoup对象
+        :param url: TargetURL
+        :param method: HTTPMethod (get or post)
+        :param kwargs: Other request parameters
+        :return: BeautifulSoupObject
         """
         try:
             if method == 'get':
@@ -83,16 +83,16 @@ class SearchEngine:
             elif method == 'post':
                 response = requests.post(url, headers=self.headers, proxies=self.proxies, timeout=30, **kwargs)
             else:
-                raise ValueError(f"不支持的HTTP方法：{method}")
+                raise ValueError(f"Unsupported HTTP method:{method}")
             
             response.raise_for_status()
             return BeautifulSoup(response.content, 'html.parser')
         except requests.RequestException as e:
-            logger.error(f"获取URL {url} 时发生错误：{str(e)}")
+            logger.error(f"Error occurred while fetching URL {url}:{str(e)}")
             raise
 
     def _parse_google_results(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
-        """解析Google搜索结果"""
+        """Parse Google search results"""
         results = []
         for g in soup.find_all('div', class_='g'):
             anchors = g.find_all('a')
@@ -107,14 +107,14 @@ class SearchEngine:
         return results
 
     def _parse_duckduckgo_results(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
-        """解析DuckDuckGo搜索结果"""
+        """Parse DuckDuckGo search results"""
         results = []
         for g in soup.find_all("a"):
             results.append({'title': g.text, 'link': g['href']})
         return results
 
     def _parse_bing_results(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
-        """解析Bing搜索结果"""
+        """Parse Bing search results"""
         results = []
         for b in soup.find_all('li', class_='b_algo'):
             anchors = b.find_all('a')
@@ -126,7 +126,7 @@ class SearchEngine:
         return results
 
     def _parse_baidu_results(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
-        """解析百度搜索结果"""
+        """Parse Baidu search results"""
         results = []
         for b in soup.find_all('div', class_='result'):
             anchors = b.find_all('a')
@@ -140,10 +140,10 @@ class SearchEngine:
 
     def get_content(self, url: str) -> Optional[str]:
         """
-        获取网页内容。
+        Get the web page content.
 
-        :param url: 目标URL
-        :return: 网页内容文本，如果发生错误则返回None
+        :param url: TargetURL
+        :return: Web page content text, returned if an error occursNone
         """
         try:
             soup = self._get_soup(url)
@@ -151,17 +151,17 @@ class SearchEngine:
             content = ' '.join([p.get_text() for p in paragraphs])
             return self._trim_content(content)
         except Exception as e:
-            logger.error(f"从 {url} 获取内容时发生错误：{str(e)}")
+            logger.error(f"Error occurred while fetching content from {url}:{str(e)}")
             return None
 
     @staticmethod
     def _trim_content(content: str, max_length: int = 8000) -> str:
         """
-        裁剪内容至指定最大长度。
+        Trim the content to the specified maximum length.
 
-        :param content: 原始内容
-        :param max_length: 最大长度
-        :return: 裁剪后的内容
+        :param content: Original content
+        :param max_length: Maximum length
+        :return: Trimmed content
         """
         if len(content) <= max_length:
             return content
@@ -170,13 +170,13 @@ class SearchEngine:
 
     def get_summaries(self, query: str, engine: str = 'google', engine_id: int = 1, count: int = 3) -> List[str]:
         """
-        获取搜索结果的摘要。
+        Get the summaries of the search results.
 
-        :param query: 搜索查询
-        :param engine: 搜索引擎名称
-        :param engine_id: 搜索引擎ID
-        :param count: 需要获取的摘要数量
-        :return: 摘要列表
+        :param query: Search query
+        :param engine: Search engine name
+        :param engine_id: Search engineID
+        :param count: Number of summaries to fetch
+        :return: Summary list
         """
         search_results = self.search(query, engine, engine_id)
         summaries = []
@@ -190,30 +190,30 @@ def search_online(query: str, engine: str = 'google', engine_id: int = 1, count:
                   headers: Optional[Dict[str, str]] = None, 
                   proxies: Optional[Dict[str, str]] = None) -> List[str]:
     """
-    在线搜索并获取摘要。
+    Search online and get summaries.
 
-    :param query: 搜索查询
-    :param engine: 搜索引擎名称
-    :param engine_id: 搜索引擎ID
-    :param count: 需要获取的摘要数量
-    :param headers: 请求头（可选）
-    :param proxies: 代理设置（可选）
-    :return: 摘要列表
+    :param query: Search query
+    :param engine: Search engine name
+    :param engine_id: Search engineID
+    :param count: Number of summaries to fetch
+    :param headers: Request headers (optional)
+    :param proxies: Proxy settings (optional)
+    :return: Summary list
     """
-    # 如果没有提供headers，使用默认值
+    # If no headers are provided, use the defaults
     if headers is None:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0',
             'Content-Type': 'text/plain',
         }
 
-    logger.info(f"开始搜索：{query}（使用{engine}引擎）")
+    logger.info(f"Start searching: {query} (using {engine} engine)")
     search_engine = SearchEngine(headers, proxies)
     return search_engine.get_summaries(query, engine, engine_id, count)
 
 def main():
-    """主函数，演示搜索引擎的使用"""
-    proxies = None  # 如果需要代理，请取消注释并填写正确的代理信息
+    """Main function, demonstrates the use of the search engine"""
+    proxies = None  # If a proxy is needed, uncomment and fill in the correct proxy information
     # proxies = {
     #     "http": "http://127.0.0.1:10809",
     #     "https": "http://127.0.0.1:10809",
@@ -227,10 +227,10 @@ def main():
 
     summaries = search_online(query, engine, engine_id, count, proxies=proxies)
     for i, summary in enumerate(summaries, 1):
-        logger.info(f"摘要 {i}:\n{summary}\n")
+        logger.info(f"Summary {i}:\n{summary}\n")
 
 if __name__ == '__main__':
-    logger.add("日志.txt", rotation="500 MB", retention="30 days", compression="zip", encoding="utf-8")
-    logger.info("搜索引擎程序启动")
+    logger.add("Log.txt", rotation="500 MB", retention="30 days", compression="zip", encoding="utf-8")
+    logger.info("Search engine program started")
     main()
-    logger.info("搜索引擎程序结束")
+    logger.info("Search engine program ended")

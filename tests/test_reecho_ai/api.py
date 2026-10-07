@@ -55,12 +55,12 @@ async def reecho_ai_api(text):
 
                         return voice_tmp_path
                     else:
-                        print(f'reecho.ai下载音频失败: {response.status}')
+                        print(f'reecho.aiFailed to download audio: {response.status}')
                         return None
     except aiohttp.ClientError as e:
-        print(f'reecho.ai请求失败: {e}')
+        print(f'reecho.aiRequest failed: {e}')
     except Exception as e:
-        print(f'reecho.ai未知错误: {e}')
+        print(f'reecho.aiUnknown error: {e}')
     
     return None
     

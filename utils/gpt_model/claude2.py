@@ -25,7 +25,7 @@ class Claude2:
             #self.organization_id ="28912dc3-bcd3-43c5-944c-a943a02d19fc"
 
             if self.get_organization_id() is None:
-                logger.error("获取organization_id失败！Claude2将无法正常工作！请排查问题")
+                logger.error("Failed to get organization_id! Claude2 will not work properly! Please investigate")
 
             self.conversation_id = self.create_new_chat()['uuid']
         except Exception as e:
@@ -55,7 +55,7 @@ class Claude2:
 
             self.organization_id = uuid
 
-            logger.info(f"创建新会话：{uuid}")
+            logger.info(f"Create new session:{uuid}")
 
             return uuid
         else:
@@ -150,7 +150,7 @@ class Claude2:
 
         response = self.send_request("POST",url,headers=headers, data=payload, stream=True)
         decoded_data = response.content.decode("utf-8")
-        #logger.info("send_message {} decoded_data：".format(decoded_data))
+        #logger.info("send_message {} decoded_data:".format(decoded_data))
         decoded_data = re.sub('\n+', '\n', decoded_data).strip()
         data_strings = decoded_data.split('\n')
         completions = []
@@ -334,7 +334,7 @@ class Claude2:
             return requests.request(method, url, headers=headers, data=data, files=files, params=params,impersonate="chrome110",timeout=500)
     
 
-    # 获取Claude2的请求结果，共用一个conversation_id，变向记忆功能
+    # Get the Claude2 request result; all requests share one conversation_id to emulate a memory feature
     def get_resp(self, prompt):
         try:
             resp_content = self.send_message(prompt, self.conversation_id)

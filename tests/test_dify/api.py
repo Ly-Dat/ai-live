@@ -19,13 +19,13 @@ class Dify:
 
 
     def get_resp(self, data):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            data (dict): 含有提问的json数据
+            data (dict): JSON data containing the question
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             resp_content = None
@@ -36,11 +36,11 @@ class Dify:
                 data_json = {
                     "inputs": {},
                     "query": data["prompt"],
-                    # 阻塞模式
+                    # Blocking mode
                     "response_mode": "blocking",
-                    # 会话 ID，需要基于之前的聊天记录继续对话，必须传之前消息的 conversation_id。
+                    # Conversation ID; to continue a conversation based on previous chat history, you must pass the conversation_id of the previous message.
                     "conversation_id": self.conversation_id,
-                    # 用户名是否区分 视情况而定，暂时为了稳定性统一
+                    # Whether the username is case-sensitive depends on the situation; unified for now for stability
                     "user": "test"
                 }
                 headers = {
@@ -56,11 +56,11 @@ class Dify:
                 if "answer" in resp_json:
                     resp_content = resp_json["answer"]
 
-                    # 是否记录历史
+                    # Whether to record history
                     if self.config_data["history_enable"]:
                         self.conversation_id = resp_json["conversation_id"]
                 else:
-                    logger.error(f"获取LLM返回失败。{resp_json}")
+                    logger.error(f"Failed to get the LLM response.{resp_json}")
                     return None
 
                 return resp_content
@@ -80,7 +80,7 @@ if __name__ == '__main__':
         "history_enable": True
     }
 
-    # 实例化并调用
+    # Instantiate and call
     dify = Dify(data)
-    logger.info(dify.get_resp({"prompt": "你可以扮演猫娘吗，每句话后面加个喵"}))
-    logger.info(dify.get_resp({"prompt": "早上好"}))
+    logger.info(dify.get_resp({"prompt": "Can you play a catgirl and add meow after every sentence"}))
+    logger.info(dify.get_resp({"prompt": "Good morning"}))

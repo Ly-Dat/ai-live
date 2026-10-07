@@ -38,22 +38,22 @@ def start_listen(config, common, my_handle, platform: str):
             self.subscription = subscription
             self.subscription.request(0x7FFFFFFF)
 
-        # TODO 收到消息回调
+        # TODO Message callback received
         def on_next(self, value: Payload, is_complete=False):
             try:
                 msg_dto = json.loads(value.data)
                 if type(msg_dto) != dict:
                     return
                 msg_type = msg_dto.get('type')
-                # 直接输出
+                # Output directly
                 if msg_type == "DANMU":
                     msg = msg_dto['msg']
                     # logger.info(
-                    #     f"{msg_dto['roomId']} 收到弹幕 {str(msg['badgeLevel']) + str(msg['badgeName']) if msg['badgeLevel'] != 0 else ''} {msg['username']}({str(msg['uid'])})：{msg['content']}"
+                    #     f"{msg_dto['roomId']} Danmaku received {str(msg['badgeLevel']) + str(msg['badgeName']) if msg['badgeLevel'] != 0 else ''} {msg['username']}({str(msg['uid'])}):{msg['content']}"
                     # )
                     username = msg['username']
                     content = msg['content']
-                    logger.info(f"【让弹幕飞-{msg_dto['platform']}-{msg_dto['roomId']}】 [{username}]: {content}")
+                    logger.info(f"[Rang Danmu Fei-{msg_dto['platform']}-{msg_dto['roomId']}] [{username}]: {content}")
 
                     data = {
                         "platform": platform,
@@ -66,17 +66,17 @@ def start_listen(config, common, my_handle, platform: str):
                     msg = msg_dto['msg']
                     logger.debug(msg)
                     # logger.info(
-                    #     f"{msg_dto['roomId']} 收到礼物 {str(msg['badgeLevel']) + str(msg['badgeName']) if msg['badgeLevel'] != 0 else ''} {msg['username']}({str(msg['uid'])}) {str(msg['data']['action']) if msg.get('data') is not None and msg.get('data').get('action') is not None else '赠送'} {msg['giftName']}({str(msg['giftId'])})x{str(msg['giftCount'])}({str(msg['giftPrice'])})"
+                    #     f"{msg_dto['roomId']} Gift received {str(msg['badgeLevel']) + str(msg['badgeName']) if msg['badgeLevel'] != 0 else ''} {msg['username']}({str(msg['uid'])}) {str(msg['data']['action']) if msg.get('data') is not None and msg.get('data').get('action') is not None else 'Gift'} {msg['giftName']}({str(msg['giftId'])})x{str(msg['giftCount'])}({str(msg['giftPrice'])})"
                     # )
                     username = msg['username']
                     gift_name = msg['giftName']
                     combo_num = msg['giftCount']
                     combo_total_coin = combo_num * msg['giftPrice']
                     logger.info(
-                        f"【让弹幕飞-{msg_dto['platform']}-{msg_dto['roomId']}】 [{username}] 赠送 {combo_num} 个 {gift_name}，总计 {combo_total_coin}"
+                        f"[Rang Danmu Fei-{msg_dto['platform']}-{msg_dto['roomId']}] [{username}] gifted {combo_num} x {gift_name}, total {combo_total_coin}"
                     )
 
-                    # TODO： 金额换算
+                    # TODO: amount conversion
                     data = {
                         "platform": platform,
                         "gift_name": gift_name,
@@ -91,15 +91,15 @@ def start_listen(config, common, my_handle, platform: str):
                 elif msg_type == "ENTER_ROOM":
                     msg = msg_dto['msg']
                     username = msg['username']
-                    logger.info(f"【让弹幕飞-{msg_dto['platform']}-{msg_dto['roomId']}】 欢迎 {username} 进入直播间")
+                    logger.info(f"[Rang Danmu Fei-{msg_dto['platform']}-{msg_dto['roomId']}] Welcome {username} to the live room")
 
                     data = {
                         "platform": platform,
                         "username": username,
-                        "content": "进入直播间",
+                        "content": "entered the live room",
                     }
 
-                    # 添加用户名到最新的用户名列表
+                    # Add the username to the latest username list
                     my_global.add_username_to_last_username_list(username)
 
                     my_handle.process_data(data, "entrance")
@@ -108,17 +108,17 @@ def start_listen(config, common, my_handle, platform: str):
                     logger.debug(msg)
                     username = msg['username']
                     clickCount = msg['clickCount']
-                    logger.info(f"【让弹幕飞-{msg_dto['platform']}-{msg_dto['roomId']}】 [{username}] 点赞了 {clickCount} 次")
-                # 无用消息丢弃
+                    logger.info(f"[Rang Danmu Fei-{msg_dto['platform']}-{msg_dto['roomId']}] [{username}] liked {clickCount} times")
+                # Discard useless messages
                 elif msg_type in ["inter_h5_game_data_update"]:
                     pass
                 else:
-                    # 刚连接上ws收到的消息
+                    # Message received right after connecting to ws
                     if "status" in msg_dto:
                         pass
                     else:
                         logger.debug(msg_dto)
-                        logger.debug(f"【让弹幕飞-{msg_dto['platform']}-{msg_dto['roomId']}】 收到消息 " + json.dumps(msg_dto))
+                        logger.debug(f"[Rang Danmu Fei-{msg_dto['platform']}-{msg_dto['roomId']}] Message received " + json.dumps(msg_dto))
                 if is_complete:
                     self._wait_for_responder_complete.set()
             except Exception as e:
@@ -136,7 +136,7 @@ def start_listen(config, common, my_handle, platform: str):
     @asynccontextmanager
     async def connect(websocket_uri):
         """
-        创建一个Client，建立连接并return
+        Create a Client, establish a connection andreturn
         """
         try:
             async with aiohttp.ClientSession() as session:
@@ -152,28 +152,28 @@ def start_listen(config, common, my_handle, platform: str):
 
     async def main(websocket_uri):
         try:
-            # 1 建立连接
+            # 1 Establish connection
             async with connect(websocket_uri) as client:
-                # 阻塞等待Channel关闭事件
+                # Block and wait for the Channel close event
                 channel_completion_event = Event()
 
-                # 定义Client向Channel发送消息的Publisher
-                # Python没有匿名内部类，这里定义一个方法作为参数，传给StreamFromAsyncGenerator类
+                # Define the messages the Client sends to the ChannelPublisher
+                # PythonThere are no anonymous inner classes, so define a method here as a parameter and pass it to the StreamFromAsyncGenerator class
                 async def generator() -> AsyncGenerator[Tuple[Payload, bool], None]:
-                    # 2 发送订阅Task的请求
-                    # Payload：Client通过Channel向Server发送的消息，False表示不需要关闭Channel
+                    # 2 Send the subscription Task request
+                    # Payload: message the Client sends to the Server through the Channel; False means no need to closeChannel
                     yield Payload(
                         data=json.dumps(subscribe_payload_json["data"]).encode()
                     ), False
-                    # 发送了一条订阅消息后直接暂停发送即可
+                    # After sending one subscription message, simply pause sending
                     await Event().wait()
 
                 stream = StreamFromAsyncGenerator(generator)
 
-                # Client请求一个Channel，Payload留空，turn StreamHandler
+                # ClientRequest a Channel, leave Payload empty,turn StreamHandler
                 requested = client.request_channel(Payload(), stream)
 
-                # 3 订阅Channel，ChannelSubscriber用于处理Server通过Channel回复的消息
+                # 3 Subscribe to the Channel; ChannelSubscriber handles the messages the Server replies through the Channel
                 requested.subscribe(ChannelSubscriber(channel_completion_event))
 
                 await channel_completion_event.wait()
@@ -182,7 +182,7 @@ def start_listen(config, common, my_handle, platform: str):
             my_handle.abnormal_alarm_handle("platform")
 
     if config.get("ordinaryroad_barrage_fly", "taskIds") == []:
-        logger.error("请先配置 让弹幕飞 的监听任务ID列表！")
+        logger.error("Please configure the listener task ID list for Rang Danmu Fei first!")
     else:
         subscribe_payload_json["data"]["taskIds"] = config.get("ordinaryroad_barrage_fly", "taskIds") 
         logger.info(subscribe_payload_json)

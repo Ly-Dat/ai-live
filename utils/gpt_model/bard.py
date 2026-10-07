@@ -10,13 +10,13 @@ class Bard_api(Common):
     def __init__(self, data):
         self.common = Common()
 
-        # 初始间隔时间
+        # Initial interval
         self.interval = 30
 
         """
-        访问 https://bard.google.com/
-        F12 打开开发者工具
-        会话：应用程序 → Cookie → 复制 Cookie 中 __Secure-1PSID 对应的值。
+        Access https://bard.google.com/
+        F12 Open developer tools
+        Session: Application -> Cookies -> copy the value of __Secure-1PSID in the cookies.
         """
         self.token = data["token"]
 
@@ -31,35 +31,35 @@ class Bard_api(Common):
         }
         self.session.cookies.set("__Secure-1PSID", self.token) 
 
-        # 创建初始定时器
+        # Create the initial timer
         self.timer = threading.Timer(self.interval, self.keep_alive)
         self.timer.daemon = True
         self.timer.start()
 
 
-    # 定时调用函数的函数
+    # Function that calls a function periodically
     def keep_alive(self):
         return
 
-        # 好像没法保活
-        logger.info("执行bard保活")
-        # 发送 继续，进行ck保活
-        resp_content = self.get_resp("继续")
+        # Seems unable to keep alive
+        logger.info("Perform bard keep-alive")
+        # Send continue to keep the cookie alive
+        resp_content = self.get_resp("Continue")
         logger.info(f"{resp_content}")
 
-        # 创建一个新的定时器，用于下一次调用
+        # Create a new timer for the next call
         self.timer = threading.Timer(self.interval, self.keep_alive)
-        self.timer.daemon = True  # 设置定时器为守护定时器，使得程序可以退出时自动退出定时器
+        self.timer.daemon = True  # Set the timer as a daemon timer so that it exits automatically when the program exits
         self.timer.start()
 
 
-    # 调用接口，获取返回内容
+    # Call the API and get the returned content
     def get_resp(self, prompt):
         try:
             bard = Bard(token=self.token, session=self.session, timeout=30)
             resp_content = bard.get_answer(prompt)['content'].replace("\\n", "")
             
-            # 取消当前定时器并创建一个新的定时器，以便使用新的间隔时间
+            # Cancel the current timer and create a new one so that the new interval is used
             self.timer.cancel()
             self.timer = threading.Timer(self.interval, self.keep_alive)
             self.timer.daemon = True

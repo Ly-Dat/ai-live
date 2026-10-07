@@ -27,19 +27,19 @@ def start_listen(config, common, my_handle, platform: str):
             try:
                 self.live_ids = config.get("room_display_id")
                 self.thread = 2
-                # 没什么用的手机号配置，也就方便登录
+                # A mostly useless phone number config, just for convenient login
                 self.phone = "123"
             except Exception as e:
                 logger.error(traceback.format_exc())
-                logger.error("请检查配置文件")
+                logger.error("Please check the config file")
                 my_handle.abnormal_alarm_handle("platform")
                 exit()
 
         def find_file(self, find_path, file_type) -> list:
             """
-            寻找文件
-            :param find_path: 子路径
-            :param file_type: 文件类型
+            Find files
+            :param find_path: Subpath
+            :param file_type: File type
             :return:
             """
             path = self.path + "\\" + find_path
@@ -61,9 +61,9 @@ def start_listen(config, common, my_handle, platform: str):
             # if not os.path.exists(cookie_path):
             #     with open(cookie_path, 'w') as file:
             #         file.write('{"a":"a"}')
-            #     logger.info(f"'{cookie_path}' 创建成功")
+            #     logger.info(f"'{cookie_path}' Created successfully")
             # else:
-            #     logger.info(f"'{cookie_path}' 已存在，无需创建")
+            #     logger.info(f"'{cookie_path}' Already exists, no need to create")
 
             with semaphore:
                 thread_name = threading.current_thread().name.split("-")[0]
@@ -92,7 +92,7 @@ def start_listen(config, common, my_handle, platform: str):
                     element = self.page.get_attribute(".no-login", "style")
 
                     if not element:
-                        logger.info("未登录，请先登录~")
+                        logger.info("Not logged in, please log in first~")
                         self.page.locator(".login").click()
                         self.page.locator(
                             "li.tab-panel:nth-child(2) > h4:nth-child(1)"
@@ -109,60 +109,60 @@ def start_listen(config, common, my_handle, platform: str):
                         if not os.path.exists(self.path + "\\cookie"):
                             os.makedirs(self.path + "\\cookie")
                         self.context.storage_state(path=cookie_path)
-                        # 检测是否开播
+                        # Check whether streaming has started
                         selector = (
                             "html body div#app div.live-room div.detail div.player "
                             "div.kwai-player.kwai-player-container.kwai-player-rotation-0 "
                             "div.kwai-player-container-video div.kwai-player-plugins div.center-state div.state "
                             "div.no-live-detail div.desc p.tip"
-                        )  # 检测正在直播时下播的选择器
+                        )  # Selector for detecting the stream ending while live
                         try:
                             msg = self.page.locator(selector).text_content(
                                 timeout=3000
                             )
-                            logger.info("当前%s" % thread_name + "，" + msg)
+                            logger.info("Current%s" % thread_name + "," + msg)
                             self.context.close()
                             self.browser.close()
 
                         except Exception as e:
-                            logger.info("当前%s，[%s]正在直播" % (thread_name, lid))
+                            logger.info("Current %s, [%s] is live streaming" % (thread_name, lid))
 
-                            logger.info(f"跳转直播间：{live_url}")
+                            logger.info(f"Navigate to the live room:{live_url}")
                             # self.page.goto(live_url)
                             # time.sleep(1)
 
                             self.page.goto(live_url)
 
-                            # 等待一段时间检查是否有验证码弹窗
+                            # Wait a while and check whether a captcha popup appears
                             try:
-                                captcha_selector = "html body div.container"  # 假设这是验证码弹窗的选择器
+                                captcha_selector = "html body div.container"  # Assume this is the selector of the captcha popup
                                 self.page.wait_for_selector(
                                     captcha_selector, timeout=5000
-                                )  # 等待5秒看是否出现验证码
-                                logger.info("检测到验证码，处理验证码...")
-                                # 等待验证码弹窗从DOM中被完全移除
+                                )  # Wait 5 seconds to see whether a captcha appears
+                                logger.info("Captcha detected, handling the captcha...")
+                                # Wait for the captcha popup to be completely removed from the DOM
                                 self.page.wait_for_selector(
                                     captcha_selector,
                                     state="detached",
                                     timeout=10000,
-                                )  # 假设最长等待10秒验证码验证完成
-                                logger.info("验证码已验证，弹窗已移除")
-                                # 弹窗处理逻辑之后等待1秒
+                                )  # Assume the captcha verification completes within 10 seconds at most
+                                logger.info("Captcha verified, popup removed")
+                                # Wait 1 second after the popup handling logic
                                 time.sleep(1)
-                                # 处理完验证码后，可能需要再次跳转页面
+                                # After handling the captcha, you may need to navigate to the page again
                                 # self.page.goto(live_url)
                             except TimeoutError:
-                                logger.error("没有检测到验证码，继续执行...")
+                                logger.error("No captcha detected, continuing...")
 
-                            logger.info(f"请在10s内手动打开直播间：{live_url}")
+                            logger.info(f"Please manually open the live room within 10s:{live_url}")
 
                             time.sleep(10)
 
                             self.page.on("websocket", self.web_sockets)
-                            logger.info(f"24h监听直播间等待下播...")
+                            logger.info(f"24hListen to the live room and wait for the stream to end...")
                             self.page.wait_for_selector(selector, timeout=86400000)
                             logger.error(
-                                "当前%s，[%s]的直播结束了" % (thread_name, lid)
+                                "Current %s, the live stream of [%s] has ended" % (thread_name, lid)
                             )
                             self.context.close()
                             self.browser.close()
@@ -177,7 +177,7 @@ def start_listen(config, common, my_handle, platform: str):
             urls = web_socket.url
             logger.info(urls)
             if "/websocket" in urls:
-                logger.info("websocket连接成功，创建监听事件")
+                logger.info("websocketConnected successfully, creating listener events")
                 web_socket.on("close", self.websocket_close)
                 web_socket.on("framereceived", self.handler)
 
@@ -198,13 +198,13 @@ def start_listen(config, common, my_handle, platform: str):
                 if obj.get("commentFeeds", ""):
                     msg_list = obj.get("commentFeeds", "")
                     for i in msg_list:
-                        # 闲时计数清零
+                        # Reset the idle count
                         my_global.idle_time_auto_clear(config, "comment")
 
                         username = i["user"]["userName"]
                         pid = i["user"]["principalId"]
                         content = i["content"]
-                        logger.info(f"[📧直播间弹幕消息] [{username}]:{content}")
+                        logger.info(f"[📧Live room danmaku message] [{username}]:{content}")
 
                         data = {
                             "platform": platform,
@@ -223,7 +223,7 @@ def start_listen(config, common, my_handle, platform: str):
                         giftId = i["giftId"]
                         comboCount = i["comboCount"]
                         logger.info(
-                            f"[🎁直播间礼物消息] 用户：{username} 赠送礼物Id={giftId} 连击数={comboCount}"
+                            f"[🎁Live room gift message] User: {username} gifted gift Id={giftId} combo count={comboCount}"
                         )
                 if obj.get("likeFeeds", ""):
                     msg_list = obj.get("likeFeeds", "")
@@ -239,28 +239,28 @@ def start_listen(config, common, my_handle, platform: str):
 
         def run_live(self):
             """
-            主程序入口
+            Main program entry
             :return:
             """
             t_list = []
-            # 允许的最大线程数
+            # Maximum number of threads allowed
             if self.thread < 1:
                 self.thread = 1
             elif self.thread > 8:
                 self.thread = 8
-                logger.info("线程最大允许8，线程数最好设置cpu核心数")
+                logger.info("The maximum number of threads allowed is 8; it is best to set the thread count to the number of CPU cores")
 
             semaphore = threading.Semaphore(self.thread)
-            # 用于记录数量
+            # Used to record the count
             n = 0
             if not self.live_ids:
-                logger.info("请导入网页直播id，多个以','间隔")
+                logger.info("Please import the web live stream ids, separate multiple with','Interval")
                 return
 
             for i in self.ids_list:
                 n += 1
                 t = threading.Thread(
-                    target=kslive().main, args=(i, semaphore), name=f"线程：{n}-{i}"
+                    target=kslive().main, args=(i, semaphore), name=f"Thread: {n}-{i}"
                 )
                 t.start()
                 t_list.append(t)

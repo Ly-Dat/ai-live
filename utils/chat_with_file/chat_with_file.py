@@ -20,11 +20,11 @@ class Chat_with_file:
 
     def __init__(self, data, chat_type="chat_with_file"):
         self.common = Common()
-        # 日志文件路径
+        # Log file path
         file_path = "./log/log-" + self.common.get_bj_time(1) + ".txt"
         Configure_logger(file_path)
 
-        # 选择模式
+        # Select mode
         match data["chat_mode"]:
             case "claude":
                 self.chat_model = Claude_mode(data)

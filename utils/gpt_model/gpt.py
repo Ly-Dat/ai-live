@@ -4,8 +4,8 @@
 @File    : gpt.py
 @Author  : HildaM
 @Email   : Hilda_quan@163.com
-@Date    : 2023/06/23 下午 7:47 
-@Description :  统一模型层抽象
+@Date    : 2023/06/23 Afternoon 7:47 
+@Description :  Unified model layer abstraction
 """
 from utils.my_log import logger
 
@@ -54,7 +54,7 @@ class GPT_Model:
             self.openai = config
         elif model_name == "chatgpt":
             if self.openai is None:
-                logger.error("openai key 为空，无法配置chatgpt模型")
+                logger.error("openai key is empty, cannot configure the chatgpt model")
                 exit(-1)
             self.chatgpt = Chatgpt(self.openai, config)
         elif model_name in model_classes:
@@ -69,26 +69,26 @@ class GPT_Model:
         setattr(self, model_name, model_classes[model_name](config))
 
     def get(self, name):
-        logger.info("GPT_MODEL: 进入get方法")
+        logger.info("GPT_MODEL: Entered the get method")
         try:
             if name != "reread":
                 return getattr(self, name)
         except AttributeError:
-            logger.warning(f"{name} 该模型不支持，如果不是LLM的类型，那就只是个警告，可以正常使用，请放心")
+            logger.warning(f"{name} This model is not supported. If it is not an LLM type, this is only a warning and it can be used normally, so rest assured")
             return None
 
     def get_openai_key(self):
         if self.openai is None:
-            logger.error("openai_key 为空")
+            logger.error("openai_key is empty")
             return None
         return self.openai["api_key"]
 
     def get_openai_model_name(self):
         if self.openai is None:
-            logger.warning("openai的model为空，将设置为默认gpt-3.5")
+            logger.warning("openaimodel is empty, will be set to the defaultgpt-3.5")
             return "gpt-3.5-turbo-0301"
         return self.openai["model"]
 
 
-# 全局变量
+# Global variable
 GPT_MODEL = GPT_Model()

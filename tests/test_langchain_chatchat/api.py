@@ -9,7 +9,7 @@ from urllib.parse import urljoin
 class Langchain_ChatChat:
     def __init__(self, data):
         # self.common = Common()
-        # 日志文件路径
+        # Log file path
         # file_path = "./log/log-" + self.common.get_bj_time(1) + ".txt"
         # Configure_logger(file_path)
 
@@ -20,18 +20,18 @@ class Langchain_ChatChat:
         self.history = []
 
 
-    # 获取知识库列表
+    # Get the knowledge base list
     def get_list_knowledge_base(self):
         url = urljoin(self.api_ip_port, "/knowledge_base/list_knowledge_bases")
         try:
             response = requests.get(url)
-            response.raise_for_status()  # 检查响应的状态码
+            response.raise_for_status()  # Check the response status code
 
             result = response.content
             ret = json.loads(result)
 
             logging.debug(ret)
-            logging.info(f"本地知识库列表：{ret['data']}")
+            logging.info(f"Local knowledge base list:{ret['data']}")
 
             return ret['data']
         except Exception as e:
@@ -40,13 +40,13 @@ class Langchain_ChatChat:
 
 
     def get_resp(self, prompt):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            prompt (str): 你的提问
+            prompt (str): Your question
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             if self.chat_type == "模型":
@@ -69,7 +69,7 @@ class Langchain_ChatChat:
             data_json["history"] = self.history
 
             response = requests.post(url=url, json=data_json)
-            response.raise_for_status()  # 检查响应的状态码
+            response.raise_for_status()  # Check the response status code
 
             result = response.content
             ret = json.loads(result)
@@ -85,12 +85,12 @@ class Langchain_ChatChat:
             else:
                 resp_content = ret["text"]
 
-            # 启用历史就给我记住！
+            # If history is enabled, remember it for me!
             if self.config_data["history_enable"]:
                 while True:
-                    # 获取嵌套列表中所有字符串的字符数
+                    # Get the character count of all strings in a nested list
                     total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                    # 如果大于限定最大历史数，就剔除第一个元素
+                    # If it exceeds the maximum history limit, remove the first element
                     if total_chars > self.config_data["history_max_len"]:
                         self.history.pop(0)
                     else:
@@ -105,16 +105,16 @@ class Langchain_ChatChat:
 
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logging.basicConfig(
-        level=logging.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logging.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
     data = {
         "api_ip_port": "http://127.0.0.1:7861",
-        # 模型/知识库/搜索引擎
+        # Model/knowledge base/search engine
         "chat_type": "搜索引擎",
         "llm": {
             "stream": False,
@@ -150,14 +150,14 @@ if __name__ == '__main__':
 
 
     if data["chat_type"] == "模型":
-        logging.info(langchain_chatchat.get_resp("你可以扮演猫娘吗，每句话后面加个喵"))
-        logging.info(langchain_chatchat.get_resp("早上好"))
+        logging.info(langchain_chatchat.get_resp("Can you play a catgirl and add meow after every sentence"))
+        logging.info(langchain_chatchat.get_resp("Good morning"))
     elif data["chat_type"] == "知识库":  
         langchain_chatchat.get_list_knowledge_base()
-        logging.info(langchain_chatchat.get_resp("伊卡洛斯和妮姆芙的关系"))
-        logging.info(langchain_chatchat.get_resp("伊卡洛斯的英文名"))
+        logging.info(langchain_chatchat.get_resp("The relationship between Icarus and Nymph"))
+        logging.info(langchain_chatchat.get_resp("The English name of Icarus"))
     # please set BING_SUBSCRIPTION_KEY and BING_SEARCH_URL in os ENV
     elif data["chat_type"] == "搜索引擎":  
-        logging.info(langchain_chatchat.get_resp("伊卡洛斯是谁"))
-        logging.info(langchain_chatchat.get_resp("伊卡洛斯的英文名"))
+        logging.info(langchain_chatchat.get_resp("Who is Icarus"))
+        logging.info(langchain_chatchat.get_resp("The English name of Icarus"))
     

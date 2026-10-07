@@ -29,10 +29,10 @@ async def clone_voice_api(text):
 
     except aiohttp.ClientError as e:
         logging.error(traceback.format_exc())
-        logging.error(f'clone_voice请求失败: {e}')
+        logging.error(f'clone_voiceRequest failed: {e}')
     except Exception as e:
         logging.error(traceback.format_exc())
-        logging.error(f'clone_voice未知错误: {e}')
+        logging.error(f'clone_voiceUnknown error: {e}')
     
     return None
 

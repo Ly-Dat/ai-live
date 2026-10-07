@@ -13,21 +13,21 @@ class My_QianFan():
         try:
             os.environ["QIANFAN_ACCESS_KEY"] = data["access_key"]
             os.environ["QIANFAN_SECRET_KEY"] = data["secret_key"]
-            # 通过 App Id 选择使用的应用
-            # 该参数可选，若不提供 SDK 会自动选择最新创建的应用
+            # Select the application to use by App Id
+            # This parameter is optional; if not provided, the SDK automatically selects the most recently created application
             # os.environ["QIANFAN_APPID"]=""
         except Exception as e:
-            logger.error("千帆大模型，配置出错，请检查config配置是否有格式问题！")
+            logger.error("Qianfan large model, configuration error, please check whether the config has a format problem!")
             logger.error(traceback.format_exc())
 
     def get_resp(self, prompt):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            prompt (str): 你的提问
+            prompt (str): Your question
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             return None
@@ -37,20 +37,20 @@ class My_QianFan():
                 "role": "user",
                 "content": prompt
             })
-            logger.debug(f"历史={tmp_history}")
+            logger.debug(f"History={tmp_history}")
             resp = chat_comp.do(messages=tmp_history, top_p=self.config_data["top_p"], temperature=self.config_data["temperature"], penalty_score=self.config_data["penalty_score"])
 
             logger.debug(resp)
-            logger.info(f'token总消耗：{resp["usage"]["total_tokens"]}')
+            logger.info(f'tokenTotal consumption:{resp["usage"]["total_tokens"]}')
 
             resp_content = resp["result"]
         
-            # 启用历史就给我记住！
+            # If history is enabled, remember it for me!
             if self.config_data["history_enable"]:
                 while True:
-                    # 获取嵌套列表中所有字符串的字符数
+                    # Get the character count of all strings in a nested list
                     total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                    # 如果大于限定最大历史数，就剔除第一个元素
+                    # If it exceeds the maximum history limit, remove the first element
                     if total_chars > self.config_data["history_max_len"]:
                         self.history.pop(0)
                     else:
@@ -66,9 +66,9 @@ class My_QianFan():
 
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logger.basicConfig(
-        level=logger.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logger.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -100,5 +100,5 @@ if __name__ == '__main__':
     }
 
     my_qian_fan = My_QianFan(data)
-    logger.info(f'{my_qian_fan.get_resp("你可以扮演猫娘吗，每句话后面加个喵")}')
-    logger.info(f'{my_qian_fan.get_resp("早上好")}')
+    logger.info(f'{my_qian_fan.get_resp("Can you play a catgirl and add meow after every sentence")}')
+    logger.info(f'{my_qian_fan.get_resp("Good morning")}')

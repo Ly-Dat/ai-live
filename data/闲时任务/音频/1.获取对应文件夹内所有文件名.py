@@ -1,10 +1,10 @@
 import os
 
-folder_path = "ikaros"  # 替换为您要获取文件名的文件夹路径
+folder_path = "ikaros"  # Replace with the folder path whose file names you want to get
 
-# 使用os模块列出文件夹内的所有文件
+# Use the os module to list all files in the folder
 file_names = os.listdir(folder_path)
 
-# 打印文件名列表
+# Print the file name list
 for file_name in file_names:
-    print(f'"data/闲时任务/音频/{folder_path}/{file_name}",')
+    print(f'"data/Idle task/audio/{folder_path}/{file_name}",')

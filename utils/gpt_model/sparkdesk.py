@@ -40,9 +40,9 @@ class SPARKDESK:
                     )
                 except TypeError as e:
                     logger.error(e)
-                    logger.error("如果没有assistant_id传参，说明你的sparkdesk-api库版本太低，请更新至最新版本。\n请先激活conda环境，然后更新，参考命令：pip install git+https://gitee.com/ikaros-521/sparkdesk-api -U")
+                    logger.error("If there is no assistant_id parameter, your sparkdesk-api library version is too old, please update to the latest version.\nPlease activate the conda environment first, then update; reference command:pip install git+https://gitee.com/ikaros-521/sparkdesk-api -U")
         else:
-            logger.info("讯飞星火配置为空")
+            logger.info("iFlytek Spark config is empty")
 
 
     def get_resp(self, prompt):
@@ -51,5 +51,5 @@ class SPARKDESK:
         elif self.type == "api":
             return self.sparkAPI.chat(prompt)
         else:
-            logger.error("你瞎动什么配置？？？")
+            logger.error("What are you messing with in the config???")
             exit(0)

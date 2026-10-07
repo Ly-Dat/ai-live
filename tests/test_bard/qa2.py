@@ -2,9 +2,9 @@ from bardapi import Bard
 import requests
 
 """
-访问 https://bard.google.com/
-F12 for console 用于控制台的 F12
-会话：应用程序→ Cookie → 复制 Cookie 的值 __Secure-1PSID 。
+Access https://bard.google.com/
+F12 for console used for the console F12
+Session: Application -> Cookies -> copy the value of __Secure-1PSID.
 """
 token=''
 
@@ -20,7 +20,7 @@ session.headers = {
 session.cookies.set("__Secure-1PSID", token) 
 
 bard = Bard(token=token, session=session, timeout=30)
-print(bard.get_answer("你可以扮演猫娘吗，每句话后面加个喵")['content'])
+print(bard.get_answer("Can you play a catgirl and add meow after every sentence")['content'])
 
 # Continued conversation without set new session
-print(bard.get_answer("早上好")['content'])
+print(bard.get_answer("Good morning")['content'])

@@ -1,29 +1,29 @@
-# 1. 导入 WinBotMain 类
+# 1. Import the WinBotMain class
 from PyAibote import WinBotMain
 import time,os
 
-# 2. 自定义一个脚本类，继承 WinBotMain
+# 2. Define a custom script class that inherits from WinBotMain
 class CustomWinScript(WinBotMain):
 
-    # 2.1. 设置是否终端打印输出 DEBUG：输出， INFO：不输出, 默认打印输出
+    # 2.1. Set terminal output. DEBUG: print, INFO: do not print. Default is to print
     Log_Level = "DEBUG" 
 
-    # 2.2. 终端打印信息是否存储LOG文件 True： 储存， False：不存储
+    # 2.2. Whether to save terminal output to a LOG file. True: save, False: do not save
     Log_Storage = True  
 
 
-    # 2.3. 注意：script_main 此方法是脚本执行入口必须存在此方法
+    # 2.3. Note: script_main is the script entry point and must exist
     def script_main(self):
-        # 查询所有窗口句柄
+        # Query all window handles
         # result = self.find_windows()
         # print(result)
-        print("开始执行自定义脚本")
+        print("Start running the custom script")
     
-        # 使用示例 [Demo]
+        # Usage example [Demo]
         result = self.init_speech_clone_service("178asdf325c95eafdaaasee3bbf64741", "tIdj8l8nPdqV86Ueasdf")
         print(result)
 
-        # 使用示例 [Demo]
+        # Usage example [Demo]
         result = self.init_metahuman("F:/AiboteHumanLive/DigitalHumanMain_V1.0.4_RC/Static/humanModelFemale", 0.5, 0.5, False)
         print(result)
 
@@ -39,7 +39,7 @@ class CustomWinScript(WinBotMain):
 
 
 if __name__ == '__main__':
-    # 3. IP为:0.0.0.0, 监听 9999 号端口
-    # 3.1. 在远端部署脚本时，请设置 Debug=False，客户端手动启动 WindowsDriver.exe 时需指定远端 IP 或端口号
-    # 3.2. 命令行启动示例："127.0.0.1" 9999 {'Name':'PyAibote'}
+    # 3. IPis: 0.0.0.0, listening on port 9999
+    # 3.1. When deploying the script remotely, set Debug=False; when starting WindowsDriver.exe manually on the client, specify the remote IP or port
+    # 3.2. Command-line startup example:"127.0.0.1" 9999 {'Name':'PyAibote'}
     CustomWinScript.execute("0.0.0.0", 9999, Debug=True)

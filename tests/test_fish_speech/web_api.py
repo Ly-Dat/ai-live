@@ -26,10 +26,10 @@ async def download_audio(type, file_url, timeout):
                         file.write(content)
                     return voice_tmp_path
                 else:
-                    logging.error(f'{type} 下载音频失败: {response.status}')
+                    logging.error(f'{type} Failed to download audio: {response.status}')
                     return None
         except asyncio.TimeoutError:
-            logging.error("{type} 下载音频超时")
+            logging.error("{type} Audio download timed out")
             return None
 
 async def fish_speech_web_api(data):
@@ -38,27 +38,27 @@ async def fish_speech_web_api(data):
     async def websocket_client(data_json):
         try:
             async with websockets.connect("wss://fs.firefly.matce.cn/queue/join") as websocket:
-                # 设置最大连接时长（例如 30 秒）
+                # Set the maximum connection time (e.g. 30 seconds)
                 return await asyncio.wait_for(websocket_client_logic(websocket, data_json), timeout=30)
         except asyncio.TimeoutError:
-            logging.error("gpt_sovits WebSocket连接超时")
+            logging.error("gpt_sovits WebSocketConnection timed out")
             return None
 
     async def websocket_client_logic(websocket, data_json):
         async for message in websocket:
             logging.debug(f"Received message: {message}")
 
-            # 解析收到的消息
+            # Parse the received message
             data = json.loads(message)
-            # 检查是否是预期的消息
+            # Check whether it is the expected message
             if "msg" in data:
                 if data["msg"] == "send_hash":
-                    # 发送响应消息
+                    # Send the response message
                     response = json.dumps({"session_hash":session_hash,"fn_index":3})
                     await websocket.send(response)
                     logging.debug(f"Sent message: {response}")
                 elif data["msg"] == "send_data":
-                    # 发送响应消息
+                    # Send the response message
                     response = json.dumps(
                         {
                             "data":[
@@ -96,6 +96,6 @@ async def fish_speech_web_api(data):
 
     return voice_tmp_path
 
-logging.basicConfig(level=logging.DEBUG)  # 设置日志级别为INFO
-# 执行异步程序
+logging.basicConfig(level=logging.DEBUG)  # Set the log level toINFO
+# Run the async program
 asyncio.run(fish_speech_web_api(1))

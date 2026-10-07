@@ -1,13 +1,13 @@
 from chatterbot import ChatBot
 from chatterbot.trainers import ListTrainer
 
-# 读取语料库文件
+# Read the corpus file
 with open('data/db.txt', 'r', encoding='utf-8') as f:
     corpus = f.readlines()
 
-# 创建ChatBot实例并训练
-my_bot = ChatBot(input('请输入ChatBot名称：'))
+# Create a ChatBot instance and train it
+my_bot = ChatBot(input('Enter the ChatBot name: '))
 trainer = ListTrainer(my_bot)
-print('开始训练！')
+print('Training started!')
 trainer.train(corpus)
-print('训练完毕！')
+print('Training finished!')

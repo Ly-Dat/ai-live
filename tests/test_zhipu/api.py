@@ -4,7 +4,7 @@ import traceback
 import re
 
 import time
-import jwt  # 确保这是 PyJWT 库
+import jwt  # Make sure this is the PyJWT library
 import requests
 from urllib.parse import urljoin
 from packaging import version
@@ -15,15 +15,15 @@ from packaging import version
 class Zhipu:
     def __init__(self, data):
         # self.common = Common()
-        # # 日志文件路径
+        # # Log file path
         # file_path = "./log/log-" + self.common.get_bj_time(1) + ".txt"
         # Configure_logger(file_path)
 
         self.config_data = data
 
-        # 检查 zhipuai 模块是否有 __version__ 属性
+        # Check whether the zhipuai module has a __version__ attribute
         if hasattr(zhipuai, '__version__'):
-            # 判断zhipu库版本，1.x.x和2.x.x有破坏性更新
+            # Check the zhipu library version; 1.x.x and 2.x.x have breaking changes
             if version.parse(zhipuai.__version__) < version.parse('2.0.0'):
                 zhipuai.api_key = data["api_key"]
                 self.zhipu_ver = "1.x.x"
@@ -37,7 +37,7 @@ class Zhipu:
 
         self.model = data["model"]
 
-        # 非SDK
+        # Non-SDK
         self.base_url = "https://open.bigmodel.cn"
         self.token = None
         self.headers = None
@@ -56,7 +56,7 @@ class Zhipu:
                     "size": 100
                 }
 
-                # get请求
+                # getRequest
                 response = requests.get(url=url, data=data, headers=self.headers)
 
                 logging.debug(response.json())
@@ -115,17 +115,17 @@ class Zhipu:
         return response
 
     '''
-    说明：
-    add: 事件流开启
-    error: 平台服务或者模型异常，响应的异常事件
-    interrupted: 中断事件，例如：触发敏感词
-    finish: 数据接收完毕，关闭事件流
+    Description:
+    add: Event stream opened
+    error: Platform service or model exception, the exception event in the response
+    interrupted: Interrupt event, e.g. triggered by a sensitive word
+    finish: Data reception complete, close the event stream
     '''
 
     def sse_invoke_example(self, prompt):
         response = zhipuai.model_api.sse_invoke(
             model="chatglm_pro",
-            # [{"role": "user", "content": "人工智能"}]
+            # [{"role": "user", "content": "Artificial intelligence"}]
             prompt=prompt,
             top_p=float(self.config_data["top_p"]),
             temperature=float(self.config_data["temperature"]),
@@ -148,7 +148,7 @@ class Zhipu:
 
         return response
 
-    # 非SDK鉴权
+    # Non-SDK authentication
     def generate_token(self, apikey: str, exp_seconds: int):
         try:
             id, secret = apikey.split(".")
@@ -157,11 +157,11 @@ class Zhipu:
 
         payload = {
             "api_key": id,
-            "exp": int(round(time.time())) + exp_seconds,  # PyJWT中exp字段期望的是秒级的时间戳
-            "timestamp": int(round(time.time() * 1000)),  # 如果需要毫秒级时间戳，可以保留这一行
+            "exp": int(round(time.time())) + exp_seconds,  # PyJWTThe exp field in expects a timestamp in seconds
+            "timestamp": int(round(time.time() * 1000)),  # If you need a millisecond timestamp, you can keep this line
         }
 
-        # 使用PyJWT编码payload
+        # Encode with PyJWTpayload
         token = jwt.encode(
             payload,
             secret,
@@ -170,28 +170,28 @@ class Zhipu:
 
         return token
 
-    # 使用正则表达式替换多个反斜杠为一个反斜杠
+    # Use a regular expression to replace multiple backslashes with a single backslash
     def remove_extra_backslashes(self, input_string):
-        """使用正则表达式替换多个反斜杠为一个反斜杠
+        """Use a regular expression to replace multiple backslashes with a single backslash
 
         Args:
-            input_string (str): 原始字符串
+            input_string (str): Original string
 
         Returns:
-            str: 替换多个反斜杠为一个反斜杠后的字符串
+            str: String after replacing multiple backslashes with a single backslash
         """
         cleaned_string = re.sub(r'\\+', r'\\', input_string)
         return cleaned_string
 
 
     def remove_useless_and_contents(self, input_string):
-        """使用正则表达式替换括号及其内部内容为空字符串、特殊字符
+        """Use a regular expression to replace parentheses and their contents with an empty string, plus special characters
 
         Args:
-            input_string (str): 原始字符串
+            input_string (str): Original string
 
         Returns:
-            str: 替换完后的字符串
+            str: String after replacement
         """
         result = re.sub(r'\（.*?\）', '', input_string)
         result = re.sub(r'\(.*?\)', '', result)
@@ -199,19 +199,19 @@ class Zhipu:
 
         return result
 
-    # 同步调用zhipu api
+    # Synchronous callzhipu api
     def get_zhipu_resp(self, data):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            data (dict): zhipu的配置 模型、msg等
+            data (dict): zhipuConfiguration of model, msg, etc.
 
         Returns:
-            dict: 返回数据
+            dict: Return data
         """
         try:
             response = self.client.chat.completions.create(
-                model=data["model"],  # 填写需要调用的模型名称
+                model=data["model"],  # Fill in the name of the model to call
                 messages=data["messages"],
                 meta=data.get("meta", None)
             )
@@ -223,13 +223,13 @@ class Zhipu:
 
 
     def get_resp(self, prompt):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            prompt (str): 你的提问
+            prompt (str): Your question
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             if self.zhipu_ver == "1.x.x":
@@ -263,15 +263,15 @@ class Zhipu:
 
                         resp_content = resp_json["data"]["content"]
 
-                        # 启用历史就给我记住！
+                        # If history is enabled, remember it for me!
                         if self.config_data["history_enable"]:
-                            # 把机器人回答添加到历史记录中
+                            # Add the robot answer to the history
                             self.history.append({"role": "assistant", "content": resp_content})
 
                             while True:
-                                # 获取嵌套列表中所有字符串的字符数
+                                # Get the character count of all strings in a nested list
                                 total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                                # 如果大于限定最大历史数，就剔除第1 2个元素
+                                # If it exceeds the maximum history limit, remove the 1st and 2nd elements
                                 if total_chars > int(self.config_data["history_max_len"]):
                                     self.history.pop(0)
                                     self.history.pop(0)
@@ -281,10 +281,10 @@ class Zhipu:
                         return resp_content
                     except Exception as e:
                         def is_odd(number):
-                            # 检查数除以2的余数是否为1
+                            # Check whether the remainder of the number divided by 2 is1
                             return number % 2 != 0
                         
-                        # 保持history始终为偶数个
+                        # Keep history always at an even number of items
                         if is_odd(len(self.history)):
                             self.history.pop(0)
 
@@ -297,15 +297,15 @@ class Zhipu:
                 logging.debug(f"ret={ret}")
 
                 if False == ret['success']:
-                    logging.error(f"请求智谱ai失败，错误代码：{ret['code']}，{ret['msg']}")
+                    logging.error(f"Failed to request Zhipu AI, error code:{ret['code']},{ret['msg']}")
                     return None
 
-                # 启用历史就给我记住！
+                # If history is enabled, remember it for me!
                 if self.config_data["history_enable"]:
                     while True:
-                        # 获取嵌套列表中所有字符串的字符数
+                        # Get the character count of all strings in a nested list
                         total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                        # 如果大于限定最大历史数，就剔除第一个元素
+                        # If it exceeds the maximum history limit, remove the first element
                         if total_chars > int(self.config_data["history_max_len"]):
                             self.history.pop(0)
                         else:
@@ -334,15 +334,15 @@ class Zhipu:
 
                         resp_content = resp_json["data"]["content"]
 
-                        # 启用历史就给我记住！
+                        # If history is enabled, remember it for me!
                         if self.config_data["history_enable"]:
-                            # 把机器人回答添加到历史记录中
+                            # Add the robot answer to the history
                             self.history.append({"role": "assistant", "content": resp_content})
 
                             while True:
-                                # 获取嵌套列表中所有字符串的字符数
+                                # Get the character count of all strings in a nested list
                                 total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                                # 如果大于限定最大历史数，就剔除第1 2个元素
+                                # If it exceeds the maximum history limit, remove the 1st and 2nd elements
                                 if total_chars > int(self.config_data["history_max_len"]):
                                     self.history.pop(0)
                                     self.history.pop(0)
@@ -352,10 +352,10 @@ class Zhipu:
                         return resp_content
                     except Exception as e:
                         def is_odd(number):
-                            # 检查数除以2的余数是否为1
+                            # Check whether the remainder of the number divided by 2 is1
                             return number % 2 != 0
                         
-                        # 保持history始终为偶数个
+                        # Keep history always at an even number of items
                         if is_odd(len(self.history)):
                             self.history.pop(0)
 
@@ -371,7 +371,7 @@ class Zhipu:
                         if self.model == "charglm-3":
                             response = self.get_zhipu_resp(
                                 { 
-                                    "model": self.model,  # 填写需要调用的模型名称
+                                    "model": self.model,  # Fill in the name of the model to call
                                     "messages": tmp_msg,
                                     "meta": {
                                         "user_info": self.config_data["user_info"],
@@ -384,7 +384,7 @@ class Zhipu:
                         else:
                             response = self.get_zhipu_resp(
                                 { 
-                                    "model": self.model,  # 填写需要调用的模型名称
+                                    "model": self.model,  # Fill in the name of the model to call
                                     "messages": tmp_msg
                                 }
                             )
@@ -392,7 +392,7 @@ class Zhipu:
                         if self.model == "charglm-3":
                             response = self.get_zhipu_resp(
                                 { 
-                                    "model": self.model,  # 填写需要调用的模型名称
+                                    "model": self.model,  # Fill in the name of the model to call
                                     "messages": [
                                         {
                                             "role": "user",
@@ -410,7 +410,7 @@ class Zhipu:
                         else:
                             response = self.get_zhipu_resp(
                                 { 
-                                    "model": self.model,  # 填写需要调用的模型名称
+                                    "model": self.model,  # Fill in the name of the model to call
                                     "messages": [
                                         {
                                             "role": "user",
@@ -425,12 +425,12 @@ class Zhipu:
             
                     resp_content = response.choices[0].message.content.strip()
 
-                    # 启用历史就给我记住！
+                    # If history is enabled, remember it for me!
                     if self.config_data["history_enable"]:
                         while True:
-                            # 获取嵌套列表中所有字符串的字符数
+                            # Get the character count of all strings in a nested list
                             total_chars = sum(len(string) for sublist in self.history for string in sublist)
-                            # 如果大于限定最大历史数，就剔除第1 2个元素
+                            # If it exceeds the maximum history limit, remove the 1st and 2nd elements
                             if total_chars > int(self.config_data["history_max_len"]):
                                 self.history.pop(0)
                                 self.history.pop(0)
@@ -446,20 +446,20 @@ class Zhipu:
 
     def get_resp_with_img(self, prompt, img_data):
         try:
-            # 检查 img_data 的类型
-            if isinstance(img_data, str):  # 如果是字符串，假定为文件路径
+            # Check the type of img_data
+            if isinstance(img_data, str):  # If it is a string, assume it is a file path
                 import base64
 
-                # 读取本地图片文件
+                # Read the local image file
                 with open(img_data, "rb") as image_file:
-                    # 将图片内容转换为base64编码
+                    # Convert the image content to base64 encoding
                     img = base64.b64encode(image_file.read()).decode("utf-8")
             else:
                 img = img_data
 
             response = self.get_zhipu_resp(
                 { 
-                    "model": "glm-4v-plus",  # 填写需要调用的模型名称
+                    "model": "glm-4v-plus",  # Fill in the name of the model to call
                     "messages": [
                         {
                             "role": "user",
@@ -493,9 +493,9 @@ class Zhipu:
             return None
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logging.basicConfig(
-        level=logging.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logging.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -518,8 +518,8 @@ if __name__ == '__main__':
 
     zhipu = Zhipu(data)
 
-    # logging.info(zhipu.get_resp("你可以扮演猫娘吗，每句话后面加个喵"))
-    # logging.info(zhipu.get_resp("早上好"))
-    # logging.info(zhipu.get_resp("你是谁"))
+    # logging.info(zhipu.get_resp("Can you play a catgirl and add meow after every sentence"))
+    # logging.info(zhipu.get_resp("Good morning"))
+    # logging.info(zhipu.get_resp("Who are you"))
 
-    logging.info(zhipu.get_resp_with_img("判断图片内容", "E:\\GitHub_pro\\AI-Vtuber\\docs\\xmind.png"))
+    logging.info(zhipu.get_resp_with_img("Determine the image content", "E:\\GitHub_pro\\AI-Vtuber\\docs\\xmind.png"))

@@ -1,0 +1,41 @@
+{
+  "_comment": "Spoken templates (Vietnamese). Placeholders: {name} {number} {price} {original_price}. Edit freely; keep claims honest and TikTok-compliant.",
+  "intro": [
+    "Tiếp theo mình giới thiệu đến cả nhà sản phẩm {name} nhé.",
+    "Cả nhà nhìn qua {name} đang có trong giỏ hàng nè.",
+    "Giờ mình cùng xem {name} nha cả nhà.",
+    "Sản phẩm này nhiều bạn hỏi nè, đó là {name}."
+  ],
+  "price_only": [
+    "Giá hiện tại là {price}.",
+    "Bên mình đang để giá {price} thôi nè."
+  ],
+  "price_with_original": [
+    "Giá gốc {original_price}, hiện đang có giá {price}.",
+    "Hôm nay giá chỉ {price}, giá thường là {original_price} nha."
+  ],
+  "highlights_lead": [
+    "Điểm nổi bật nè:",
+    "Mình thích nhất là:"
+  ],
+  "call_to_action": [
+    "Cả nhà bấm vào giỏ hàng góc dưới để xem chi tiết nhé.",
+    "Bạn nào quan tâm thì xem trong giỏ hàng, có gì thắc mắc cứ comment mình trả lời nha.",
+    "Cần hỏi thêm về sản phẩm thì cứ bình luận, mình giải đáp liền nè."
+  ],
+  "welcome": "Chào mừng cả nhà đã vào phòng live, mình là trợ lý AI của shop, cùng xem các sản phẩm trong giỏ hàng nhé.",
+  "tour_end": "Mình đã giới thiệu hết các sản phẩm trong giỏ hàng rồi, cả nhà cần xem lại món nào thì comment tên món đó nhé.",
+  "no_answer": "Câu này mình chưa có thông tin chính xác, cả nhà xem chi tiết trong trang sản phẩm giúp mình nhé.",
+  "answer_price": "{name} đang có giá {value} nha bạn.",
+  "answer_options": "{name} có các lựa chọn: {value}",
+  "answer_shipping": "{value}",
+  "answer_return": "{value}",
+  "answer_usage": "Cách dùng {name}: {value}",
+  "answer_stock": "{value}",
+  "disclosure": "Mình là trợ lý AI của shop, nội dung livestream này được tạo bằng trí tuệ nhân tạo nhé cả nhà.",
+  "interstitial": [
+    "Bạn nào mới vào nhớ bấm theo dõi kênh để không bỏ lỡ các phiên live sau nha.",
+    "Cả nhà có câu hỏi về sản phẩm cứ gõ vào khung bình luận, mình trả lời liền.",
+    "Thích sản phẩm nào thì bấm vào giỏ hàng xem chi tiết và đặt ngay trong TikTok nhé."
+  ]
+}

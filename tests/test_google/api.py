@@ -5,14 +5,14 @@ client = Translate(proxies={'https': 'http://localhost:10809'})
 text = client.detect('Answer the question.')
 print(text)
 
-# 检测语言
+# Detect language
 text = client.detect('Answer the question.')
 print(text)
 
-# 翻译句子
+# Translate the sentence
 text = client.translate('你好', target='en', source='zh-CN')
 print(text)
 
-# 文本到语音
+# Text to speech
 tts = client.tts('こにちわ', target='ja')
 open('こにちわ.wav', 'wb').write(tts)

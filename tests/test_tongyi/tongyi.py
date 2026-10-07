@@ -5,7 +5,7 @@ from utils.common import Common
 from utils.logger import Configure_logger
 
 def convert_cookies(cookies: list) -> dict:
-    """转换cookies"""
+    """Convertcookies"""
     cookies_dict = {}
     for cookie in cookies:
         cookies_dict[cookie["name"]] = cookie["value"]
@@ -14,7 +14,7 @@ def convert_cookies(cookies: list) -> dict:
 class TongYi:
     def __init__(self, data):
         self.common = Common()
-        # 日志文件路径
+        # Log file path
         file_path = "./log/log-" + self.common.get_bj_time(1) + ".txt"
         Configure_logger(file_path)
 
@@ -29,13 +29,13 @@ class TongYi:
 
         try:
             if self.config_data["type"] == "web":
-                # 非流式模式
+                # Non-streaming mode
                 import revTongYi.qianwen as qwen
                 
                 with open(self.cookie_path, "r") as f:
                     self.cookies_dict = convert_cookies(json.load(f))
                 self.chatbot = qwen.Chatbot(
-                    cookies=self.cookies_dict  # 以dict形式提供cookies
+                    cookies=self.cookies_dict  # Provided as a dictcookies
                 )
                 
             elif self.config_data["type"] == "api":
@@ -46,13 +46,13 @@ class TongYi:
             logging.error(traceback.format_exc())
 
     def get_resp(self, prompt):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            prompt (str): 你的提问
+            prompt (str): Your question
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             if self.config_data["type"] == "web":
@@ -63,7 +63,7 @@ class TongYi:
                 
                 # logging.info(ret)
                 
-                # 是否启用上下文记忆
+                # Whether to enable context memory
                 if self.config_data['history_enable']:
                     self.parentId = ret['msgId']
                 resp_content = ret['content'][0]
@@ -104,9 +104,9 @@ class TongYi:
                         self.history.append({'role': response.output.choices[0]['message']['role'],
                                         'content': resp_content})
                         while True:
-                            # 获取嵌套列表中所有字符串的字符数
+                            # Get the character count of all strings in a nested list
                             total_chars = sum(len(item['content']) for item in self.history if 'content' in item)
-                            # 如果大于限定最大历史数，就剔除第一个元素
+                            # If it exceeds the maximum history limit, remove the first element
                             if total_chars > int(self.config_data["history_max_len"]):
                                 self.history.pop(0)
                                 self.history.pop(0)
@@ -123,9 +123,9 @@ class TongYi:
 
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logging.basicConfig(
-        level=logging.INFO,  # 设置日志级别，可以根据需求调整
+        level=logging.INFO,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -148,6 +148,6 @@ if __name__ == '__main__':
     tongyi = TongYi(data)
 
 
-    logging.info(tongyi.get_resp("你现在叫小伊，是个猫娘，每句话后面加个喵"))
-    logging.info(tongyi.get_resp("早上好，你叫什么"))
+    logging.info(tongyi.get_resp("You are now called Xiaoyi, a catgirl, add meow after every sentence"))
+    logging.info(tongyi.get_resp("Good morning, what is your name"))
     

@@ -6,7 +6,7 @@ import traceback
 from utils.common import Common
 from utils.my_log import logger
 
-# 前往官网：https://cloud.baidu.com/product/wenxinworkshop 申请服务获取
+# Go to the official site: https://cloud.baidu.com/product/wenxinworkshop to apply for the service and get it
 
 class My_WenXinWorkShop:
     def __init__(self, data):
@@ -22,7 +22,7 @@ class My_WenXinWorkShop:
         logger.debug(self.config_data)
 
         try:
-            if self.config_data['type'] == "千帆大模型":
+            if self.config_data['type'] == "Qianfan":
                 model_url_map = {
                     "ERNIEBot": LLMAPI.ERNIEBot,
                     "ERNIEBot_turbo": LLMAPI.ERNIEBot_turbo,
@@ -55,12 +55,12 @@ class My_WenXinWorkShop:
                         secret_key=self.config_data["secret_key"],
                         url=model_url_map[selected_model]
                     )
-                    logger.info(f"千帆大模型加载成功，模型名称：{selected_model}，url：{model_url_map[selected_model]}")
+                    logger.info(f"Qianfan large model loaded successfully, model name: {selected_model}, url:{model_url_map[selected_model]}")
             elif self.config_data['type'] == "AppBuilder":
                 self.app_builder_get_conversation_id()
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f"千帆大模型加载失败，错误信息：{str(e)}")
+            logger.error(f"Qianfan large model failed to load, error message:{str(e)}")
 
 
     def app_builder_get_conversation_id(self):
@@ -79,31 +79,31 @@ class My_WenXinWorkShop:
             resp_json = json.loads(response.content)
             if "conversation_id" in resp_json:
                 self.conversation_id = resp_json["conversation_id"]
-                logger.info(f"获取会话ID成功，会话ID为：{self.conversation_id}")
+                logger.info(f"Session ID obtained successfully, the session ID is:{self.conversation_id}")
             else:
-                logger.error(f"获取会话ID失败，请检查app_id/app_token是否正确。错误信息：{resp_json}")
+                logger.error(f"Failed to get the session ID, please check whether app_id/app_token is correct. Error message:{resp_json}")
 
             return None
         except Exception as e:
             logger.error(traceback.format_exc())
-            logger.error(f"获取会话ID失败，请检查app_id/app_token是否正确。错误信息：{e}")
+            logger.error(f"Failed to get the session ID, please check whether app_id/app_token is correct. Error message:{e}")
             return None
 
 
     def get_resp(self, prompt: str, stream: bool=False):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            prompt (str): 你的提问
-            stream (bool, optional): 是否流式返回. Defaults to False.
+            prompt (str): Your question
+            stream (bool, optional): Whether to return as a stream. Defaults to False.
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             resp_content = None
 
-            if self.config_data['type'] == "千帆大模型":
+            if self.config_data['type'] == "Qianfan":
                 # create messages
                 messages: Messages = []
                 
@@ -133,12 +133,12 @@ class My_WenXinWorkShop:
                 if stream:
                     return resp_content
 
-                # 启用历史就给我记住！
+                # If history is enabled, remember it for me!
                 if self.config_data["history_enable"]:
                     while True:
-                        # 获取嵌套列表中所有字符串的字符数
+                        # Get the character count of all strings in a nested list
                         total_chars = sum(len(item['content']) for item in self.history if 'content' in item)
-                        # 如果大于限定最大历史数，就剔除第一个元素
+                        # If it exceeds the maximum history limit, remove the first element
                         if total_chars > self.config_data["history_max_len"]:
                             self.history.pop(0)
                             self.history.pop(0)
@@ -172,9 +172,9 @@ class My_WenXinWorkShop:
                 def remove_ref_markers(s):
                     import re
                     
-                    # 使用正则表达式替换 '*' 和 '^' 为 ''
+                    # Replace using a regular expression '*' and '^' is ''
                     tmp = re.sub(r'[\*]', '', s)
-                    # 使用正则表达式替换形如 ^[数字]^ 的模式为 ''
+                    # Use a regular expression to replace patterns of the form ^[digit]^ with ''
                     return re.sub(r'\^\[\d+\]\^', '', tmp)
 
                 if "content" in resp_json:
@@ -184,7 +184,7 @@ class My_WenXinWorkShop:
                             resp_content = remove_ref_markers(resp_content)
                             break
                 else:
-                    logger.error(f"获取LLM返回失败。{resp_json}")
+                    logger.error(f"Failed to get the LLM response.{resp_json}")
                     return None
 
             return resp_content
@@ -194,16 +194,16 @@ class My_WenXinWorkShop:
 
         return None
 
-    # 添加AI返回消息到会话，用于提供上下文记忆
+    # Add the AI reply message to the session to provide contextual memory
     def add_assistant_msg_to_session(self, prompt: str, message: str):
         try:
-            if self.config_data['type'] == "千帆大模型":
-                # 启用历史就给我记住！
+            if self.config_data['type'] == "Qianfan":
+                # If history is enabled, remember it for me!
                 if self.config_data["history_enable"]:
                     while True:
-                        # 获取嵌套列表中所有字符串的字符数
+                        # Get the character count of all strings in a nested list
                         total_chars = sum(len(item['content']) for item in self.history if 'content' in item)
-                        # 如果大于限定最大历史数，就剔除第一个元素
+                        # If it exceeds the maximum history limit, remove the first element
                         if total_chars > self.config_data["history_max_len"]:
                             self.history.pop(0)
                             self.history.pop(0)
@@ -223,9 +223,9 @@ class My_WenXinWorkShop:
             return {"ret": False}
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logger.basicConfig(
-        level=logger.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logger.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -244,7 +244,7 @@ if __name__ == '__main__':
         "stream": False,
     }
 
-    # 实例化并调用
+    # Instantiate and call
     my_wenxinworkshop = My_WenXinWorkShop(data)
-    logger.info(my_wenxinworkshop.get_resp("你可以扮演猫娘吗，每句话后面加个喵"))
-    logger.info(my_wenxinworkshop.get_resp("早上好"))
+    logger.info(my_wenxinworkshop.get_resp("Can you play a catgirl and add meow after every sentence"))
+    logger.info(my_wenxinworkshop.get_resp("Good morning"))

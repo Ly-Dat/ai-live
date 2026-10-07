@@ -1,9 +1,9 @@
 from bardapi import Bard
 
 """
-访问 https://bard.google.com/
-F12 for console 用于控制台的 F12
-会话：应用程序→ Cookie → 复制 Cookie 的值 __Secure-1PSID 。
+Access https://bard.google.com/
+F12 for console used for the console F12
+Session: Application -> Cookies -> copy the value of __Secure-1PSID.
 """
 token = ''
 

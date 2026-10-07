@@ -4,7 +4,7 @@ import traceback
 
 from utils.my_log import logger
 
-# 对接AUDIO_PLAYER 音频播放器项目
+# Integrate with the AUDIO_PLAYER audio player project
 class AUDIO_PLAYER:
     def __init__(self, data):
         try:
@@ -75,7 +75,7 @@ class AUDIO_PLAYER:
 
     def skip_current_stream(self):
         """
-        跳过当前播放音频
+        Skip the currently playing audio
         """
         try:
             url = f"{self.api_ip_port}/skip_current_stream"
@@ -97,7 +97,7 @@ class AUDIO_PLAYER:
 
     def get_list(self):
         """
-        获取音频播放队列列表
+        Get the audio playback queue list
         """
         try:
             url = f"{self.api_ip_port}/get_list"
@@ -119,7 +119,7 @@ class AUDIO_PLAYER:
 
     def clear(self):
         """
-        清空播放队列
+        Clear the playback queue
         """
         try:
             url = f"{self.api_ip_port}/clear"

@@ -6,11 +6,11 @@ class TTS:
     def __init__(self):
         self.timeout = 60
 
-    # 请求vits_simple_api的api gpt_sovits
+    # Request vits_simple_api APIapi gpt_sovits
     async def vits_simple_api_gpt_sovits_api(self, data):
         try:
             logging.debug(f"data={data}")
-            # API地址 "http://127.0.0.1:5000/voice"
+            # APIAddress "http://127.0.0.1:5000/voice"
             API_URL = urljoin(data["api_ip_port"], '/voice/gpt-sovits')
 
             data_json = {
@@ -27,17 +27,17 @@ class TTS:
                 "temperature": data["temperature"]
             }
 
-            # 创建 FormData 对象
+            # Create a FormData object
             form_data = FormData()
-            # 添加文本字段
+            # Add the text field
             for key, value in data_json.items():
                 form_data.add_field(key, str(value))
 
-            # 以二进制读取模式打开音频文件，并添加到表单数据中
-            # 'reference_audio' 是字段名称，应与服务器端接收的名称一致
+            # Open the audio file in binary read mode and add it to the form data
+            # 'reference_audio' Is the field name, which should match the name the server receives
             form_data.add_field('reference_audio',
                         open(data["reference_audio"], 'rb'),
-                        content_type='audio/mpeg')  # 内容类型根据文件类型修改
+                        content_type='audio/mpeg')  # The content type is modified according to the file type
                 
             logging.info(f"data_json={data_json}")
             # logging.info(f"data={data}")
@@ -59,17 +59,17 @@ class TTS:
                     return voice_tmp_path
         except aiohttp.ClientError as e:
             logging.error(traceback.format_exc())
-            logging.error(f'vits_simple_api gpt_sovits请求失败，请检查您的vits_simple_api是否启动/配置是否正确，报错内容: {e}')
+            logging.error(f'vits_simple_api gpt_sovitsRequest failed, please check whether your vits_simple_api is started/configured correctly, error details: {e}')
         except Exception as e:
             logging.error(traceback.format_exc())
-            logging.error(f'vits_simple_api gpt_sovits未知错误，请检查您的vits_simple_api是否启动/配置是否正确，报错内容: {e}')
+            logging.error(f'vits_simple_api gpt_sovitsUnknown error, please check whether your vits_simple_api is started/configured correctly, error details: {e}')
         
         return None
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logging.basicConfig(
-        level=logging.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logging.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )

@@ -5,21 +5,21 @@ from tencentcloud.common.profile.http_profile import HttpProfile
 from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentCloudSDKException
 from tencentcloud.tmt.v20180321 import tmt_client, models
 try:
-    # 实例化一个认证对象，入参需要传入腾讯云账户 SecretId 和 SecretKey，此处还需注意密钥对的保密
-    # 代码泄露可能会导致 SecretId 和 SecretKey 泄露，并威胁账号下所有资源的安全性。以下代码示例仅供参考，建议采用更安全的方式来使用密钥，请参见：https://cloud.tencent.com/document/product/1278/85305
-    # 密钥可前往官网控制台 https://console.cloud.tencent.com/cam/capi 进行获取
+    # Instantiate a credential object with the Tencent Cloud SecretId and SecretKey; keep the key pair secret
+    # A code leak may expose SecretId and SecretKey and threaten every resource under the account. The sample below is for reference only; use a safer way to handle keys, see:https://cloud.tencent.com/document/product/1278/85305
+    # Keys can be obtained from the console at https://console.cloud.tencent.com/cam/capi
     cred = credential.Credential("SecretId", "SecretKey")
-    # 实例化一个http选项，可选的，没有特殊需求可以跳过
+    # Instantiate an http option (optional, can be skipped)
     httpProfile = HttpProfile()
     httpProfile.endpoint = "tmt.ap-shanghai.tencentcloudapi.com"
 
-    # 实例化一个client选项，可选的，没有特殊需求可以跳过
+    # Instantiate a client option (optional, can be skipped)
     clientProfile = ClientProfile()
     clientProfile.httpProfile = httpProfile
-    # 实例化要请求产品的client对象,clientProfile是可选的
+    # Instantiate the client object for the product; clientProfile is optional
     client = tmt_client.TmtClient(cred, "ap-shanghai", clientProfile)
 
-    # 实例化一个请求对象,每个接口都会对应一个request对象
+    # Instantiate a request object; each API has its own request object
     req = models.TextTranslateRequest()
     params = {
         "SourceText": "test",
@@ -29,9 +29,9 @@ try:
     }
     req.from_json_string(json.dumps(params))
 
-    # 返回的resp是一个TextTranslateResponse的实例，与请求对象对应
+    # The returned resp is a TextTranslateResponse instance matching the request object
     resp = client.TextTranslate(req)
-    # 输出json格式的字符串回包
+    # Output the JSON string response
     print(resp.to_json_string())
 
 except TencentCloudSDKException as err:

@@ -14,52 +14,52 @@ class Data_Analysis:
         self.config = Config(config_path)
         self.common = Common()
 
-        # # 获取 jieba 库的日志记录器
+        # # Get the jieba library logger
         # jieba_logger = logger.getLogger("jieba")
-        # # 设置 jieba 日志记录器的级别为 WARNING
+        # # Set the jieba logger level to WARNING
         # jieba_logger.setLevel(logger.WARNING)
 
 
-    # 重载config
+    # Reloadconfig
     def reload_config(self, config_path):
         self.config = Config(config_path)
 
-    # 获取重复数最高的关键词数据
+    # Get the data of keywords with the most duplicates
     def get_most_common_words(self, text_list, top_num=10):
-        """获取重复数最高的关键词数据
+        """Get the data of keywords with the most duplicates
 
         Args:
-            text_list (list): 字符串列表
-            top_num (int, optional): 前n个重复数最高的关键词. Defaults to 10.
+            text_list (list): List of strings
+            top_num (int, optional): Top n keywords with the most duplicates. Defaults to 10.
 
         Returns:
-            dict: 关键词json
+            dict: Keywordjson
         """
 
-        # 假设这是您的字符串数组
+        # Suppose this is your string array
         # text_list = [
-        #     "Python是一种广泛使用的高级编程语言",
-        #     "它结合了解释型、编译型、互动性和面向对象的脚本语言的特点",
-        #     # ...更多字符串
+        #     "Pythonis a widely used high-level programming language",
+        #     "It combines the features of interpreted, compiled, interactive, and object-oriented scripting languages",
+        #     # ...More strings
         # ]
 
-        # 使用jieba进行中文分词
+        # Use jieba for Chinese word segmentation
         words = []
         for text in text_list:
             cut_words = jieba.cut(text)
             # cut_words = jieba.cut_for_search(text)
             words.extend(cut_words)
 
-        # 过滤掉单个字符的分词结果
+        # Filter out single-character segmentation results
         words = [word for word in words if len(word) > 1]
 
-        # 计算每个词的出现次数
+        # Count the occurrences of each word
         word_counts = Counter(words)
 
-        # 找出出现次数最多的词语
-        most_common_words = word_counts.most_common(top_num)  # 获取前10个最常见的词
+        # Find the most frequent words
+        most_common_words = word_counts.most_common(top_num)  # Get the 10 most common words
 
-        # 使用列表推导式和字典推导式进行转换
+        # Use list comprehensions and dict comprehensions for the conversion
         dict_list = [{'name': name, 'value': value} for name, value in most_common_words]
 
         logger.debug(dict_list)
@@ -68,22 +68,22 @@ class Data_Analysis:
     
 
     def get_comment_word_cloud_option(self, top_num=10):
-        """获取弹幕词云的图表option（用于给nicegui绘制图表）
+        """Get the chart option for the danmaku word cloud (for drawing charts with nicegui)
 
         Args:
-            top_num (int, optional): 前n个重复数最高的关键词. Defaults to 10.
+            top_num (int, optional): Top n keywords with the most duplicates. Defaults to 10.
 
         Returns:
-            dict: nicegui绘制图表的option
+            dict: niceguiChart drawing foroption
         """
         try:
             if not os.path.exists(self.config.get('database', 'path')):
-                logger.warning(f"数据库：{self.config.get('database', 'path')} 不存在，如果您是第一次启动项目，且没有 运行的情况下，那么请忽略此报错信息，正常运行后，会自动创建数据库，无须担心")
+                logger.warning(f"Database:{self.config.get('database', 'path')} does not exist. If this is your first time starting the project and it has not been run yet, ignore this error message; the database will be created automatically after a normal run, so there is no need to worry")
                 return None
 
             db = SQLiteDB(self.config.get('database', 'path'))
 
-            # 查询数据
+            # Query data
             select_data_sql = '''
             SELECT content FROM danmu
             '''
@@ -92,10 +92,10 @@ class Data_Analysis:
 
             data_json = self.get_most_common_words(text_list, top_num)
 
-            # 可滚动的图例
+            # Scrollable legend
             option = {
                 'title': {
-                    'text': '弹幕关键词统计',
+                    'text': 'Comment keyword statistics',
                     'left': 'center'
                 },
                 'tooltip': {
@@ -108,11 +108,11 @@ class Data_Analysis:
                     'right': 10,
                     'top': 20,
                     'bottom': 20,
-                    'data': [d['name'] for d in data_json] # 使用列表推导式提取所有'name'的值
+                    'data': [d['name'] for d in data_json] # Use a list comprehension to extract all'name'value of
                 },
                 'series': [
                     {
-                        'name': '关键词',
+                        'name': 'Keywords',
                         'type': 'pie',
                         'radius': '55%',
                         'center': ['50%', '60%'],
@@ -135,23 +135,23 @@ class Data_Analysis:
 
 
     def get_integral_option(self, type="integral", top_num=10):
-        """获取积分表的图表option（用于给nicegui绘制图表）
+        """Get the chart option for the points table (for drawing charts with nicegui)
 
         Args:
-            type (str): 数据类型（integral/view_num/sign_num/total_price）
-            top_num (int, optional): 前n个最大的数据. Defaults to 10.
+            type (str): Data type (integral/view_num/sign_num/total_price)
+            top_num (int, optional): Top n largest data. Defaults to 10.
 
         Returns:
-            dict: nicegui绘制图表的option
+            dict: niceguiChart drawing foroption
         """
         try:
             if not os.path.exists(self.config.get('database', 'path')):
-                logger.warning(f"数据库：{self.config.get('database', 'path')} 不存在，如果您是第一次启动项目，且没有 运行的情况下，那么请忽略此报错信息，正常运行后，会自动创建数据库，无须担心")
+                logger.warning(f"Database:{self.config.get('database', 'path')} does not exist. If this is your first time starting the project and it has not been run yet, ignore this error message; the database will be created automatically after a normal run, so there is no need to worry")
                 return None
             
             db = SQLiteDB(self.config.get('database', 'path'))
 
-            # 查询数据
+            # Query data
             select_data_sql = f'''
             SELECT * FROM integral
             ORDER BY {type} DESC
@@ -160,7 +160,7 @@ class Data_Analysis:
             data_list = db.fetch_all(select_data_sql)
 
             
-            # 使用列表推导式将每个元组转换为列表
+            # Use a list comprehension to convert each tuple to a list
             list_list = [list(t) for t in data_list]
             username_list = [t[1] for t in data_list]
 
@@ -168,11 +168,11 @@ class Data_Analysis:
 
             option = {
                 'title': {
-                    'text': '积分表数据统计',
+                    'text': 'Points table statistics',
                     'left': 'center'
                 },
                 'legend': {
-                    'data': ['总积分', '观看数', '签到数', '总金额'],
+                    'data': ['Total points', 'Views', 'Check-ins', 'Total amount'],
                     'top': 30,
                     'bottom': 30
                 },
@@ -217,7 +217,7 @@ class Data_Analysis:
                 'yAxis': [
                     {
                         'type': 'value',
-                        'name': '总积分',
+                        'name': 'Total points',
                         'alignTicks': True,
                         'position': 'left',
                         'axisLine': {
@@ -229,7 +229,7 @@ class Data_Analysis:
                     },
                     {
                         'type': 'value',
-                        'name': '观看数',
+                        'name': 'Views',
                         'yAxisIndex': 1,
                         'alignTicks': True,
                         'position': 'left',
@@ -243,7 +243,7 @@ class Data_Analysis:
                     },
                     {
                         'type': 'value',
-                        'name': '签到数',
+                        'name': 'Check-ins',
                         'yAxisIndex': 2,
                         'alignTicks': True,
                         'position': 'right',
@@ -257,7 +257,7 @@ class Data_Analysis:
                     },
                     {
                         'type': 'value',
-                        'name': '总金额',
+                        'name': 'Total amount',
                         'yAxisIndex': 3,
                         'alignTicks': True,
                         'position': 'right',
@@ -271,22 +271,22 @@ class Data_Analysis:
                 ],
                 'series': [
                     {
-                        'name': '总积分',
+                        'name': 'Total points',
                         'type': 'bar',
                         'encode': { 'x': 'username', 'y': 'integral' }
                     },
                     {
-                        'name': '观看数',
+                        'name': 'Views',
                         'type': 'bar',
                         'encode': { 'x': 'username', 'y': 'view_num' }
                     },
                     {
-                        'name': '签到数',
+                        'name': 'Check-ins',
                         'type': 'bar',
                         'encode': { 'x': 'username', 'y': 'sign_num' }
                     },
                     {
-                        'name': '总金额',
+                        'name': 'Total amount',
                         'type': 'bar',
                         'encode': { 'x': 'username', 'y': 'total_price' }
                     },
@@ -300,22 +300,22 @@ class Data_Analysis:
         
 
     def get_gift_option(self, top_num=10):
-        """获取礼物表的图表option（用于给nicegui绘制图表）
+        """Get the chart option for the gift table (for drawing charts with nicegui)
 
         Args:
-            top_num (int, optional): 前n个最大的数据. Defaults to 10.
+            top_num (int, optional): Top n largest data. Defaults to 10.
 
         Returns:
-            dict: nicegui绘制图表的option
+            dict: niceguiChart drawing foroption
         """
         try:
             if not os.path.exists(self.config.get('database', 'path')):
-                logger.warning(f"数据库：{self.config.get('database', 'path')} 不存在，如果您是第一次启动项目，且没有 运行的情况下，那么请忽略此报错信息，正常运行后，会自动创建数据库，无须担心")
+                logger.warning(f"Database:{self.config.get('database', 'path')} does not exist. If this is your first time starting the project and it has not been run yet, ignore this error message; the database will be created automatically after a normal run, so there is no need to worry")
                 return None
             
             db = SQLiteDB(self.config.get('database', 'path'))
 
-            # 查询数据
+            # Query data
             select_data_sql = f'''
             SELECT * FROM gift
             ORDER BY total_price DESC
@@ -323,7 +323,7 @@ class Data_Analysis:
             '''
             data_list = db.fetch_all(select_data_sql)
 
-            # 使用列表推导式将每个元组转换为列表
+            # Use a list comprehension to convert each tuple to a list
             username_list = [t[0] for t in data_list]
             total_price_list = [t[4] for t in data_list]
 
@@ -332,7 +332,7 @@ class Data_Analysis:
 
             option = {
                 'title': {
-                    'text': '礼物榜单',
+                    'text': 'Gift leaderboard',
                     'left': 'center'
                 },
                 'tooltip': {

@@ -3,12 +3,12 @@ import json, logging
 from xingchen import Configuration, ApiClient, ChatApiSub, ChatReqParams, CharacterKey, Message, UserProfile, \
     ModelParameters, ChatHistoryQueryDTO, ChatHistoryQueryWhere
 
-# 官方文档：https://xingchen.aliyun.com/xingchen/document
+# Official documentation:https://xingchen.aliyun.com/xingchen/document
 
 class TongYiXingChen:
     def __init__(self, data):
         # self.common = Common()
-        # # 日志文件路径
+        # # Log file path
         # file_path = "./log/log-" + self.common.get_bj_time(1) + ".txt"
         # Configure_logger(file_path)
 
@@ -29,7 +29,7 @@ class TongYiXingChen:
         return api_instance
 
     def build_chat_param(self, prompt):
-        # 是否启用历史记忆
+        # Whether to enable history memory
         if self.config_data["history_enable"]:
             messages_list = []
             for data in self.history:
@@ -111,11 +111,11 @@ class TongYiXingChen:
             pageSize=10
         )
 
-        # 对话历史
+        # Conversation history
         result = api.chat_histories(chat_history_query_dto=body)
         logging.info(result.data)
 
-    # 非流式回复
+    # Non-streaming reply
     def chat_sync(self, prompt):
         chat_param = self.build_chat_param(prompt)
         res = self.api_instance.chat(chat_param, _request_timeout=self.timeout)
@@ -124,9 +124,9 @@ class TongYiXingChen:
 
         return res.to_dict()
 
-    # 流式回复
+    # Streaming reply
     def chat_async(self, prompt):
-        # 用户对话
+        # User conversation
         chat_param = self.build_chat_param(prompt)
         chat_param.streaming = True
         responses = self.api_instance.chat(chat_param, _request_timeout=self.timeout)
@@ -134,13 +134,13 @@ class TongYiXingChen:
             logging.info(res)
 
     def get_resp(self, prompt):
-        """请求对应接口，获取返回值
+        """Request the corresponding API and get the return value
 
         Args:
-            prompt (str): 你的提问
+            prompt (str): Your question
 
         Returns:
-            str: 返回的文本回答
+            str: Returned text answer
         """
         try:
             if self.config_data["type"] == "固定角色":
@@ -149,12 +149,12 @@ class TongYiXingChen:
 
                     resp_content = data_json["data"]["choices"][0]["messages"][0]["content"]
 
-                    # 启用历史就给我记住！
+                    # If history is enabled, remember it for me!
                     if self.config_data["history_enable"]:
                         while True:
-                            # 获取嵌套列表中所有字符串的字符数
+                            # Get the character count of all strings in a nested list
                             total_chars = sum(len(item['content']) for item in self.history if 'content' in item)
-                            # 如果大于限定最大历史数，就剔除第一个元素
+                            # If it exceeds the maximum history limit, remove the first element
                             if total_chars > self.config_data["history_max_len"]:
                                 self.history.pop(0)
                             else:
@@ -173,9 +173,9 @@ class TongYiXingChen:
         return None
 
 if __name__ == '__main__':
-    # 配置日志输出格式
+    # Configure the log output format
     logging.basicConfig(
-        level=logging.DEBUG,  # 设置日志级别，可以根据需求调整
+        level=logging.DEBUG,  # Set the log level; adjust as needed
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -196,8 +196,8 @@ if __name__ == '__main__':
         "history_max_len": 300
     }
 
-    # 实例化并调用 init_client
+    # Instantiate and call init_client
     tongyixingchen = TongYiXingChen(data)
-    logging.info(tongyixingchen.get_resp("请记住我的话"))
-    logging.info(tongyixingchen.get_resp("我刚才说了什么"))
-    logging.info(tongyixingchen.get_resp("我刚才说了什么!"))
+    logging.info(tongyixingchen.get_resp("Please remember what I said"))
+    logging.info(tongyixingchen.get_resp("What did I just say"))
+    logging.info(tongyixingchen.get_resp("What did I just say!"))

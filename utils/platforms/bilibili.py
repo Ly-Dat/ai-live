@@ -11,10 +11,10 @@ def start_listen(config, common, my_handle, platform: str):
     try:
         if config.get("bilibili", "login_type") == "cookie":
             logger.info(
-                "b站登录后F12抓网络包获取cookie，强烈建议使用小号！有封号风险"
+                "bAfter logging in to the site, press F12 and capture network packets to get the cookie; using an alt account is strongly recommended! There is a risk of being banned"
             )
             logger.info(
-                "b站登录后，F12控制台，输入 window.localStorage.ac_time_value 回车获取(如果没有，请重新登录)"
+                "bAfter logging in to the site, open the F12 console, enter window.localStorage.ac_time_value and press Enter to get it (if there is none, please log in again)"
             )
 
             bilibili_cookie = config.get("bilibili", "cookie")
@@ -27,7 +27,7 @@ def start_listen(config, common, my_handle, platform: str):
             # logger.info(f'buvid3={common.parse_cookie_data(bilibili_cookie, "buvid3")}')
             # logger.info(f'DedeUserID={common.parse_cookie_data(bilibili_cookie, "DedeUserID")}')
 
-            # 生成一个 Credential 对象
+            # Generate a Credential object
             credential = Credential(
                 sessdata=common.parse_cookie_data(bilibili_cookie, "SESSDATA"),
                 bili_jct=common.parse_cookie_data(bilibili_cookie, "bili_jct"),
@@ -35,23 +35,23 @@ def start_listen(config, common, my_handle, platform: str):
                 dedeuserid=common.parse_cookie_data(bilibili_cookie, "DedeUserID"),
                 ac_time_value=bilibili_ac_time_value,
             )
-        elif config.get("bilibili", "login_type") == "手机扫码":
+        elif config.get("bilibili", "login_type") == "Scan QR with phone":
             credential = login.login_with_qrcode()
-        elif config.get("bilibili", "login_type") == "手机扫码-终端":
+        elif config.get("bilibili", "login_type") == "Scan QR with phone - terminal":
             credential = login.login_with_qrcode_term()
-        elif config.get("bilibili", "login_type") == "账号密码登录":
+        elif config.get("bilibili", "login_type") == "Account & password login":
             bilibili_username = config.get("bilibili", "username")
             bilibili_password = config.get("bilibili", "password")
 
             credential = login.login_with_password(
                 bilibili_username, bilibili_password
             )
-        elif config.get("bilibili", "login_type") == "不登录":
+        elif config.get("bilibili", "login_type") == "No login":
             credential = None
         else:
             credential = login.login_with_qrcode()
 
-        # 初始化 Bilibili 直播间
+        # Initialize the Bilibili live room
         room = live.LiveDanmaku(my_handle.get_room_id(), credential=credential)
     except Exception as e:
         logger.error(traceback.format_exc())
@@ -59,42 +59,42 @@ def start_listen(config, common, my_handle, platform: str):
         # os._exit(0)
 
     """
-    DANMU_MSG: 用户发送弹幕
-    SEND_GIFT: 礼物
-    COMBO_SEND：礼物连击
-    GUARD_BUY：续费大航海
-    SUPER_CHAT_MESSAGE：醒目留言（SC）
-    SUPER_CHAT_MESSAGE_JPN：醒目留言（带日语翻译？）
-    WELCOME: 老爷进入房间
-    WELCOME_GUARD: 房管进入房间
-    NOTICE_MSG: 系统通知（全频道广播之类的）
-    PREPARING: 直播准备中
-    LIVE: 直播开始
-    ROOM_REAL_TIME_MESSAGE_UPDATE: 粉丝数等更新
-    ENTRY_EFFECT: 进场特效
-    ROOM_RANK: 房间排名更新
-    INTERACT_WORD: 用户进入直播间
-    ACTIVITY_BANNER_UPDATE_V2: 好像是房间名旁边那个xx小时榜
-    本模块自定义事件：
-    VIEW: 直播间人气更新
-    ALL: 所有事件
-    DISCONNECT: 断开连接（传入连接状态码参数）
-    TIMEOUT: 心跳响应超时
-    VERIFICATION_SUCCESSFUL: 认证成功
+    DANMU_MSG: User sends danmaku
+    SEND_GIFT: Gift
+    COMBO_SEND: gift combo
+    GUARD_BUY: Captain renewal
+    SUPER_CHAT_MESSAGE: Super Chat (SC)
+    SUPER_CHAT_MESSAGE_JPN: Super Chat (with Japanese translation?)
+    WELCOME: Master entering the room
+    WELCOME_GUARD: Administrator entering the room
+    NOTICE_MSG: System notification (such as site-wide broadcasts)
+    PREPARING: Stream is being prepared
+    LIVE: Stream started
+    ROOM_REAL_TIME_MESSAGE_UPDATE: Follower count and other updates
+    ENTRY_EFFECT: Entrance effect
+    ROOM_RANK: Room ranking update
+    INTERACT_WORD: User enters the live room
+    ACTIVITY_BANNER_UPDATE_V2: It seems to be the xx-hour ranking next to the room name
+    Custom events of this module:
+    VIEW: Live room popularity update
+    ALL: All events
+    DISCONNECT: Disconnect (pass the connection status code parameter)
+    TIMEOUT: Heartbeat response timeout
+    VERIFICATION_SUCCESSFUL: Authentication succeeded
     """
 
     @room.on("DANMU_MSG")
     async def _(event):
         """
-        处理直播间弹幕事件
-        :param event: 弹幕事件数据
+        Handle live room danmaku events
+        :param event: Danmaku event data
         """
 
-        # 闲时计数清零
+        # Reset the idle count
         my_global.idle_time_auto_clear(config, "comment")
 
-        content = event["data"]["info"][1]  # 获取弹幕内容
-        username = event["data"]["info"][2][1]  # 获取发送弹幕的用户昵称
+        content = event["data"]["info"][1]  # Get the danmaku content
+        username = event["data"]["info"][2][1]  # Get the nickname of the user who sent the danmaku
 
         logger.info(f"[{username}]: {content}")
 
@@ -105,20 +105,20 @@ def start_listen(config, common, my_handle, platform: str):
     @room.on("COMBO_SEND")
     async def _(event):
         """
-        处理直播间礼物连击事件
-        :param event: 礼物连击事件数据
+        Handle live room gift combo events
+        :param event: Gift combo event data
         """
         my_global.idle_time_auto_clear(config, "gift")
 
         gift_name = event["data"]["data"]["gift_name"]
         username = event["data"]["data"]["uname"]
-        # 礼物数量
+        # Gift quantity
         combo_num = event["data"]["data"]["combo_num"]
-        # 总金额
+        # Total amount
         combo_total_coin = event["data"]["data"]["combo_total_coin"]
 
         logger.info(
-            f"用户：{username} 赠送 {combo_num} 个 {gift_name}，总计 {combo_total_coin}电池"
+            f"User: {username} gifted {combo_num} x {gift_name}, total {combo_total_coin} batteries"
         )
 
         data = {
@@ -135,8 +135,8 @@ def start_listen(config, common, my_handle, platform: str):
     @room.on("SEND_GIFT")
     async def _(event):
         """
-        处理直播间礼物事件
-        :param event: 礼物事件数据
+        Handle live room gift events
+        :param event: Gift event data
         """
         my_global.idle_time_auto_clear(config, "gift")
 
@@ -144,15 +144,15 @@ def start_listen(config, common, my_handle, platform: str):
 
         gift_name = event["data"]["data"]["giftName"]
         username = event["data"]["data"]["uname"]
-        # 礼物数量
+        # Gift quantity
         num = event["data"]["data"]["num"]
-        # 总金额
+        # Total amount
         combo_total_coin = event["data"]["data"]["combo_total_coin"]
-        # 单个礼物金额
+        # Single gift amount
         discount_price = event["data"]["data"]["discount_price"]
 
         logger.info(
-            f"用户：{username} 赠送 {num} 个 {gift_name}，单价 {discount_price}电池，总计 {combo_total_coin}电池"
+            f"User: {username} gifted {num} x {gift_name}, unit price {discount_price} batteries, total {combo_total_coin} batteries"
         )
 
         data = {
@@ -169,8 +169,8 @@ def start_listen(config, common, my_handle, platform: str):
     @room.on("GUARD_BUY")
     async def _(event):
         """
-        处理直播间续费大航海事件
-        :param event: 续费大航海事件数据
+        Handle live room Captain renewal events
+        :param event: Captain renewal event data
         """
 
         logger.info(event)
@@ -178,8 +178,8 @@ def start_listen(config, common, my_handle, platform: str):
     @room.on("SUPER_CHAT_MESSAGE")
     async def _(event):
         """
-        处理直播间醒目留言（SC）事件
-        :param event: 醒目留言（SC）事件数据
+        Handle live room Super Chat (SC) events
+        :param event: Super Chat (SC) event data
         """
         my_global.idle_time_auto_clear(config, "gift")
 
@@ -187,7 +187,7 @@ def start_listen(config, common, my_handle, platform: str):
         uname = event["data"]["data"]["user_info"]["uname"]
         price = event["data"]["data"]["price"]
 
-        logger.info(f"用户：{uname} 发送 {price}元 SC：{message}")
+        logger.info(f"User: {uname} sent a {price} yuan SC:{message}")
 
         data = {
             "platform": platform,
@@ -206,28 +206,28 @@ def start_listen(config, common, my_handle, platform: str):
     @room.on("INTERACT_WORD")
     async def _(event):
         """
-        处理直播间用户进入直播间事件
-        :param event: 用户进入直播间事件数据
+        Handle live room user entering the live room events
+        :param event: User entering the live room event data
         """
 
         my_global.idle_time_auto_clear(config, "entrance")
 
         username = event["data"]["data"]["uname"]
 
-        logger.info(f"用户：{username} 进入直播间")
+        logger.info(f"User: {username} entered the live room")
 
-        # 添加用户名到最新的用户名列表
+        # Add the username to the latest username list
         my_global.add_username_to_last_username_list(username)
 
-        data = {"platform": platform, "username": username, "content": "进入直播间"}
+        data = {"platform": platform, "username": username, "content": "entered the live room"}
 
         my_handle.process_data(data, "entrance")
 
     # @room.on('WELCOME')
     # async def _(event):
     #     """
-    #     处理直播间老爷进入房间事件
-    #     :param event: 老爷进入房间事件数据
+    #     Handle live room Master entering the room events
+    #     :param event: Master entering the room event data
     #     """
 
     #     logger.info(event)
@@ -235,17 +235,17 @@ def start_listen(config, common, my_handle, platform: str):
     # @room.on('WELCOME_GUARD')
     # async def _(event):
     #     """
-    #     处理直播间房管进入房间事件
-    #     :param event: 房管进入房间事件数据
+    #     Handle live room administrator entering the room events
+    #     :param event: Administrator entering the room event data
     #     """
 
     #     logger.info(event)
 
     try:
-        # 启动 Bilibili 直播间连接
+        # Start the Bilibili live room connection
         sync(room.connect())
     except KeyboardInterrupt:
-        logger.warning("程序被强行退出")
+        logger.warning("The program was forcibly exited")
     finally:
-        logger.warning("关闭连接...可能是直播间号配置有误或者其他原因导致的")
+        logger.warning("Closing the connection... it may be caused by a wrong live room number config or other reasons")
         os._exit(0)

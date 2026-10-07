@@ -4,8 +4,8 @@
 @File    : claude_model.py
 @Author  : HildaM
 @Email   : Hilda_quan@163.com
-@Date    : 2023/06/17 下午 4:44 
-@Description : 本地化向量数据库，实现langchain_pdf
+@Date    : 2023/06/17 Afternoon 4:44 
+@Description : Localized vector database, implementinglangchain_pdf
 """
 import logging
 from langchain.document_loaders import PyPDFLoader
@@ -16,8 +16,8 @@ from utils.gpt_model.gpt import GPT_MODEL
 from utils.my_handle import My_handle
 
 
-# 由于similarity_search返回的数据不是标准的json格式，不能用过python格式化，所以只能用字符串操作获取数据
-# 返回的数据很标准，可以很方便获取content信息
+# Since the data returned by similarity_search is not standard JSON and cannot be formatted with Python, string operations are the only way to get the data
+# The returned data is very standard, so the content info is easy to get
 def get_content(data: str):
     prefix = "{'content': "
     suffix = ", 'chunk'"
@@ -35,12 +35,12 @@ class Claude_mode(Chat_model):
     def __init__(self, data):
         super(Claude_mode, self).__init__(data)
 
-        logging.info(f"本地数据文件路径：{self.data_path}")
+        logging.info(f"Local data file path: {self.data_path}")
 
-        # 加载pdf并生成向量数据库
+        # Load the pdf and generate the vector database
         self.load_zip_as_db(self.data_path, self.pdf_loader,
                             self.chunk_size,self.chunk_overlap)
-        # 初始化claude客户端
+        # Initialize the claude client
         self.claude = GPT_MODEL.get("claude")
 
     def load_zip_as_db(self, zip_file_path,
@@ -50,10 +50,10 @@ class Claude_mode(Chat_model):
         from utils.chat_with_file.vector_store.faiss import create_faiss_index_from_zip
 
         if chunk_overlap >= chunk_size:
-            logging.error("输入的chunk_overlap大于chunk_size. 为了避免创建失败，将会修正chunk_overlap为chunk_size的十分之一")
+            logging.error("The input chunk_overlap is greater than chunk_size. To avoid creation failure, chunk_overlap will be corrected to one tenth of chunk_size")
             chunk_overlap = round(chunk_size / 10)
         if zip_file_path is None:
-            logging.error("zip文件路径为空. 向量数据库构建失败.请重新启动")
+            logging.error("zipFile path is empty. Vector database build failed. Please restart")
             exit(-1)
 
         self.local_db = create_faiss_index_from_zip(
@@ -64,23 +64,23 @@ class Claude_mode(Chat_model):
             chunk_overlap=chunk_overlap
         )
 
-        logging.info("成功创建向量知识库!")
+        logging.info("Vector knowledge base created successfully!")
 
-    # 调用本地向量数据库，获取关联信息
+    # Call the local vector database to get related info
     def get_local_database_data(self, message):
-        logging.info(f"开始从本地向量数据库中查询有关”{message}“的信息........")
+        logging.info(f"Start querying the local vector database for info about {message}........")
 
         contents = []
         docs = self.local_db.similarity_search(message, k=self.local_max_query)
         for i in range(self.local_max_query):
-            # 预处理分块
+            # Preprocess chunking
             content = docs[i].page_content.replace('\n', ' ')
-            logging.info(f"No.{i} 相关联信息: {content}")
+            logging.info(f"No.{i} Related info: {content}")
             data = get_content(content)
-            # 更新contents
+            # Updatecontents
             contents.append(data)
 
-        logging.info("从本地向量数据库查询到的相关信息: {}".format(contents))
+        logging.info("Relevant info queried from the local vector database: {}".format(contents))
         if len(contents) == 0 or contents is None:
             return
         related_data = "\n---\n".join(contents) + "\n---\n"
@@ -100,5 +100,5 @@ class Claude_mode(Chat_model):
 if __name__ == '__main__':
     my_handle = My_handle("config.json")
     if my_handle is None:
-        print("程序初始化失败！")
+        print("Program initialization failed!")
         exit(0)
