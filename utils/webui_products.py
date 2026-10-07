@@ -17,9 +17,17 @@ import subprocess
 import sys
 import tempfile
 
-from nicegui import ui
+from nicegui import ui, run
 
 from . import product_catalog, tiktok_safety
+
+from .tiktok_fetch import fetch_tiktok_product, _download_images, _money, IMG_DIR
+
+NEW_PRODUCT_DEFAULTS = {
+    "shipping": "Shop gửi hàng qua TikTok Shop, thời gian giao tuỳ khu vực.",
+    "return_policy": "Được đổi trả theo chính sách của TikTok Shop.",
+    "stock_note": "Số lượng có hạn trong phiên live này.",
+}
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -86,8 +94,23 @@ def build_products_tab(config):
         with ui.column().classes('w-1/2'):
             ui.label('Cart products (in the order the streamer introduces them)').classes('text-bold')
             table = ui.table(columns=columns, rows=rows(), row_key='idx', selection='single').classes('w-full')
+
+            # ---- dialog must be created BEFORE the Add button uses it ----
+            with ui.dialog() as add_dialog, ui.card().classes('w-96'):
+                link = ui.input('TikTok product link (empty = blank product)').classes('w-full')
+
+                async def do_add():
+                    add_dialog.close()
+                    v = link.value or ""
+                    link.value = ""
+                    await add_product(v)
+
+                link.on('keydown.enter', do_add)
+                ui.button('Add', on_click=do_add)
+
             with ui.row():
                 ui.button('New', on_click=lambda: new_product())
+                ui.button('Add', icon='add', on_click=add_dialog.open)
                 ui.button('Move up', on_click=lambda: move(-1))
                 ui.button('Move down', on_click=lambda: move(1))
                 ui.button('Reload file', on_click=lambda: (load(), refresh_table(), ui.notify('Reloaded', type='info')))
@@ -199,6 +222,45 @@ def build_products_tab(config):
         state["selected"] = len(cat.products) - 1
         fill_form(cat.products[-1])
 
+    async def add_product(raw: str = ""):
+        info = {}
+        raw = (raw or "").strip()
+        if raw.startswith("http"):
+            ui.notify("Reading the product in Chrome... if a check appears there, solve it.", timeout=8000)
+            try:
+                info = await run.io_bound(fetch_tiktok_product, raw)
+            except Exception as ex:
+                ui.notify(f"Browser problem: {ex}", type="negative", timeout=12000)
+            if not info.get("name"):
+                ui.notify("Couldn't read that page. Blank product created, fill it in manually.",
+                          type="warning", timeout=8000)
+        elif raw:
+            try:
+                info = json.loads(raw)
+            except ValueError:
+                ui.notify("Not a link or valid product data. Blank product created.", type="warning")
+
+        cat = state["catalog"]
+        n = len(cat.products) + 1
+        existing = {p.get("id") for p in cat.products}
+        while f"P{n:03d}" in existing:
+            n += 1
+        pid = f"P{n:03d}"
+        IMG_DIR.mkdir(parents=True, exist_ok=True)
+        imgs = await run.io_bound(_download_images, pid, info.get("images", []))
+        cat.products.append({
+            **NEW_PRODUCT_DEFAULTS,
+            "id": pid, "order": len(cat.products) + 1,
+            "name": info.get("name") or "New product", "aliases": [],
+            "price": _money(info.get("price")), "original_price": _money(info.get("original_price")),
+            "description": info.get("description", ""), "intro": info.get("intro", ""),
+            "highlights": [], "sizes_colors": info.get("sizes_colors", ""), "how_to_use": "",
+            "faq": [], "images": imgs, "active": True,
+        })
+        persist()                                   # renumbers order and saves data/products.json
+        state["selected"] = len(cat.products) - 1
+        fill_form(cat.products[-1])
+        
     def delete_product():
         i = state["selected"]
         if i is None:

@@ -1,44 +1,57 @@
 {
-  "_comment": "SAMPLE DATA - replace with the real items in your TikTok Shop cart (same order as the cart: 'order' is the cart number you call out). Keep claims honest; no absolute/medical claims, no phone/Zalo/links.",
   "shop_name": "Shop Mẫu",
   "products": [
     {
-      "id": "P001", "order": 1,
-      "name": "Áo thun cotton basic",
-      "aliases": ["áo thun", "áo cotton", "áo phông"],
-      "price": "129.000đ", "original_price": "199.000đ",
-      "description": "Áo thun cotton mềm, form rộng vừa, dễ phối đồ đi học đi làm.",
-      "highlights": ["Chất cotton thoáng mát", "Đường may chắc chắn", "Có nhiều màu để chọn"],
-      "sizes_colors": "Có size từ S đến XL, các màu trắng, đen, be.",
-      "how_to_use": "Nên giặt nước lạnh, lộn trái khi giặt để giữ màu.",
+      "id": "P001",
+      "order": 1,
+      "name": "ViViApparel dành cho nữ: áo cardigan tay dài thoải mái",
+      "description": "ViViApparel dành cho nữ: áo cardigan tay dài thoải mái, phong cách cổ điển thời trang, dáng rộng đa năng và phổ biến. Phù hợp mặc thường ngày và trong cuộc sống hàng ngày; là lớp phủ kiểu khăn quàng cổ mềm mại, thoải mái cho phụ nữ.",
+      "sizes_colors": "Màu sắc: Màu cà phê sữa, Trắng, Màu đen, Mơ; Kích cỡ: S, M, L",
+      "price": ", đ",
+      "original_price": "276.794₫",
+      "images": [
+        "data/product_images/P004_1791360277402.webp",
+        "data/product_images/P004_1791360277600.webp",
+        "data/product_images/P004_1791360277812.webp",
+        "data/product_images/P004_1791360277972.webp",
+        "data/product_images/P004_1791360278114.webp",
+        "data/product_images/P004_1791360278258.webp"
+      ],
+      "how_to_use": "",
       "shipping": "Shop gửi hàng qua TikTok Shop, thời gian giao tuỳ khu vực.",
       "return_policy": "Được đổi trả theo chính sách của TikTok Shop.",
-      "stock_note": "",
-      "faq": [{"q": "Mặc size nào nếu cao 1m65 nặng 55kg?", "a": "Thường vừa size M, bạn xem bảng size trong trang sản phẩm để chọn chính xác."}]
+      "stock_note": "Số lượng có hạn trong phiên live này.",
+      "active": true,
+      "aliases": [],
+      "highlights": [],
+      "faq": [],
+      "intro": "ViViApparel mang đến những mẫu cardigan nữ tay dài với thiết kế rộng rãi, thoải mái và mang phong cách cổ điển nhưng vẫn thời trang. Chất liệu mềm mại, dễ mặc giúp sản phẩm phù hợp cho nhiều hoàn cảnh, từ đi làm, đi chơi đến sử dụng hằng ngày. Thiết kế đa năng có thể phối cùng áo thun, váy hoặc quần jeans, tạo nên vẻ ngoài thanh lịch và trẻ trung. Đây là lựa chọn lý tưởng cho những ngày se lạnh, vừa giữ ấm nhẹ nhàng vừa giúp bạn hoàn thiện phong cách một cách tự nhiên.\n"
     },
     {
-      "id": "P002", "order": 2,
-      "name": "Bình giữ nhiệt 500ml",
-      "aliases": ["bình giữ nhiệt", "bình nước", "ly giữ nhiệt"],
-      "price": "159.000đ", "original_price": "",
-      "description": "Bình inox 500ml, nắp kín, bỏ vừa balo và ngăn để ly xe.",
-      "highlights": ["Inox 304", "Giữ nóng lạnh nhiều giờ", "Nắp kín chống tràn"],
-      "sizes_colors": "Các màu kem, xanh mint, đen.",
-      "how_to_use": "Tráng bình bằng nước ấm trước khi dùng lần đầu.",
-      "shipping": "", "return_policy": "", "stock_note": "Số lượng có hạn trong phiên live này.",
-      "faq": []
-    },
-    {
-      "id": "P003", "order": 3,
-      "name": "Kem chống nắng dịu nhẹ SPF50",
-      "aliases": ["kem chống nắng", "chống nắng"],
-      "price": "189.000đ", "original_price": "239.000đ",
-      "description": "Kết cấu mỏng nhẹ, dùng hằng ngày, thoa xong ít bết dính.",
-      "highlights": ["SPF50 PA+++", "Kết cấu mỏng nhẹ", "Hợp dùng hằng ngày"],
-      "sizes_colors": "Tuýp 50ml.",
-      "how_to_use": "Thoa đều trước khi ra ngoài khoảng 15 phút và thoa lại sau vài giờ.",
-      "shipping": "", "return_policy": "", "stock_note": "",
-      "faq": [{"q": "Có hợp da nhạy cảm không?", "a": "Mỗi người một loại da, bạn nên thử một vùng nhỏ trước và xem thành phần trong trang sản phẩm."}]
+      "shipping": "Shop gửi hàng qua TikTok Shop, thời gian giao tuỳ khu vực.",
+      "return_policy": "Được đổi trả theo chính sách của TikTok Shop.",
+      "stock_note": "Số lượng có hạn trong phiên live này.",
+      "id": "P002",
+      "order": 2,
+      "name": "ViViApparel dành cho nữ: áo cardigan tay dài thoải mái",
+      "aliases": [],
+      "price": "139.230₫",
+      "original_price": "276.794₫",
+      "description": "ViViApparel dành cho nữ: áo cardigan tay dài thoải mái, phong cách cổ điển thời trang, dáng rộng đa năng và phổ biến. Phù hợp mặc thường ngày và trong cuộc sống hàng ngày; là lớp phủ kiểu khăn quàng cổ mềm mại, thoải mái cho phụ nữ.",
+      "intro": "",
+      "highlights": [],
+      "sizes_colors": "Màu sắc: Màu cà phê sữa, Trắng, Màu đen, Mơ; Kích cỡ: S, M, L",
+      "how_to_use": "",
+      "faq": [],
+      "images": [
+        "data/product_images/P002_1791368338343.webp",
+        "data/product_images/P002_1791368338476.webp",
+        "data/product_images/P002_1791368338574.webp",
+        "data/product_images/P002_1791368338687.webp",
+        "data/product_images/P002_1791368338815.webp",
+        "data/product_images/P002_1791368338941.webp"
+      ],
+      "active": true
     }
   ]
 }

@@ -20,7 +20,7 @@ import time
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from utils import product_catalog, tiktok_safety  # noqa: E402
+from utils import product_catalog, tiktok_safety, live_state  # noqa: E402  (live_state added)
 
 CHARS_PER_SECOND = 13.0  # rough speech rate used to avoid piling up audio (override with --cps)
 
@@ -41,6 +41,7 @@ def speak(args, safety, text: str) -> None:
     """Send a non-product line (disclosure, reminder) if it passes the safety filter, then wait for it to be spoken."""
     if not text or safety.check(text, "output"):
         return
+    live_state.wait_for_quiet(args.quiet)  # let comment replies go first
     post_reread(args.api, args.name, text)
     time.sleep(len(text) / CHARS_PER_SECOND + args.gap)
 
@@ -73,7 +74,19 @@ def run(args) -> None:
             # a short reminder (follow / ask questions / open the cart) after every 2 products
             if idx and idx % 2 == 0 and interstitials:
                 speak(args, safety, interstitials[(round_no + idx) % len(interstitials)])
-            pitch = catalog.build_pitch(product, round_no)
+            # Comments take priority: pause the tour while viewers are chatting
+            live_state.wait_for_quiet(args.quiet)
+            # Remember the current product so comments that name no product ("how much?") resolve to it
+            live_state.set_current(product.get("id", ""))
+
+            # Prefer the hand-written introduction from products.json, fall back to the template pitch
+            intro = (product.get("intro") or "").strip()
+            if intro:
+                pitch = intro
+                if product.get("price") and product["price"] not in intro:
+                    pitch += f" Giá hiện tại {product['price']}."
+            else:
+                pitch = catalog.build_pitch(product, round_no)
             hits = safety.check(pitch, "output")
             if hits:
                 print(f"[tour] SKIPPED '{product['name']}': {[(h.category, h.term) for h in hits]}", flush=True)
@@ -100,10 +113,11 @@ if __name__ == "__main__":
     ap.add_argument("--templates", default="data/pitch_templates.json")
     ap.add_argument("--terms", default="data/tiktok_policy_terms.json")
     ap.add_argument("--name", default="Streamer", help="username shown in logs/captions")
-    ap.add_argument("--gap", type=float, default=8.0, help="extra seconds after each pitch, leaves room for comment replies")
+    ap.add_argument("--gap", type=float, default=1.0, help="extra seconds after each pitch, leaves room for comment replies")
     ap.add_argument("--pause", type=float, default=30.0, help="seconds between full passes")
     ap.add_argument("--rounds", type=int, default=0, help="0 = loop forever")
     ap.add_argument("--cps", type=float, default=13.0, help="assumed speech speed in characters per second")
     ap.add_argument("--disclosure-every", type=int, default=4, help="say the AI disclosure every N passes (1 = every pass)")
     ap.add_argument("--once", action="store_true")
+    ap.add_argument("--quiet", type=float, default=1.0, help="seconds to wait after the last comment before presenting the next product")
     run(ap.parse_args())
