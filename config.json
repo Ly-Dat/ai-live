@@ -23,6 +23,12 @@
     "auto_add": true,
     "pitch_on_pop": true,
     "pitch_on_pop_cooldown": 120,
+    "spotlight": {
+      "enable": true,
+      "min_questions": 3,
+      "window_sec": 300,
+      "cooldown_sec": 600
+    },
     "path": "data/products.json",
     "templates_path": "data/pitch_templates.json",
     "context_prefix": "Product information you may use (do not invent anything beyond it):\n"

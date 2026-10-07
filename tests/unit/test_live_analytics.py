@@ -44,3 +44,14 @@ def test_report_and_buy_reply(tmp_path):
     c = ProductCatalog(os.path.join(ROOT, "data", "products.json"), os.path.join(ROOT, "data", "pitch_templates.json"))
     r = c.buy_reply(c.products[0])
     assert c.products[0]["name"] in r and "giỏ hàng" in r
+
+
+def test_recent_sales_questions_window(tmp_path):
+    a = LiveAnalytics(str(tmp_path))
+    for _ in range(3):
+        a.record("comment", user="u", text="giá", intent="price", product_id="P001")
+    a.record("comment", user="u", text="hi", intent="chat", product_id="P001")
+    a.record("comment", user="u", text="giá", intent="price", product_id="P002")
+    assert a.recent_sales_questions("P001", 300) == 3
+    a.events[0]["ts"] -= 1000  # outside the window
+    assert a.recent_sales_questions("P001", 300) == 2

@@ -86,6 +86,16 @@ class LiveAnalytics:
             except OSError:
                 pass  # analytics must never break the live
 
+    def recent_sales_questions(self, product_id: str, window_sec: int = 300) -> int:
+        """Shopping questions about one product in the last `window_sec` seconds."""
+        cutoff = time.time() - window_sec
+        with self._lock:
+            return sum(
+                1 for e in self.events
+                if e["kind"] == "comment" and e.get("product_id") == product_id
+                and e.get("intent") in SALES_INTENTS and e["ts"] >= cutoff
+            )
+
     def summary(self) -> Dict:
         with self._lock:
             return summarize(list(self.events))

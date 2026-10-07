@@ -1393,6 +1393,36 @@ class My_handle(metaclass=SingletonMeta):
         except Exception:
             logger.error(traceback.format_exc())
 
+    def spotlight_handle(self, product):
+        """Auto-spotlight: when several viewers ask about the same product in a short window, pitch it again.
+
+        Settings: products.spotlight {enable, min_questions, window_sec, cooldown_sec}. Shares the per-product
+        cooldown with pitch-on-pin so the same item is never repeated back to back.
+        """
+        try:
+            cfg = My_handle.config.get("products", "spotlight") or {}
+            if not cfg.get("enable") or not product:
+                return
+            window = int(cfg.get("window_sec") or 300)
+            asked = self.get_analytics().recent_sales_questions(product["id"], window)
+            if asked < int(cfg.get("min_questions") or 3):
+                return
+            now = time.time()
+            last = self.__dict__.setdefault("_last_product_pitch", {})
+            if now - last.get(product["id"], 0) < float(cfg.get("cooldown_sec") or 600):
+                return
+            last[product["id"]] = now
+            catalog = self.get_product_catalog()
+            pitch = catalog.build_pitch(product, len(last))
+            pitch = self.prohibitions_handle(pitch, scope="output")
+            if pitch is None:
+                return
+            logger.info(f"Spotlight: {asked} questions about {product['name']} in {window}s, pitching it again")
+            self.get_analytics().record("pitch", product_id=product["id"], source="spotlight")
+            self.reread_handle({"username": "Streamer", "content": pitch}, type="reread")
+        except Exception:
+            logger.error(traceback.format_exc())
+
     def get_product_catalog(self):
         """Lazily load the product catalog; returns None when the feature is disabled or the file is missing."""
         if not My_handle.config.get("products", "enable"):
@@ -3270,6 +3300,8 @@ class My_handle(metaclass=SingletonMeta):
                              product_id=matched_product["id"] if matched_product else None)
             analytics.record("answer", source="quick" if quick_reply else "llm",
                              product_id=matched_product["id"] if matched_product else None)
+            if matched_product and intent in live_analytics.SALES_INTENTS:
+                self.spotlight_handle(matched_product)
 
             if quick_reply:
                 resp_content = quick_reply

@@ -90,4 +90,5 @@ logic is deliberately kept free of NiceGUI / network imports so it stays testabl
 - The Partner API client has not been run against a real shop yet.
 - `product_tour.py` runs as its own process, so its pitches are not in the analytics log yet (route it through `/send` with a `source` field).
 - The safety term list is a conservative starting point; TikTok's real enforcement is private and changes.
-- Ideas: auto-spotlight the hottest product (`summary["hot_products"]`), multi-shop profiles, per-viewer follow-up memory, an A/B test of pitch templates using the buying-signal rate.
+- Auto-spotlight (`My_handle.spotlight_handle`) re-pitches a product after N shopping questions in a window; tune `products.spotlight`.
+- Ideas: multi-shop profiles, per-viewer follow-up memory, an A/B test of pitch templates using the buying-signal rate.
