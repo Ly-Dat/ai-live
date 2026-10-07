@@ -339,6 +339,20 @@ def present_product(args, catalog, safety, product, round_no: int) -> None:
 
 
 # ------------------------------------------------------------------ main loop
+def wait_for_ai_turn() -> None:
+    """Stay silent while the seller has marked these hours as their own (Schedule tab -> Coverage)."""
+    try:
+        from utils import coverage
+        announced = False
+        while coverage.is_human(coverage.load()):
+            if not announced:
+                print("[tour] seller is hosting now, tour paused", flush=True)
+                announced = True
+            time.sleep(10)
+    except Exception:
+        pass
+
+
 def run(args) -> None:
     safety = tiktok_safety.TikTokSafety(args.terms)
     start_listener(args.listen_port)
@@ -363,6 +377,7 @@ def run(args) -> None:
             first = False
 
         for product in products:
+            wait_for_ai_turn()
             present_product(args, catalog, safety, product, round_no)
             
         CURRENT.update(name="", images=[])

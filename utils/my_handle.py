@@ -19,7 +19,7 @@ from .db import SQLiteDB
 from .my_translate import My_Translate
 
 from .luoxi_project.live_comment_assistant import send_msg_to_live_comment_assistant
-from . import tiktok_safety, product_catalog, live_analytics, flash_sale, engage
+from . import tiktok_safety, product_catalog, live_analytics, flash_sale, engage, coverage
 
 
 """
@@ -3448,6 +3448,9 @@ class My_handle(metaclass=SingletonMeta):
             analytics = self.get_analytics()
             analytics.record("comment", user=username, text=data["content"], intent=intent,
                              product_id=matched_product["id"] if matched_product else None)
+            if self.coverage_human():   # the seller is hosting: keep the question for them, say nothing
+                analytics.record("handoff", user=username, text=data["content"], intent=intent)
+                return None
             analytics.record("answer", source="taught" if taught_reply else ("quick" if quick_reply else "llm"),
                              product_id=matched_product["id"] if matched_product else None)
             if matched_product and intent in live_analytics.SALES_INTENTS:
@@ -3627,6 +3630,8 @@ class My_handle(metaclass=SingletonMeta):
         
             if not My_handle.config.get("thanks")["gift_enable"]:
                 return None
+            if self.coverage_human():
+                return None
 
             # If the total gift price is below the configured minimum for gift thanks
             if data["total_price"] < My_handle.config.get("thanks")["lowest_price"]:
@@ -3695,6 +3700,18 @@ class My_handle(metaclass=SingletonMeta):
             My_handle._taught_book = teach.TaughtBook(os.path.join(setup_wizard.ROOT, "data", "taught.json"))
         return My_handle._taught_book
 
+    def coverage_human(self):
+        """True while the seller has marked these hours as 'I am hosting' (the AI then stays quiet). Re-read every 5 s."""
+        try:
+            now = time.time()
+            cache = self.__dict__.get("_coverage_cache")
+            if not cache or now - cache[0] > 5:
+                cache = (now, coverage.is_human(coverage.load()))
+                self._coverage_cache = cache
+            return cache[1]
+        except Exception:
+            return False
+
     def _note_unsure(self, question, product, reply):
         """When the AI admits it does not know, log the question so the seller can teach the answer afterwards."""
         try:
@@ -3728,6 +3745,8 @@ class My_handle(metaclass=SingletonMeta):
                     returning_visits = book.visit(data.get("username") or "")
             except Exception as e:
                 logger.debug(f"returning viewers: {e}")
+            if self.coverage_human():
+                return None
 
             # Record database
             if My_handle.config.get("database", "entrance_enable"):
@@ -3823,6 +3842,9 @@ class My_handle(metaclass=SingletonMeta):
             # Banned content handling
             data['username'] = self.prohibitions_handle(data['username'])
             if data['username'] is None:
+                return None
+
+            if self.coverage_human():
                 return None
 
             # Convert digits in the username string to Chinese numerals

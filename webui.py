@@ -3439,6 +3439,7 @@ def goto_func_page():
         dashboard_page = ui.tab('Dashboard')
         tools_page = ui.tab('Live tools')
         teach_page = ui.tab('Teach')
+        schedule_page = ui.tab('Schedule')
         talk_page = ui.tab('Chat')
         image_recognition_page = ui.tab('Image Recognition')
         integral_page = ui.tab('Points')
@@ -3462,7 +3463,7 @@ def goto_func_page():
 
     select_page = build_shell(tabs, [
         ("Studio", [("Home", "home", home_page), ("Setup", "rocket_launch", setup_page), ("Dashboard", "insights", dashboard_page),
-                    ("Teach", "school", teach_page), ("Live tools", "bolt", tools_page), ("Products", "shopping_bag", products_page)]),
+                    ("Teach", "school", teach_page), ("Schedule", "event", schedule_page), ("Live tools", "bolt", tools_page), ("Products", "shopping_bag", products_page)]),
         ("Host", [("Voice", "record_voice_over", voice_page), ("AI model", "psychology", llm_page),
                   ("Text-to-Speech", "graphic_eq", tts_page), ("Virtual body", "face", visual_body_page),
                   ("Copywriting", "edit_note", copywriting_page), ("Chat", "forum", talk_page),
@@ -6103,6 +6104,9 @@ def goto_func_page():
         with ui.tab_panel(teach_page).style(tab_panel_css):
             from utils.webui_teach import build_teach_tab
             build_teach_tab(config)
+        with ui.tab_panel(schedule_page).style(tab_panel_css):
+            from utils.webui_schedule import build_schedule_tab
+            build_schedule_tab(config)
 
         with ui.tab_panel(tools_page).style(tab_panel_css):
             from utils.webui_tools import build_tools_tab
