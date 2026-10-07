@@ -133,3 +133,7 @@ Only `talk`, `tiktok`, `youtube` and `twitch` remain; the Chinese-platform liste
 Every comment, answer, blocked message and pitch is logged to `log/analytics/session-*.jsonl` (viewer names are salted hashes).
 View it in the web UI **Dashboard** tab, or run `python report_session.py [--out report.md]` after the live.
 Toggle with `config.json -> analytics.enable`.
+
+## Credits
+
+- Home mascot: [page-mascot](https://github.com/nilbuild/page-mascot) by Kamran Ahmed (MIT), ported to plain JS in `utils/webui_mascot.py`. Sprite sheets and licence in `data/mascots/`.

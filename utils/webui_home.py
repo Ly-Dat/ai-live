@@ -8,7 +8,7 @@ import os
 
 from nicegui import ui
 
-from . import home_status, live_analytics, milestones, recap, setup_wizard, starter
+from . import home_status, live_analytics, milestones, recap, setup_wizard, starter, webui_mascot
 from .webui_theme import port_open
 
 
@@ -145,7 +145,9 @@ def build_home_tab(config, go):
                 ui.label(f"{m['left']} more {m['noun']} to reach {m['goal']}.").classes("lv-sub").style("margin:6px 0 0;font-size:13px")
 
     with ui.row().classes("w-full").style("gap:18px;flex-wrap:wrap;align-items:flex-start"):
-        with ui.column().style("flex:3;min-width:320px;gap:0"):
+        with ui.column().style("flex:3;min-width:320px;gap:0;position:relative;padding-top:46px"):
+            with ui.element("div").style("position:absolute;top:0;right:24px;z-index:2;line-height:0"):
+                webui_mascot.mascot("cat", 96)
             hero_and_steps()
         with ui.column().style("flex:2;min-width:300px;gap:16px"):
             last_session()
