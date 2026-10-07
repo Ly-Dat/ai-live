@@ -214,6 +214,22 @@ def _fallback_card(config):
         refresh()
 
 
+def _overlay_card(config):
+    port = (config.get("webui", "port") or 8081)
+    url = f"http://127.0.0.1:{port}/overlay"
+    with ui.card().classes("lv-card w-full").style("padding:20px"):
+        ui.label("Show these on screen").style("font-weight:700;font-size:16px")
+        ui.label("Giveaway, poll and flash-sale countdowns appear as a transparent panel. In TikTok LIVE Studio or OBS add a "
+                 "Browser / Link source with this address, bottom-left of your scene. It only shows what is running right now.").classes("lv-sub")
+        with ui.row().classes("items-center"):
+            ui.input(value=url).props("readonly").classes("w-80")
+            ui.button("Copy", icon="content_copy",
+                      on_click=lambda: (ui.run_javascript("navigator.clipboard.writeText(" + __import__("json").dumps(url) + ")"),
+                                        ui.notify("Copied", type="positive"))).props("flat no-caps color=primary")
+            ui.button("Open preview", icon="open_in_new", on_click=lambda: ui.run_javascript(
+                "window.open(" + __import__("json").dumps(url) + ")")).props("flat no-caps")
+
+
 def build_tools_tab(config):
     page_title("Live tools", "Flash sales, giveaways and polls that the AI host runs for you. Every line goes through the TikTok safety filter.")
     _flash_card(config)
@@ -224,5 +240,7 @@ def build_tools_tab(config):
             _poll_card()
     with ui.column().classes("w-full").style("margin-top:16px"):
         _sales_card()
+    with ui.column().classes("w-full").style("margin-top:16px"):
+        _overlay_card(config)
     with ui.column().classes("w-full").style("margin-top:16px"):
         _fallback_card(config)

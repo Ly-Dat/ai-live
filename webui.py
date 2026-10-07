@@ -982,6 +982,31 @@ def goto_func_page():
             return CommonResult(code=-1, message=f"Failed!{e}")
 
     # Get system info endpoint
+    @app.get("/overlay/state")
+    def overlay_state_route():
+        """JSON for the on-screen overlay (see utils/overlay_page.py)."""
+        from fastapi.responses import JSONResponse
+        from utils import engage as _engage, flash_sale as _flash, overlay_state as _ov, tiktok_safety as _ts
+        try:
+            flash = _flash.load_state(config.get("products", "flash_sale_path") or _flash.DEFAULT_PATH)
+            name = ""
+            if flash and flash.get("active"):
+                pdata = json.load(open(config.get("products", "path") or "data/products.json", encoding="utf-8"))
+                name = next((p["name"] for p in pdata.get("products", []) if p.get("id") == flash.get("product_id")), "")
+            safety = _ts.TikTokSafety(config.get("filter", "tiktok_safety", "terms_path") or "data/tiktok_policy_terms.json")
+            out = _ov.build(_engage.load_state(), flash, name, time.time(), safe=lambda s: not safety.check(s, "output"))
+        except Exception:
+            out = {"items": []}
+        return JSONResponse(out, headers={"Cache-Control": "no-store"})
+
+
+    @app.get("/overlay")
+    def overlay_page_route():
+        from fastapi.responses import HTMLResponse
+        from utils.overlay_page import OVERLAY_HTML
+        return HTMLResponse(OVERLAY_HTML)
+
+
     @app.get("/get_sys_info")
     async def get_sys_info():
         try:
