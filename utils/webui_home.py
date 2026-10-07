@@ -9,7 +9,7 @@ import time
 
 from nicegui import app, ui
 
-from . import habit, home_status, live_analytics, milestones, personas, recap, recap_card, setup_wizard, starter, webui_mascot
+from . import habit, home_status, preflight, live_analytics, milestones, personas, recap, recap_card, setup_wizard, starter, webui_mascot
 from .webui_theme import port_open
 
 
@@ -98,6 +98,38 @@ def build_home_tab(config, go):
         return count, engine
 
     @ui.refreshable
+    def preflight_card():
+        with ui.card().classes("lv-card w-full").style("padding:18px 20px"):
+            ui.label("Pre-live check").style("font-weight:700;font-size:16px")
+            box = ui.column().style("gap:6px;width:100%")
+
+            def check():
+                facts, _shop, count, engine = _facts(config)
+                setup = setup_wizard.load_setup()
+                nop = 0
+                try:
+                    data = json.load(open(config.get("products", "path") or "data/products.json", encoding="utf-8"))
+                    nop = sum(1 for p in data.get("products", []) if p.get("active", True) and not p.get("price"))
+                except Exception:
+                    pass
+                rows = preflight.run(dict(facts, engine=engine, no_price=nop, own_voice=setup.get("own_voice")))
+                box.clear()
+                with box:
+                    ui.label(preflight.summary(rows)).style("font-weight:600")
+                    for r in rows:
+                        with ui.row().style("gap:8px;align-items:center;flex-wrap:nowrap"):
+                            icon, color = {True: ("check_circle", "#22c55e"), False: ("error", "#ef4444"), None: ("info", "#f59e0b")}[r["ok"]]
+                            ui.icon(icon).style(f"color:{color};font-size:20px")
+                            with ui.column().style("gap:0;min-width:0"):
+                                ui.label(r["label"]).style("font-size:14px")
+                                if r["fix"]:
+                                    ui.label(r["fix"]).classes("lv-sub").style("margin:0;font-size:12px")
+                            if r["go"]:
+                                ui.button("Fix", on_click=lambda g=r["go"]: go(g)).props("flat dense no-caps color=primary")
+            ui.button("Check now", icon="fact_check", on_click=check).props("unelevated no-caps")
+            check()
+            ui.timer(10.0, check)
+
     def last_session():
         path = live_analytics.latest_session_file(log_dir)
         with ui.card().classes("lv-card w-full").style("padding:18px 20px"):
@@ -287,6 +319,7 @@ def build_home_tab(config, go):
             hero_and_steps()
         with ui.column().style("flex:2;min-width:300px;gap:16px"):
             welcome_card()
+            preflight_card()
             last_session()
             progress_card()
             plan_card()

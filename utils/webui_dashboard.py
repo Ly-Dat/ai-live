@@ -8,7 +8,7 @@ import os
 
 from nicegui import ui
 
-from . import live_analytics
+from . import live_analytics, moments
 from .webui_theme import page_title, stat_card
 
 
@@ -52,10 +52,24 @@ def build_dashboard_tab(config):
             {"name": "n", "label": "Hits", "field": "n"},
         ], rows=[], row_key="c").classes("w-full").props("flat")
 
+    with ui.card().classes("lv-card w-full").style("padding:16px;margin-top:14px") as moments_card:
+        ui.label("Best moments").style("font-weight:700;font-size:16px")
+        ui.label("The busiest minutes of this live, counted from when the session started. Use them to find the spots in your "
+                 "TikTok replay worth cutting into clips (the replay clock can differ by a few seconds or minutes).").classes("lv-sub")
+        moments_box = ui.column().style("gap:6px;width:100%")
+        copy_btn = ui.button("Copy list", icon="content_copy").props("flat no-caps color=primary")
+
+    moments_state = {"text": ""}
+
+    def copy_moments():
+        ui.run_javascript("navigator.clipboard.writeText(" + json.dumps(moments_state["text"]) + ")")
+        ui.notify("Copied", type="positive")
+    copy_btn.on("click", copy_moments)
+
     def refresh():
         path = live_analytics.latest_session_file(log_dir)
         has = bool(path)
-        for el in (tiles_row, hot, lower_row, export_btn):
+        for el in (tiles_row, hot, lower_row, export_btn, moments_card):
             el.set_visibility(has)   # no rows of zeros before the first live
         empty.set_visibility(not has)
         status.set_visibility(has)
@@ -75,6 +89,18 @@ def build_dashboard_tab(config):
         comp.rows = [{"c": k, "n": v} for k, v in s["blocked_by_category"].items()]
         hot.set_text("Hot right now: " + (", ".join(nm.get(p, p) for p in s["hot_products"]) or "-"))
         interest.update(); comp.update()
+        top = moments.best_moments(live_analytics.load_events(path))
+        moments_box.clear()
+        with moments_box:
+            if not top:
+                ui.label("Nothing stood out yet. Busy minutes show up here once chat picks up.").classes("lv-sub")
+            for m in top:
+                with ui.row().style("gap:10px;align-items:center;flex-wrap:nowrap"):
+                    ui.label(m["at"]).classes("lv-chip hot").style("min-width:52px;text-align:center")
+                    bits = [f"{m['comments']} comments"] + ([f"{m['buy']} buying signals"] if m["buy"] else []) + ([f"{m['gifts']} gifts"] if m["gifts"] else [])
+                    ui.label(", ".join(bits) + (f'  "{m["sample"]}"' if m["sample"] else "")).style("min-width:0")
+        copy_btn.set_visibility(bool(top))
+        moments_state["text"] = moments.as_text(top)
 
     def export():
         path = live_analytics.latest_session_file(log_dir)

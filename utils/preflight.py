@@ -1,0 +1,48 @@
+"""Pre-live check: a short list of things that would embarrass you on air, each with the one-click fix.
+
+Pure: `run(facts)` turns plain facts into rows, so it is easy to test. The web UI gathers the facts.
+Each row: {"id", "ok" (True / False / None = heads-up), "label", "fix", "go"} where `go` is the tab that fixes it.
+"""
+from typing import Dict, List
+
+
+def run(f: Dict) -> List[Dict]:
+    rows = []
+
+    def add(id_, ok, label, fix="", go=""):
+        rows.append({"id": id_, "ok": ok, "label": label, "fix": "" if ok else fix, "go": "" if ok else go})
+
+    user = (f.get("tiktok_username") or "").strip()
+    add("account", bool(user), f"TikTok account: @{user}" if user else "No TikTok account set",
+        "Enter the username that goes live.", "Setup")
+    add("app", bool(f.get("api_ok")), "Host app is running" if f.get("api_ok") else "Host app is not running",
+        "Start the app (python main.py), then check again.", "Setup")
+    engine = f.get("engine") or "edge-tts"
+    if engine == "vieneu":
+        add("voice", bool(f.get("voice_ok")), "Voice server (VieNeu) is up" if f.get("voice_ok") else "Voice server (VieNeu) is not reachable",
+            "Start the voice server from Setup. Until then the host falls back to Edge voice.", "Voice")
+    else:
+        add("voice", True, "Voice: Edge TTS (needs internet)")
+    if f.get("mode") != "creator":
+        n = int(f.get("product_count") or 0)
+        add("products", n > 0, f"{n} active product{'s' if n != 1 else ''} in the cart" if n else "No products yet",
+            "Add a product or use the 3 samples.", "Products")
+        nop = int(f.get("no_price") or 0)
+        if n and nop:
+            add("prices", None, f"{nop} product{'s' if nop != 1 else ''} without a price",
+                "Price questions get a weaker answer when the price is empty.", "Products")
+    add("bridge", bool(f.get("bridge_on")), "Chat bridge is connected" if f.get("bridge_on") else "Chat bridge is not started",
+        "Press Go live (the bridge only runs once you are live on TikTok).", "Setup")
+    if f.get("own_voice") and engine != "vieneu":
+        add("own_voice", None, "Own voice is set but the engine is not VieNeu", "Save the Setup step again.", "Setup")
+    return rows
+
+
+def summary(rows: List[Dict]) -> str:
+    bad = [r for r in rows if r["ok"] is False]
+    warn = [r for r in rows if r["ok"] is None]
+    if bad:
+        return f"{len(bad)} thing{'s' if len(bad) != 1 else ''} to fix before going live."
+    if warn:
+        return f"Ready. {len(warn)} heads-up{'s' if len(warn) != 1 else ''}."
+    return "All clear. You are ready to go live."
