@@ -9,6 +9,7 @@ import os
 from nicegui import ui
 
 from . import live_analytics
+from .webui_theme import page_title, stat_card
 
 
 def build_dashboard_tab(config):
@@ -22,28 +23,29 @@ def build_dashboard_tab(config):
         except Exception:
             return {}, ""
 
-    ui.label("Live dashboard").classes("text-h6")
-    status = ui.label("").classes("text-caption")
-    with ui.row().classes("w-full"):
+    page_title("Dashboard", "What viewers asked, what the AI answered, and what the compliance filter caught - updates every few seconds.")
+    status = ui.label("").classes("lv-chip")
+    with ui.row().classes("w-full").style("gap:14px;margin-top:10px"):
         tiles = {}
-        for key, label in [("comments", "Comments"), ("unique_viewers", "Viewers who commented"),
-                           ("sales_comments", "Shopping questions"), ("buy_intent", "Buying signals"),
-                           ("answered", "AI answers"), ("blocked", "Blocked by filter")]:
-            with ui.card().classes("w-40"):
-                ui.label(label).classes("text-caption")
-                tiles[key] = ui.label("0").classes("text-h5")
-    ui.label("Product interest").classes("text-subtitle1")
-    interest = ui.table(columns=[
-        {"name": "p", "label": "Product", "field": "p", "align": "left"},
-        {"name": "n", "label": "Questions", "field": "n"},
-        {"name": "d", "label": "Breakdown", "field": "d", "align": "left"},
-    ], rows=[], row_key="p").classes("w-full")
-    ui.label("Compliance log").classes("text-subtitle1")
-    comp = ui.table(columns=[
-        {"name": "c", "label": "Category", "field": "c", "align": "left"},
-        {"name": "n", "label": "Hits", "field": "n"},
-    ], rows=[], row_key="c").classes("w-full")
-    hot = ui.label("").classes("text-subtitle2")
+        for key, label, icon in [("comments", "Comments", "chat_bubble"), ("unique_viewers", "Viewers", "groups"),
+                                 ("sales_comments", "Shop questions", "shopping_cart"), ("buy_intent", "Buying signals", "local_fire_department"),
+                                 ("answered", "AI answers", "smart_toy"), ("blocked", "Blocked", "shield")]:
+            tiles[key] = stat_card(label, icon)
+    hot = ui.label("").classes("lv-chip hot").style("margin:14px 0 0")
+    with ui.row().classes("w-full").style("gap:16px;flex-wrap:nowrap;margin-top:14px;align-items:flex-start"):
+      with ui.card().classes("lv-card").style("flex:3;padding:16px;min-width:0"):
+        ui.label("Product interest").style("font-weight:700;font-size:16px")
+        interest = ui.table(columns=[
+            {"name": "p", "label": "Product", "field": "p", "align": "left"},
+            {"name": "n", "label": "Questions", "field": "n"},
+            {"name": "d", "label": "Breakdown", "field": "d", "align": "left"},
+        ], rows=[], row_key="p").classes("w-full").props("flat")
+      with ui.card().classes("lv-card").style("flex:2;padding:16px;min-width:0"):
+        ui.label("Compliance log").style("font-weight:700;font-size:16px")
+        comp = ui.table(columns=[
+            {"name": "c", "label": "Category", "field": "c", "align": "left"},
+            {"name": "n", "label": "Hits", "field": "n"},
+        ], rows=[], row_key="c").classes("w-full").props("flat")
 
     def refresh():
         path = live_analytics.latest_session_file(log_dir)
@@ -71,6 +73,6 @@ def build_dashboard_tab(config):
         open(out, "w", encoding="utf-8").write(md)
         ui.notify(f"Report saved: {out}", type="positive")
 
-    ui.button("Export report (.md)", on_click=export)
+    ui.button("Export report (.md)", icon="download", on_click=export).style("margin-top:16px")
     ui.timer(5.0, refresh)
     refresh()

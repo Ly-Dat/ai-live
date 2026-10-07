@@ -644,6 +644,14 @@
     "tran": 1.0,
     "wav_format": "wav"
   },
+  "vieneu": {
+    "api_url": "http://127.0.0.1:8000",
+    "model": "vieneu-v3-turbo",
+    "voice": "Mai Anh",
+    "api_key": "",
+    "sample_rate": 48000,
+    "timeout": 60
+  },
   "edge-tts": {
     "voice": "vi-VN-HoaiMyNeural",
     "rate": "+0%",

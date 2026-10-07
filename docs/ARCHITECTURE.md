@@ -76,6 +76,8 @@ Key design rules:
 | `utils/personas.py`, `data/personas.json` | Voice + style presets | compliance rules are always appended |
 | `utils/setup_wizard.py`, `utils/webui_setup.py`, `launcher.py`, `start.bat` | Onboarding | wizard answers to `data/setup.json` + `config.json`; `ProcessManager` runs the bridge and tour |
 | `utils/simulator.py`, `simulate_live.py`, `data/sim_scenario.json` | Demo / regression | offline verdicts (blocked / quick / buy_cta / llm) per comment, with `expect` checks used by tests |
+| `utils/vieneu_tts.py`, `voice_server.py` | Free local Vietnamese TTS | HTTP client for a VieNeu OpenAI-style server in its own `venv_voice`; PCM wrapped as WAV; falls back to edge-tts when unreachable |
+| `utils/webui_theme.py`, `utils/webui_voice.py` | UI shell and Voice tab | CSS variables, dark/light, sidebar nav, status pills; voice lab with preview and server start/stop |
 
 ## 4. Data
 

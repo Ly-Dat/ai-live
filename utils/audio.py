@@ -982,6 +982,15 @@ class Audio:
 
                 # Call the API to synthesize speech
                 voice_tmp_path = await self.my_tts.edge_tts_api(data)
+            elif message["tts_type"] == "vieneu":
+                data = {
+                    "content": message["content"],
+                    "vieneu": message["data"],
+                    "edge-tts": self.config.get("edge-tts")
+                }
+
+                # Free local VieNeu-TTS; falls back to edge-tts if its server is down
+                voice_tmp_path = await self.my_tts.vieneu_tts_api(data)
             elif message["tts_type"] == "elevenlabs":
                 # If a key is configured, set it0.0
                 if message["data"]["api_key"] != "":
@@ -1922,6 +1931,15 @@ class Audio:
 
             # Call the API to synthesize speech
             voice_tmp_path = await self.my_tts.edge_tts_api(data)
+
+        elif audio_synthesis_type == "vieneu":
+            data = {
+                "content": content,
+                "vieneu": self.config.get("vieneu"),
+                "edge-tts": self.config.get("edge-tts")
+            }
+
+            voice_tmp_path = await self.my_tts.vieneu_tts_api(data)
 
         elif audio_synthesis_type == "elevenlabs":
             return

@@ -20,6 +20,7 @@ import tempfile
 from nicegui import ui
 
 from . import catalog_enrich, product_catalog, tiktok_safety
+from .webui_theme import page_title
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -82,8 +83,9 @@ def build_products_tab(config):
         table.rows = rows()
         table.update()
 
+    page_title('Products', 'Your cart as the AI knows it. Edit facts here; the host only says what is written.')
     with ui.row().classes('w-full items-start no-wrap'):
-        with ui.column().classes('w-1/2'):
+        with ui.card().classes('lv-card').style('width:49%;padding:18px;min-width:0'):
             ui.label('Cart products (in the order the streamer introduces them)').classes('text-bold')
             table = ui.table(columns=columns, rows=rows(), row_key='idx', selection='single').classes('w-full')
             with ui.row():
@@ -108,7 +110,7 @@ def build_products_tab(config):
                           type='positive' if r.returncode == 0 else 'negative')
             ui.upload(on_upload=on_upload, auto_upload=True).props('accept=".csv,.xlsx" flat bordered').classes('w-full')
 
-        with ui.column().classes('w-1/2'):
+        with ui.card().classes('lv-card').style('width:49%;padding:18px;min-width:0'):
             ui.label('Edit product').classes('text-bold')
             f = {}
             f["name"] = ui.input('Name').classes('w-full')

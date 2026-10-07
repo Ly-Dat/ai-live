@@ -75,6 +75,15 @@ Run the bridge with `--debug-cart cart.jsonl` once in a real live to capture the
 `OecLiveShoppingMessageV2` may carry more product detail, and that file shows what is available.
 3. **TikTok Shop Partner API (seller account).** `python sync_shop_products.py [--details] [--dry-run]` pulls the real catalog; put credentials in `tiktok_shop_credentials.json` or `TTS_*` env vars. Needs an approved app; not yet verified against a live shop.
 
+## Voices (free)
+
+Open the **Voice** tab to pick an engine and preview it.
+
+- **Edge TTS** (default): free, no setup. Unofficial service with no SLA.
+- **VieNeu-TTS v3 Turbo**: free, runs locally, Apache-2.0 (commercial use allowed, keep attribution, do not clone real people without consent). Start it with `python voice_server.py` (or the Start button in the Voice tab). The first run creates `venv_voice` and downloads the model. If the server is down, speech falls back to Edge TTS automatically.
+
+Not used: VietTTS / viXTTS (non-commercial licenses).
+
 ## Configuration
 
 - `config.json -> products`: enable/disable catalog grounding, paths, the text placed before product facts in the LLM prompt.

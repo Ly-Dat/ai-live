@@ -260,3 +260,7 @@ log/analytics/
 data/setup.json
 data/flash_sale.json
 log/*.log
+
+venv_voice/
+venv_tt/
+out/preview/

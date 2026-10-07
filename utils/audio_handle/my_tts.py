@@ -1,3 +1,4 @@
+import asyncio
 import json, os
 import aiohttp, requests, ssl, asyncio
 from urllib.parse import urlencode
@@ -358,6 +359,24 @@ class MY_TTS:
             logger.error(e)
             return None
     
+
+    async def vieneu_tts_api(self, data):
+        """VieNeu-TTS (free, local). Falls back to edge-tts when the VieNeu server is not reachable,
+        so the stream never goes silent."""
+        try:
+            from utils import vieneu_tts
+            file_name = 'vieneu_' + self.common.get_bj_time(4) + '.wav'
+            out_path = self.common.get_new_audio_path(self.audio_out_path, file_name)
+            path = await asyncio.to_thread(vieneu_tts.synthesize, data["content"], data["vieneu"], out_path)
+            if path:
+                return path
+            logger.warning("VieNeu server not reachable or returned no audio; falling back to edge-tts")
+            if data.get("edge-tts"):
+                return await self.edge_tts_api({"content": data["content"], "edge-tts": data["edge-tts"]})
+            return None
+        except Exception:
+            logger.error(traceback.format_exc())
+            return None
 
     # Request OpenAI_TTS APIapi
     def openai_tts_api(self, data):

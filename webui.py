@@ -151,7 +151,7 @@ if config.get("webui", "local_dir_to_endpoint", "enable"):
         app.add_static_files(tmp['url_path'], tmp['local_dir'])
 
 # Dark mode
-dark = ui.dark_mode()
+dark = ui.dark_mode(True)
 
 ui.colors(primary='#4f46e5', secondary='#64748b', accent='#06b6d4',
           positive='#16a34a', negative='#dc2626')
@@ -200,6 +200,10 @@ body { background: var(--page-bg) !important; }
 }
 ''')
 
+# Studio theme (dark, sidebar navigation, status header); overrides the base CSS above
+from utils.webui_theme import apply_theme, build_shell, port_open
+apply_theme()
+
 """
 Common functions
 """
@@ -237,6 +241,7 @@ webui_title = config.get("webui", "title")
 # CSS
 theme_choose = config.get("webui", "theme", "choose")
 tab_panel_css = config.get("webui", "theme", "list", theme_choose, "tab_panel")
+tab_panel_css = ""  # the studio theme styles the panels; the old per-theme gradient is not used
 card_css = config.get("webui", "theme", "list", theme_choose, "card")
 button_bottom_css = config.get("webui", "theme", "list", theme_choose, "button_bottom")
 button_bottom_color = config.get("webui", "theme", "list", theme_choose, "button_bottom_color")
@@ -3338,6 +3343,7 @@ def goto_func_page():
     audio_synthesis_type_options = {
         'none': 'Disabled', 
         'edge-tts': 'Edge-TTS', 
+        'vieneu': 'VieNeu-TTS (free, local, Vietnamese)',
         'vits': 'VITS', 
         'bert_vits2': 'bert_vits2',
         'vits_fast': 'VITS-Fast', 
@@ -3394,7 +3400,7 @@ def goto_func_page():
         'xuniren': 'xuniren', 
     }
 
-    with ui.tabs().classes('w-full').props('align=left outside-arrows mobile-arrows active-color=primary indicator-color=primary') as tabs:
+    with ui.tabs().classes('lv-hidden-tabs') as tabs:
         setup_page = ui.tab('Setup')
         common_config_page = ui.tab('Common Config')
         llm_page = ui.tab('Large Language Model')
@@ -3403,6 +3409,7 @@ def goto_func_page():
         visual_body_page = ui.tab('Virtual Body')
         copywriting_page = ui.tab('Copywriting')
         products_page = ui.tab('Products')
+        voice_page = ui.tab('Voice')
         dashboard_page = ui.tab('Dashboard')
         tools_page = ui.tab('Live tools')
         talk_page = ui.tab('Chat')
@@ -3415,6 +3422,32 @@ def goto_func_page():
         web_page = ui.tab('Page Config')
         docs_page = ui.tab('Docs & Tutorials')
         about_page = ui.tab('About')
+
+    def studio_status():
+        from utils.webui_setup import PM as _PM
+        api_ok = port_open(config.get("api_port"))
+        bridge = _PM.running("bridge")
+        engine = config.get("audio_synthesis_type") or "edge-tts"
+        voice_txt = {"edge-tts": "Voice: Edge", "vieneu": "Voice: VieNeu"}.get(engine, f"Voice: {engine}")
+        return {"app": ("Streamer online" if api_ok else "Streamer offline", api_ok),
+                "bridge": ("TikTok bridge running" if bridge else "TikTok bridge off", bridge),
+                "voice": (voice_txt, True)}
+
+    select_page = build_shell(tabs, [
+        ("Studio", [("Setup", "rocket_launch", setup_page), ("Dashboard", "insights", dashboard_page),
+                    ("Live tools", "bolt", tools_page), ("Products", "shopping_bag", products_page)]),
+        ("Host", [("Voice", "record_voice_over", voice_page), ("AI model", "psychology", llm_page),
+                  ("Text-to-Speech", "graphic_eq", tts_page), ("Virtual body", "face", visual_body_page),
+                  ("Copywriting", "edit_note", copywriting_page), ("Chat", "forum", talk_page),
+                  ("Assistant streamer", "support_agent", assistant_anchor_page),
+                  ("Image recognition", "image_search", image_recognition_page),
+                  ("Translation", "translate", translate_page), ("Points", "stars", integral_page)]),
+        ("System", [("Common config", "tune", common_config_page), ("Voice changer", "settings_voice", svc_page),
+                    ("Serial port", "usb", serial_page), ("Data analysis", "analytics", data_analysis_page),
+                    ("Page config", "web", web_page), ("Docs & tutorials", "menu_book", docs_page),
+                    ("About", "info", about_page)]),
+    ], dark, status_fn=studio_status, go_live=lambda: select_page(setup_page))
+    select_page(setup_page)
 
     with ui.tab_panels(tabs, value=setup_page).classes('w-full'):
         with ui.tab_panel(common_config_page).style(tab_panel_css):
@@ -6028,6 +6061,10 @@ def goto_func_page():
                 with copywriting_audio_card.style(card_css):
                     with ui.row():
                         ui.label("The generated Copywriting audio is shown here, only the most recently synthesized Copywriting audio is shown, and you can delete the synthesized audio here")
+        with ui.tab_panel(voice_page).style(tab_panel_css):
+            from utils.webui_voice import build_voice_tab
+            build_voice_tab(config)
+
         with ui.tab_panel(setup_page).style(tab_panel_css):
             from utils.webui_setup import build_setup_tab
             build_setup_tab(config)

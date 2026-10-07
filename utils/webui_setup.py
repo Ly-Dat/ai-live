@@ -18,6 +18,7 @@ import urllib.request
 from nicegui import ui
 
 from . import personas, setup_wizard, simulator, product_catalog, tiktok_safety
+from .webui_theme import page_title
 
 ROOT = setup_wizard.ROOT
 PM = setup_wizard.ProcessManager()  # module level: survives page reloads inside the web UI process
@@ -35,8 +36,9 @@ def build_setup_tab(config):
     pdata = personas.load(personas_path)
     pmap = {p["id"]: p for p in pdata["personas"]}
 
-    ui.label("Setup wizard").classes("text-h6")
-    ui.label("Five quick steps. Your answers are saved to data/setup.json and config.json.").classes("text-caption")
+    with ui.element("div").classes("lv-hero w-full").style("margin-bottom:22px"):
+        ui.label("Go live in five steps").classes("lv-title")
+        ui.label("Shop, products, voice, a safe dry run, then press Start. Your answers are saved to data/setup.json and config.json.").style("opacity:.9")
 
     with ui.stepper().props("vertical").classes("w-full") as stepper:
         # ------------------------------------------------------------------ 1 shop

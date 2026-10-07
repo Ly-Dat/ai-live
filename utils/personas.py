@@ -28,6 +28,9 @@ def apply_to_config(cfg: Dict, data: Dict, persona_id: str) -> List[str]:
     tts["voice"] = persona["voice"]
     tts["rate"] = persona.get("rate", "+0%")
     changes.append(f"edge-tts voice {persona['voice']} rate {tts['rate']}")
+    if persona.get("vieneu_voice"):
+        cfg.setdefault("vieneu", {})["voice"] = persona["vieneu_voice"]
+        changes.append(f"vieneu voice {persona['vieneu_voice']}")
     if persona.get("live2d") and isinstance(cfg.get("live2d"), dict):
         cfg["live2d"]["name"] = persona["live2d"]
         changes.append(f"live2d model {persona['live2d']}")

@@ -1,0 +1,211 @@
+"""
+Visual theme for the control panel: dark "studio" look (violet -> pink accent), sidebar navigation, status header,
+card / stat helpers. Pure presentation: no business logic lives here.
+
+  apply_theme()                 once, before building the page
+  build_shell(tabs, nav)        header + grouped sidebar that drive an (invisible) ui.tabs
+  page_title(title, subtitle)   consistent heading for each tab
+  stat_card(label, icon)        returns the value label of a KPI card
+"""
+import socket
+from typing import Callable, Dict, List, Optional, Tuple
+
+from nicegui import ui
+
+ACCENT = "#8b5cf6"      # violet
+ACCENT_2 = "#ec4899"    # pink
+
+CSS = """
+:root{
+  --lv-bg:#f5f4fb; --lv-surface:#ffffff; --lv-surface-2:#f0eefa; --lv-border:#e3e0f2;
+  --lv-text:#1d1b2e; --lv-muted:#6f6b8a; --lv-accent:#8b5cf6; --lv-accent-2:#ec4899;
+  --lv-good:#16a34a; --lv-warn:#d97706; --lv-bad:#dc2626;
+  --lv-grad:linear-gradient(135deg,#8b5cf6 0%,#ec4899 100%);
+  --page-bg:var(--lv-bg); --card-bg:var(--lv-surface); --card-border:var(--lv-border);
+}
+body.body--dark{
+  --lv-bg:#0c0b14; --lv-surface:#151423; --lv-surface-2:#1c1b2e; --lv-border:#2a2842;
+  --lv-text:#ecebf8; --lv-muted:#8f8cac; --lv-good:#34d399; --lv-warn:#fbbf24; --lv-bad:#f87171;
+  --page-bg:var(--lv-bg); --card-bg:var(--lv-surface); --card-border:var(--lv-border);
+}
+html,body,.q-layout{ font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif !important; }
+body{ background:var(--lv-bg) !important; color:var(--lv-text); }
+.q-page-container,.q-tab-panels,.q-tab-panel{ background:transparent !important; }
+.q-tab-panel{ padding:26px 32px 110px !important; max-width:1320px; margin:0 auto; }
+
+/* ---- header ---- */
+.lv-header{ background:color-mix(in srgb,var(--lv-surface) 82%,transparent) !important; backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--lv-border); color:var(--lv-text) !important; height:60px; padding:0 20px; }
+.lv-brand{ display:flex; align-items:center; gap:12px; }
+.lv-logo{ width:34px; height:34px; border-radius:11px; background:var(--lv-grad); display:flex; align-items:center;
+  justify-content:center; color:#fff; font-weight:800; box-shadow:0 6px 18px rgba(139,92,246,.45); }
+.lv-brand-name{ font-weight:800; font-size:17px; letter-spacing:.2px; }
+.lv-brand-sub{ font-size:11px; color:var(--lv-muted); margin-top:-3px; }
+.lv-pill{ display:inline-flex; align-items:center; gap:7px; padding:5px 12px; border-radius:999px; font-size:12px;
+  font-weight:600; background:var(--lv-surface-2); border:1px solid var(--lv-border); color:var(--lv-muted); }
+.lv-dot{ width:8px; height:8px; border-radius:50%; background:#6b6785; }
+.lv-pill.on{ color:var(--lv-text); } .lv-pill.on .lv-dot{ background:var(--lv-good); box-shadow:0 0 0 4px rgba(52,211,153,.18); }
+.lv-pill.warn .lv-dot{ background:var(--lv-warn); }
+
+/* ---- sidebar ---- */
+.lv-drawer{ background:var(--lv-surface) !important; border-right:1px solid var(--lv-border) !important; }
+.lv-drawer .q-scrollarea__content{ padding:14px 12px 24px; }
+.lv-group{ font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--lv-muted);
+  margin:16px 10px 6px; }
+.lv-nav{ width:100%; justify-content:flex-start !important; border-radius:12px !important; padding:9px 12px !important;
+  color:var(--lv-muted) !important; font-weight:600; text-transform:none; transition:all .15s ease; }
+.lv-nav .q-icon{ font-size:20px; margin-right:12px; }
+.lv-nav:hover{ background:var(--lv-surface-2) !important; color:var(--lv-text) !important; }
+.lv-nav.active{ background:var(--lv-grad) !important; color:#fff !important; box-shadow:0 8px 20px rgba(139,92,246,.35); }
+.lv-nav .q-btn__content{ justify-content:flex-start; flex-wrap:nowrap; text-align:left; }
+.lv-hidden-tabs{ display:none !important; }
+
+/* ---- cards / headings ---- */
+.lv-title{ font-size:26px; font-weight:800; letter-spacing:-.3px; }
+.lv-sub{ color:var(--lv-muted); font-size:14px; margin-top:2px; margin-bottom:18px; }
+.lv-card,.q-expansion-item,.q-stepper,.q-table__container.lv-table{
+  background:var(--lv-surface) !important; border:1px solid var(--lv-border) !important; border-radius:18px !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.02), 0 10px 30px rgba(0,0,0,.06); }
+body.body--dark .lv-card, body.body--dark .q-expansion-item, body.body--dark .q-stepper{
+  box-shadow:0 1px 0 rgba(255,255,255,.03), 0 14px 34px rgba(0,0,0,.35); }
+.q-expansion-item{ margin:12px 0 !important; overflow:hidden; }
+.q-card{ border-radius:16px; }
+.lv-stat{ min-width:140px; flex:1 1 150px; padding:16px 18px; position:relative; overflow:hidden; }
+.lv-stat::after{ content:''; position:absolute; right:-24px; top:-24px; width:90px; height:90px; border-radius:50%;
+  background:var(--lv-grad); opacity:.14; }
+.lv-stat-label{ white-space:nowrap; font-size:12px; font-weight:600; color:var(--lv-muted); text-transform:uppercase; letter-spacing:.8px; }
+.lv-stat-value{ font-size:30px; font-weight:800; line-height:1.15; margin-top:4px; }
+.lv-ico{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  background:var(--lv-surface-2); color:var(--lv-accent); margin-bottom:10px; }
+.lv-hero{ background:var(--lv-grad); color:#fff; border-radius:20px; padding:22px 26px;
+  box-shadow:0 18px 40px rgba(139,92,246,.35); }
+.lv-hero .lv-title{ color:#fff; }
+.lv-chip{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600;
+  background:var(--lv-surface-2); border:1px solid var(--lv-border); color:var(--lv-muted); margin:2px 4px 2px 0; }
+.lv-chip.good{ color:var(--lv-good); } .lv-chip.bad{ color:var(--lv-bad); } .lv-chip.hot{ color:var(--lv-accent-2); }
+
+/* ---- controls ---- */
+.q-btn{ border-radius:12px; text-transform:none; font-weight:600; letter-spacing:0; }
+.q-btn.bg-primary{ background:var(--lv-grad) !important; }
+.q-field--outlined .q-field__control{ border-radius:12px; }
+.q-field--standard .q-field__control{ border-radius:10px 10px 0 0; }
+.q-field{ margin:4px 6px; }
+.q-tab-panels{ padding-bottom:0; }
+.q-table th{ font-weight:700; color:var(--lv-muted); text-transform:uppercase; font-size:11px; letter-spacing:.8px; }
+.q-table__card{ background:transparent !important; box-shadow:none !important; }
+.q-stepper{ background:var(--lv-surface) !important; }
+.q-stepper__tab--active .q-stepper__dot, .q-stepper__tab--done .q-stepper__dot{ background:var(--lv-grad) !important; }
+.q-separator{ background:var(--lv-border) !important; }
+.q-notification{ border-radius:14px; }
+
+.bottom-bar{
+  position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:200; gap:10px; padding:10px 16px;
+  background:color-mix(in srgb,var(--lv-surface) 88%,transparent); backdrop-filter:blur(14px);
+  border:1px solid var(--lv-border); border-radius:18px; box-shadow:0 14px 40px rgba(0,0,0,.35);
+}
+::-webkit-scrollbar{ width:10px; height:10px; } ::-webkit-scrollbar-thumb{ background:var(--lv-border); border-radius:8px; }
+.nicegui-tab-panel{ gap:4px; }
+.lv-title{ margin:0; line-height:1.2; } .lv-sub{ margin-bottom:20px; line-height:1.5; }
+.q-uploader{ background:var(--lv-surface-2) !important; color:var(--lv-text) !important; border:1px dashed var(--lv-border);
+  border-radius:14px; box-shadow:none !important; max-height:150px; }
+.q-uploader__header{ background:transparent !important; color:var(--lv-accent) !important; }
+.q-uploader__list{ min-height:0 !important; padding:0 !important; }
+.q-uploader__dnd{ outline-color:var(--lv-accent); }
+.q-field--standard .q-field__control:before{ border-bottom-color:var(--lv-border); }
+.q-select__dropdown-icon{ color:var(--lv-muted); }
+@media (max-width: 900px){ .q-tab-panel{ padding:16px 14px 110px !important; } .lv-title{ font-size:22px; } }
+"""
+
+
+def apply_theme() -> None:
+    """Colours, fonts, global CSS. Call once, before building any element."""
+    ui.colors(primary=ACCENT, secondary=ACCENT_2, accent="#22d3ee", positive="#22c55e", negative="#ef4444",
+              warning="#f59e0b", info="#38bdf8")
+    ui.add_head_html(
+        '<link rel="preconnect" href="https://fonts.googleapis.com">'
+        '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">'
+    )
+    ui.add_css(CSS)
+
+
+def page_title(title: str, subtitle: str = "") -> None:
+    ui.label(title).classes("lv-title")
+    if subtitle:
+        ui.label(subtitle).classes("lv-sub")
+
+
+def stat_card(label: str, icon: str = "insights", value: str = "0") -> ui.label:
+    with ui.card().classes("lv-card lv-stat").props("flat"):
+        with ui.element("div").classes("lv-ico"):
+            ui.icon(icon)
+        ui.label(label).classes("lv-stat-label")
+        return ui.label(value).classes("lv-stat-value")
+
+
+def port_open(port: int, host: str = "127.0.0.1") -> bool:
+    try:
+        with socket.socket() as s:
+            s.settimeout(0.4)
+            return s.connect_ex((host, int(port))) == 0
+    except (OSError, ValueError):
+        return False
+
+
+def _pill(text: str, on: bool = False, warn: bool = False):
+    el = ui.element("div").classes("lv-pill" + (" on" if on else "") + (" warn" if warn else ""))
+    with el:
+        ui.element("span").classes("lv-dot")
+        lbl = ui.label(text)
+    return el, lbl
+
+
+def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark, status_fn: Optional[Callable[[], Dict]] = None,
+                go_live: Optional[Callable[[], None]] = None, title: str = "AI Live Studio") -> Callable:
+    """Header + sidebar. `tabs` is the (hidden) ui.tabs; `nav` is [(group, [(label, icon, tab), ...]), ...].
+    Returns select(tab) so other code can navigate."""
+    buttons: Dict[object, ui.button] = {}
+
+    def select(tab):
+        tabs.set_value(tab)
+        for t, b in buttons.items():
+            b.classes(add="active" if t is tab else None, remove=None if t is tab else "active")
+
+    with ui.header(elevated=False).classes("lv-header items-center justify-between no-wrap"):
+        with ui.element("div").classes("lv-brand"):
+            ui.button(icon="menu", on_click=lambda: drawer.toggle()).props("flat round dense").classes("lt-md")
+            with ui.element("div").classes("lv-logo"):
+                ui.label("AI")
+            with ui.element("div"):
+                ui.label(title).classes("lv-brand-name")
+                ui.label("TikTok LIVE seller").classes("lv-brand-sub")
+        with ui.row().classes("items-center gt-xs").style("gap:8px"):
+            pills = {
+                "app": _pill("Streamer offline"),
+                "bridge": _pill("TikTok bridge off"),
+                "voice": _pill("Voice: edge-tts"),
+            }
+            ui.button(icon="light_mode", on_click=lambda: dark.toggle()).props("flat round dense").tooltip("Light / dark")
+            if go_live:
+                ui.button("Go live", icon="podcasts", on_click=go_live).props("unelevated color=primary")
+
+    def refresh():
+        if not status_fn:
+            return
+        st = status_fn()
+        for key, (el, lbl) in pills.items():
+            info = st.get(key)
+            if not info:
+                continue
+            text, on = info[0], info[1]
+            lbl.text = text
+            el.classes(add="on" if on else None, remove=None if on else "on")
+    ui.timer(4.0, refresh)
+
+    drawer = ui.left_drawer(value=True, fixed=True, bordered=False).props("width=250 breakpoint=900").classes("lv-drawer")
+    with drawer:
+        for group, items in nav:
+            ui.label(group).classes("lv-group")
+            for label, icon, tab in items:
+                b = ui.button(label, icon=icon, on_click=lambda t=tab: select(t)).props("flat no-caps align=left").classes("lv-nav")
+                buttons[tab] = b
+    return select

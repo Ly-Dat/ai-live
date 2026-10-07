@@ -106,6 +106,31 @@ def ensure_bridge_env(root: str = ROOT, log=print) -> str:
     return py
 
 
+def voice_python(root: str = ROOT) -> Optional[str]:
+    for rel in (("venv_voice", "Scripts", "python.exe"), ("venv_voice", "bin", "python")):
+        p = os.path.join(root, *rel)
+        if os.path.exists(p):
+            return p
+    return None
+
+
+def ensure_voice_env(root: str = ROOT, log=print) -> str:
+    """Create venv_voice with the free VieNeu-TTS package (own env: it pulls gradio/onnxruntime/librosa)."""
+    py = voice_python(root)
+    if py:
+        return py
+    log("Creating the voice environment (venv_voice) and installing VieNeu-TTS ...")
+    subprocess.check_call([sys.executable, "-m", "venv", os.path.join(root, "venv_voice")])
+    py = voice_python(root)
+    subprocess.check_call([py, "-m", "pip", "install", "--quiet", "--upgrade", "pip"])
+    subprocess.check_call([py, "-m", "pip", "install", "--quiet", "vieneu"])
+    return py
+
+
+def voice_command(python: str) -> List[str]:
+    return [python, "-m", "apps.openai_speech"]
+
+
 def bridge_command(setup: Dict, python: str) -> List[str]:
     cmd = [python, "tiktok_bridge.py", clean_username(setup["tiktok_username"])]
     if setup.get("gifts"):
@@ -130,12 +155,13 @@ class ProcessManager:
         p = self.procs.get(name)
         return p is not None and p.poll() is None
 
-    def start(self, name: str, cmd: List[str]) -> bool:
+    def start(self, name: str, cmd: List[str], env: Optional[Dict[str, str]] = None) -> bool:
         if self.running(name):
             return False
         os.makedirs(os.path.join(self.root, "log"), exist_ok=True)
         logf = open(os.path.join(self.root, "log", f"{name}.log"), "a", encoding="utf-8")
-        self.procs[name] = subprocess.Popen(cmd, cwd=self.root, stdout=logf, stderr=subprocess.STDOUT)
+        full_env = dict(os.environ, **env) if env else None
+        self.procs[name] = subprocess.Popen(cmd, cwd=self.root, stdout=logf, stderr=subprocess.STDOUT, env=full_env)
         return True
 
     def stop(self, name: str) -> bool:
@@ -152,6 +178,9 @@ class ProcessManager:
     def stop_all(self) -> None:
         for n in list(self.procs):
             self.stop(n)
+
+
+PM_VOICE = ProcessManager()  # the VieNeu voice server; separate from the bridge/tour manager
 
 
 def tail(path: str, lines: int = 12) -> str:
