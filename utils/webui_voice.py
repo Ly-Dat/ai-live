@@ -14,13 +14,12 @@ import time
 
 from nicegui import app, ui
 
-from . import setup_wizard, vieneu_tts
+from . import setup_wizard, vieneu_tts, voice_catalog
 from .webui_theme import page_title
 
 ROOT = setup_wizard.ROOT
 PREVIEW_DIR = os.path.join(ROOT, "out", "preview")
-EDGE_VOICES = ["vi-VN-HoaiMyNeural", "vi-VN-NamMinhNeural"]
-SAMPLE = "Chào cả nhà, mình là trợ lý AI của shop. Hôm nay có nhiều sản phẩm hay lắm, cùng xem nhé!"
+SAMPLE = voice_catalog.sample("vi")
 
 
 def _save_config(mutator):
@@ -58,7 +57,7 @@ def build_voice_tab(config):
                ".lv-selected{outline:2px solid var(--lv-accent);box-shadow:0 14px 34px rgba(139,92,246,.35)!important}")
     with ui.row().classes("w-full").style("gap:16px;flex-wrap:wrap"):
         for key, title, badge, text in [
-            ("edge-tts", "Edge TTS", "Instant", "Zero setup. Two natural Vietnamese neural voices (female HoaiMy, male NamMinh). Needs internet; it uses Microsoft's Edge read-aloud service, which has no official SLA."),
+            ("edge-tts", "Edge TTS", "Instant", "Zero setup. 2 native Vietnamese voices (HoaiMy, NamMinh) plus 20+ English neural voices (US, UK, AU, CA, IN, IE). Needs internet; it uses Microsoft's Edge read-aloud service, which has no official SLA."),
             ("vieneu", "VieNeu-TTS", "Local - Apache-2.0", "Open Vietnamese model that runs on your own PC (CPU is fast enough, GPU is faster). 20+ voices, 48 kHz, no per-character cost. Falls back to Edge automatically if the server is off."),
         ]:
             c = ui.card().classes("lv-card lv-engine").style("flex:1 1 320px;padding:18px").on("click", lambda k=key: pick(k))
@@ -88,13 +87,34 @@ def build_voice_tab(config):
         ui.label("Type a line, pick a voice, press play. Nothing is saved until you press Save.").classes("lv-sub")
         text_in = ui.textarea("Sample line", value=SAMPLE).classes("w-full")
         with ui.row().classes("items-end").style("gap:12px"):
-            edge_sel = ui.select(EDGE_VOICES, label="Edge voice", value=edge_cfg.get("voice") or EDGE_VOICES[0]).classes("w-64")
+            cur_edge = edge_cfg.get("voice") or "vi-VN-HoaiMyNeural"
+            lang_sel = ui.select({"vi": "Vietnamese", "en": "English"}, label="Language", value=voice_catalog.lang_of(cur_edge)).classes("w-40")
+            gender_sel = ui.select({"": "Any", "F": "Female", "M": "Male"}, label="Voice type", value="").classes("w-32")
+            edge_sel = ui.select(voice_catalog.options(lang_sel.value), label="Edge voice", value=cur_edge).classes("w-96")
             vie_sel = ui.select([vcfg.get("voice") or "Mai Anh"], label="VieNeu voice", value=vcfg.get("voice") or "Mai Anh").classes("w-64")
         with ui.row().style("gap:10px;margin-top:6px"):
             b_edge = ui.button("Play with Edge", icon="volume_up").props("outline")
             b_vie = ui.button("Play with VieNeu", icon="graphic_eq")
         audio_box = ui.column().classes("w-full")
         play_note = ui.label("").classes("lv-sub")
+
+    def refill_edge(*_):
+        opts = voice_catalog.options(lang_sel.value, gender_sel.value or None)
+        cur = edge_sel.value
+        if cur not in opts:
+            cur = next(iter(opts), cur)
+        edge_sel.set_options(opts, value=cur)
+
+    def lang_changed(*_):
+        text_in.value = voice_catalog.sample(lang_sel.value)
+        refill_edge()
+
+    lang_sel.on_value_change(lang_changed)
+    gender_sel.on_value_change(refill_edge)
+    if voice_catalog.lang_of(edge_sel.value) == "en":
+        text_in.value = voice_catalog.sample("en")
+    if edge_sel.value not in edge_sel.options:  # a voice set by hand in config.json stays selectable
+        edge_sel.set_options({**edge_sel.options, edge_sel.value: edge_sel.value}, value=edge_sel.value)
 
     def show_audio(fname):
         audio_box.clear()
