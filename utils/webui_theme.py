@@ -188,6 +188,30 @@ def _pill(text: str, on: bool = False, warn: bool = False):
     return el, lbl
 
 
+_THEME_JS = """
+(function(){
+  function apply(){
+    if(!window.Quasar||!Quasar.Dark){return false}
+    var v=null;try{v=localStorage.getItem("lvDark")}catch(e){}
+    Quasar.Dark.set(v===null?true:v==="1");return true}
+  // the server also sets a dark default when the page connects; keep re-applying the saved choice for a few seconds
+  var n=0,t=setInterval(function(){apply();if(++n>40)clearInterval(t)},150);
+  window.lvToggleDark=function(){Quasar.Dark.toggle();try{localStorage.setItem("lvDark",Quasar.Dark.isActive?"1":"0")}catch(e){}}
+})();
+"""
+
+
+def theme_switch(dark=None):
+    """Sun/moon button, always visible (also on phones). Remembers the choice in this browser; default is dark."""
+    ui.add_head_html("<style>.lv-sun{display:none}.lv-moon{display:inline-flex}"
+                     "body.body--dark .lv-sun{display:inline-flex}body.body--dark .lv-moon{display:none}</style>")
+    ui.add_body_html("<script>" + _THEME_JS + "</script>")
+    with ui.button(on_click=lambda: ui.run_javascript("window.lvToggleDark&&window.lvToggleDark()")).props("flat round dense").tooltip("Light / dark") as b:
+        ui.icon("light_mode").classes("lv-sun")
+        ui.icon("dark_mode").classes("lv-moon")
+    return b
+
+
 def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark, status_fn: Optional[Callable[[], Dict]] = None,
                 go_live: Optional[Callable[[], None]] = None, title: str = "AI Live Studio") -> Callable:
     """Header + sidebar. `tabs` is the (hidden) ui.tabs; `nav` is [(group, [(label, icon, tab), ...]), ...].
@@ -215,9 +239,9 @@ def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark
                 "bridge": _pill("Not live"),
                 "voice": _pill("Voice: edge-tts"),
             }
-            ui.button(icon="light_mode", on_click=lambda: dark.toggle()).props("flat round dense").tooltip("Light / dark")
             if go_live:
                 ui.button("Go live", icon="podcasts", on_click=go_live).props("unelevated color=primary")
+        theme_switch(dark)
 
     def refresh():
         if not status_fn:
