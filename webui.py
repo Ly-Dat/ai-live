@@ -4384,18 +4384,18 @@ def goto_func_page():
         with ui.tab_panel(llm_page).style(tab_panel_css):
             if config.get("webui", "show_card", "llm", "chatgpt"):
                 with ui.card().style(card_css):
-                    ui.label("ChatGPT | 闻达 | ChatGLM3 | Kimi Chat | Ollama | One-API等OpenAI接口模型 ")
+                    ui.label("ChatGPT | Wenda | ChatGLM3 | Kimi Chat | Ollama | One-API and other OpenAI-compatible API models ")
                     with ui.row():
                         input_openai_api = ui.input(
                             label='API address', 
-                            placeholder='API请求地址，支持代理', 
+                            placeholder='API Endpoint (Proxy Supported)', 
                             value=config.get("openai", "api"),
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         ).style("width:200px;")
-                        textarea_openai_api_key = ui.textarea(label='API密钥', placeholder='API KEY，支持代理', value=textarea_data_change(config.get("openai", "api_key"))).style("width:400px;")
-                        button_openai_test = ui.button('测试', on_click=lambda: test_openai_key(), color=button_bottom_color).style(button_bottom_css)
+                        textarea_openai_api_key = ui.textarea(label='API Key', placeholder='API Key, Proxy Supported', value=textarea_data_change(config.get("openai", "api_key"))).style("width:400px;")
+                        button_openai_test = ui.button('Test', on_click=lambda: test_openai_key(), color=button_bottom_color).style(button_bottom_css)
                     with ui.row():
                         chatgpt_models = [
                             "gpt-3.5-turbo",
@@ -4423,22 +4423,22 @@ def goto_func_page():
                         for line in chatgpt_models:
                             data_json[line] = line
                         select_chatgpt_model = ui.select(
-                            label='模型', 
+                            label='Model', 
                             options=data_json, 
                             value=config.get("chatgpt", "model"),
                             with_input=True,
                             new_value_mode='add-unique',
                             clearable=True
-                        ).tooltip("如果你没有在此找到你用的模型名，你可以删除此配置项的内容，然后手动输入，最后一定要回车！确认！")
-                        input_chatgpt_temperature = ui.input(label='温度', placeholder='控制生成文本的随机性。较高的温度值会使生成的文本更随机和多样化，而较低的温度值会使生成的文本更加确定和一致。', value=config.get("chatgpt", "temperature")).style("width:100px;")
-                        input_chatgpt_max_tokens = ui.input(label='最大token数', placeholder='限制生成Answer的最大长度。', value=config.get("chatgpt", "max_tokens")).style("width:100px;")
-                        input_chatgpt_top_p = ui.input(label='top_p', placeholder='Nucleus采样。这个参数控制模型从累积概率大于一定阈值的令牌中进行采样。较高的值会产生更多的多样性，较低的值会产生更少但更确定的Answer。', value=config.get("chatgpt", "top_p")).style("width:100px;")
-                        switch_chatgpt_stream = ui.switch('流式输出', value=config.get("chatgpt", "stream")).tooltip("是否开启流式输出，开启后，Answer会逐句输出，关闭后，Answer会一次性输出。")
+                        ).tooltip("If you can't find the model you are using here, you can clear this field and enter the model name manually. Be sure to press Enter to confirm!")
+                        input_chatgpt_temperature = ui.input(label='Temperature', placeholder='Controls the randomness of generated text. Higher temperature values produce more random and diverse responses, while lower values produce more deterministic and consistent responses.', value=config.get("chatgpt", "temperature")).style("width:100px;")
+                        input_chatgpt_max_tokens = ui.input(label='Max Tokens', placeholder='Limits the maximum length of the generated answer.', value=config.get("chatgpt", "max_tokens")).style("width:100px;")
+                        input_chatgpt_top_p = ui.input(label='top_p', placeholder='Nucleus sampling. This parameter controls sampling from tokens whose cumulative probability exceeds a certain threshold. Higher values produce more diverse responses, while lower values produce fewer but more deterministic responses.', value=config.get("chatgpt", "top_p")).style("width:100px;")
+                        switch_chatgpt_stream = ui.switch('Stream Output', value=config.get("chatgpt", "stream")).tooltip("Whether to enable streaming output. When enabled, the answer is displayed sentence by sentence; when disabled, the answer is displayed all at once.")
                     with ui.row():
-                        input_chatgpt_presence_penalty = ui.input(label='存在惩罚', placeholder='控制模型生成Answer时对给定Question提示的Follow程度。较高的存在惩罚值会减少模型对给定提示的重复程度，鼓励模型更自主地生成Answer。', value=config.get("chatgpt", "presence_penalty")).style("width:100px;")
-                        input_chatgpt_frequency_penalty = ui.input(label='频率惩罚', placeholder='控制生成Answer时对已经出现过的令牌的惩罚程度。较高的频率惩罚值会减少模型生成已经频繁出现的令牌，以避免重复和过度使用特定词语。', value=config.get("chatgpt", "frequency_penalty")).style("width:100px;")
+                        input_chatgpt_presence_penalty = ui.input(label='Presence Penalty', placeholder='Controls how much the model avoids repeating tokens from the given prompt when generating a response. Higher values reduce repetition and encourage the model to generate more original responses.', value=config.get("chatgpt", "presence_penalty")).style("width:100px;")
+                        input_chatgpt_frequency_penalty = ui.input(label='Frequency Penalty', placeholder='Controls how much the model penalizes tokens that have already appeared in the generated response. Higher values reduce the repetition of frequently used tokens and help avoid repetitive wording.', value=config.get("chatgpt", "frequency_penalty")).style("width:100px;")
 
-                        input_chatgpt_preset = ui.input(label='预设', placeholder='用于指定一组预定义的设置，以便模型更好地适应特定的对话场景。', value=config.get("chatgpt", "preset")).style("width:500px") 
+                        input_chatgpt_preset = ui.input(label='Preset', placeholder='Specifies a set of predefined settings to help the model better adapt to specific conversation scenarios.', value=config.get("chatgpt", "preset")).style("width:500px") 
 
             
             
@@ -4455,40 +4455,40 @@ def goto_func_page():
                             options=data_json, 
                             value=config.get("chat_with_file", "chat_mode")
                         )
-                        input_chat_with_file_data_path = ui.input(label='数据文件路径', placeholder='加载的本地zip数据文件路径（到x.zip）, 如：./data/伊卡洛斯百度百科.zip', value=config.get("chat_with_file", "data_path"))
+                        input_chat_with_file_data_path = ui.input(label='Data File Path', placeholder='Path to the local ZIP data file to load (up to x.zip), e.g., ./data/伊卡洛斯百度百科.zip', value=config.get("chat_with_file", "data_path"))
                         input_chat_with_file_data_path.style("width:400px")
                     with ui.row():
-                        input_chat_with_file_separator = ui.input(label='分隔符', placeholder='拆分文本的分隔符，这里使用 换行符 作为分隔符。', value=config.get("chat_with_file", "separator"))
+                        input_chat_with_file_separator = ui.input(label='Separator', placeholder='The delimiter used to split the text. A line break is used as the separator.', value=config.get("chat_with_file", "separator"))
                         input_chat_with_file_separator.style("width:300px")
-                        input_chat_with_file_chunk_size = ui.input(label='块大小', placeholder='每个文本块的Max characters(文本块字符越多，消耗token越多，Reply越详细)', value=config.get("chat_with_file", "chunk_size"))
+                        input_chat_with_file_chunk_size = ui.input(label='Chunk Size', placeholder='Maximum number of characters per text chunk. More characters per chunk consume more tokens and produce more detailed responses.', value=config.get("chat_with_file", "chunk_size"))
                         input_chat_with_file_chunk_size.style("width:300px")
-                        input_chat_with_file_chunk_overlap = ui.input(label='块重叠', placeholder='两个相邻文本块之间的重叠字符数。这种重叠可以帮助保持文本的连贯性，特别是当文本被用于训练语言模型或其他需要上下文信息的机器学习模型时', value=config.get("chat_with_file", "chunk_overlap"))
+                        input_chat_with_file_chunk_overlap = ui.input(label='Chunk Overlap', placeholder='Number of overlapping characters between two adjacent text chunks. This overlap helps maintain text coherence, especially when the text is used for language model training or other machine learning tasks that require contextual information.', value=config.get("chat_with_file", "chunk_overlap"))
                         input_chat_with_file_chunk_overlap.style("width:300px")
                         lines = ["sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco", "GanymedeNil/text2vec-large-chinese"]
                         data_json = {}
                         for line in lines:
                             data_json[line] = line
                         select_chat_with_file_local_vector_embedding_model = ui.select(
-                            label='模型', 
+                            label='Model', 
                             options=data_json, 
                             value=config.get("chat_with_file", "local_vector_embedding_model")
                         )
                     with ui.row():
-                        input_chat_with_file_chain_type = ui.input(label='链Type', placeholder='指定要生成的语言链的Type，For example:stuff', value=config.get("chat_with_file", "chain_type"))
+                        input_chat_with_file_chain_type = ui.input(label='Chain Type', placeholder='Specify the type of language chain to generate, e.g. stuff', value=config.get("chat_with_file", "chain_type"))
                         input_chat_with_file_chain_type.style("width:300px")
-                        input_chat_with_file_question_prompt = ui.input(label='Question总结提示词', placeholder='通过LLM总结本地向量Database输出内容，此处填写总结用提示词', value=config.get("chat_with_file", "question_prompt"))
+                        input_chat_with_file_question_prompt = ui.input(label='Question summary prompt', placeholder='Summarize the local vector database output via LLM; enter the summarization prompt here', value=config.get("chat_with_file", "question_prompt"))
                         input_chat_with_file_question_prompt.style("width:300px")
-                        input_chat_with_file_local_max_query = ui.input(label='最大查询Database次数', placeholder='最大查询Database次数。限制次数有助于节省token', value=config.get("chat_with_file", "local_max_query"))
+                        input_chat_with_file_local_max_query = ui.input(label='Max database queries', placeholder='Maximum number of database queries. Limiting this helps save tokens', value=config.get("chat_with_file", "local_max_query"))
                         input_chat_with_file_local_max_query.style("width:300px")
-                        switch_chat_with_file_show_token_cost = ui.switch('显示成本', value=config.get("chat_with_file", "show_token_cost")).style(switch_internal_css)
+                        switch_chat_with_file_show_token_cost = ui.switch('Show cost', value=config.get("chat_with_file", "show_token_cost")).style(switch_internal_css)
             
             if config.get("webui", "show_card", "llm", "chatterbot"):
                 with ui.card().style(card_css):
                     ui.label("Chatterbot")
                     with ui.grid(columns=2):
-                        input_chatterbot_name = ui.input(label='bot名称', placeholder='bot名称', value=config.get("chatterbot", "name"))
+                        input_chatterbot_name = ui.input(label='Bot name', placeholder='Bot name', value=config.get("chatterbot", "name"))
                         input_chatterbot_name.style("width:400px")
-                        input_chatterbot_db_path = ui.input(label='Database path', placeholder='Database path（绝对或相对路径）', value=config.get("chatterbot", "db_path"))
+                        input_chatterbot_db_path = ui.input(label='Database path', placeholder='Database path (absolute or relative)', value=config.get("chatterbot", "db_path"))
                         input_chatterbot_db_path.style("width:400px")
             
             if config.get("webui", "show_card", "llm", "text_generation_webui"):
@@ -4502,17 +4502,17 @@ def goto_func_page():
                         )
                         input_text_generation_webui_api_ip_port = ui.input(
                             label='API address', 
-                            placeholder='text-generation-webui开启API模式后监听的IP和Port地址', 
+                            placeholder='IP and port that text-generation-webui listens on after API mode is enabled', 
                             value=config.get("text_generation_webui", "api_ip_port"),
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
                             }
                         )
                         input_text_generation_webui_api_ip_port.style("width:300px")
-                        input_text_generation_webui_max_new_tokens = ui.input(label='max_new_tokens', placeholder='自行查阅', value=config.get("text_generation_webui", "max_new_tokens"))
+                        input_text_generation_webui_max_new_tokens = ui.input(label='max_new_tokens', placeholder='Please refer to the docs', value=config.get("text_generation_webui", "max_new_tokens"))
                         input_text_generation_webui_max_new_tokens.style("width:200px")
-                        switch_text_generation_webui_history_enable = ui.switch('上下文记忆', value=config.get("text_generation_webui", "history_enable")).style(switch_internal_css)
-                        input_text_generation_webui_history_max_len = ui.input(label='最大记忆长度', placeholder='最大记忆的上下文字符数量，不建议设置过大，容易爆显存，自行根据情况配置', value=config.get("text_generation_webui", "history_max_len"))
+                        switch_text_generation_webui_history_enable = ui.switch('Context memory', value=config.get("text_generation_webui", "history_enable")).style(switch_internal_css)
+                        input_text_generation_webui_history_max_len = ui.input(label='Max memory length', placeholder='Maximum number of context characters to remember. Not recommended to set too high, as it may run out of VRAM; configure according to your situation', value=config.get("text_generation_webui", "history_max_len"))
                         input_text_generation_webui_history_max_len.style("width:200px")
                     with ui.row():
                         select_text_generation_webui_mode = ui.select(
@@ -4520,17 +4520,17 @@ def goto_func_page():
                             options={"chat": "chat", "chat-instruct": "chat-instruct", "instruct": "instruct"}, 
                             value=config.get("text_generation_webui", "mode")
                         ).style("width:150px")
-                        input_text_generation_webui_character = ui.input(label='character', placeholder='自行查阅', value=config.get("text_generation_webui", "character"))
+                        input_text_generation_webui_character = ui.input(label='character', placeholder='Please refer to the docs', value=config.get("text_generation_webui", "character"))
                         input_text_generation_webui_character.style("width:100px")
-                        input_text_generation_webui_instruction_template = ui.input(label='instruction_template', placeholder='自行查阅', value=config.get("text_generation_webui", "instruction_template"))
+                        input_text_generation_webui_instruction_template = ui.input(label='instruction_template', placeholder='Please refer to the docs', value=config.get("text_generation_webui", "instruction_template"))
                         input_text_generation_webui_instruction_template.style("width:150px")
-                        input_text_generation_webui_your_name = ui.input(label='your_name', placeholder='自行查阅', value=config.get("text_generation_webui", "your_name"))
+                        input_text_generation_webui_your_name = ui.input(label='your_name', placeholder='Please refer to the docs', value=config.get("text_generation_webui", "your_name"))
                         input_text_generation_webui_your_name.style("width:100px")
                     with ui.row():
-                        input_text_generation_webui_top_p = ui.input(label='top_p', value=config.get("text_generation_webui", "top_p"), placeholder='topP生成时，核采样方法的概率阈值。例如，取值为0.8时，仅保留累计概率之和大于等于0.8的概率分布中的token，作为随机采样的候选集。取值范围为(0,1.0)，取值越大，生成的随机性越高；取值越低，生成的随机性越低。默认值 0.95。注意，取值不要大于等于1')
-                        input_text_generation_webui_top_k = ui.input(label='top_k', value=config.get("text_generation_webui", "top_k"), placeholder='匹配搜索结果条数')
-                        input_text_generation_webui_temperature = ui.input(label='temperature', value=config.get("text_generation_webui", "temperature"), placeholder='较高的值将使输出更加随机，而较低的值将使输出更加集中和确定。可选，默认取值0.92')
-                        input_text_generation_webui_seed = ui.input(label='seed', value=config.get("text_generation_webui", "seed"), placeholder='seed生成时，随机数的种子，用于控制模型生成的随机性。如果使用相同的种子，每次Run生成的结果都将相同；当需要复现模型的生成结果时，可以使用相同的种子。seed参数支持无符号64位整数Type。默认值 1683806810')
+                        input_text_generation_webui_top_p = ui.input(label='top_p', value=config.get("text_generation_webui", "top_p"), placeholder='Probability threshold for nucleus sampling during generation. For example, at 0.8, only tokens in the probability distribution whose cumulative probability is >= 0.8 are kept as the candidate set for random sampling. Range is (0, 1.0); higher values increase randomness, lower values decrease it. Default 0.95. Note: the value must not be >= 1')
+                        input_text_generation_webui_top_k = ui.input(label='top_k', value=config.get("text_generation_webui", "top_k"), placeholder='Number of matching search results')
+                        input_text_generation_webui_temperature = ui.input(label='temperature', value=config.get("text_generation_webui", "temperature"), placeholder='Higher values make the output more random, lower values make it more focused and deterministic. Optional, default 0.92')
+                        input_text_generation_webui_seed = ui.input(label='seed', value=config.get("text_generation_webui", "seed"), placeholder='Seed for the random number generator during generation, used to control randomness. With the same seed, each run produces the same result; use the same seed to reproduce generations. Supports unsigned 64-bit integers. Default 1683806810')
 
             if config.get("webui", "show_card", "llm", "sparkdesk"):    
                 with ui.card().style(card_css):
@@ -4564,7 +4564,7 @@ def goto_func_page():
                             input_sparkdesk_api_key = ui.input(label='api_key', value=config.get("sparkdesk", "api_key"), placeholder='申请官方API后，云Platform中提供的APIKey').style("width:200px") 
                             
                             select_sparkdesk_version = ui.select(
-                                label='版本', 
+                                label='Version', 
                                 options={
                                     "4.0": "Ultra",
                                     "3.5": "Max",
@@ -4575,7 +4575,7 @@ def goto_func_page():
                                 }, 
                                 value=str(config.get("sparkdesk", "version"))
                             ).style("width:100px") 
-                            input_sparkdesk_assistant_id = ui.input(label='助手ID', value=config.get("sparkdesk", "assistant_id"), placeholder='助手创作中心，创建助手后助手API的接口地址最后的助手ID').style("width:100px") 
+                            input_sparkdesk_assistant_id = ui.input(label='Assistant ID', value=config.get("sparkdesk", "assistant_id"), placeholder='助手创作中心，创建助手后助手API的接口地址最后的助手ID').style("width:100px") 
                  
             if config.get("webui", "show_card", "llm", "langchain_chatchat"):  
                 with ui.card().style(card_css):
@@ -4583,7 +4583,7 @@ def goto_func_page():
                     with ui.row():
                         input_langchain_chatchat_api_ip_port = ui.input(
                             label='API address', 
-                            placeholder='langchain_chatchat的API版本Run后的服务链接（需要完整的URL）', 
+                            placeholder='Service URL after running the API version of Langchain-Chatchat (full URL required）', 
                             value=config.get("langchain_chatchat", "api_ip_port"),
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
@@ -4599,28 +4599,28 @@ def goto_func_page():
                             options=data_json, 
                             value=config.get("langchain_chatchat", "chat_type")
                         )
-                        switch_langchain_chatchat_history_enable = ui.switch('上下文记忆', value=config.get("langchain_chatchat", "history_enable")).style(switch_internal_css)
-                        input_langchain_chatchat_history_max_len = ui.input(label='最大记忆长度', placeholder='最大记忆的上下文字符数量，不建议设置过大，容易爆显存，自行根据情况配置', value=config.get("langchain_chatchat", "history_max_len"))
+                        switch_langchain_chatchat_history_enable = ui.switch('Context memory', value=config.get("langchain_chatchat", "history_enable")).style(switch_internal_css)
+                        input_langchain_chatchat_history_max_len = ui.input(label='Max memory length', placeholder='Maximum number of context characters to remember. Not recommended to set too high, as it may run out of VRAM; configure according to your situation', value=config.get("langchain_chatchat", "history_max_len"))
                         input_langchain_chatchat_history_max_len.style("width:400px")
                     with ui.row():
                         with ui.card().style(card_css):
-                            ui.label("模型")
+                            ui.label("Model")
                             with ui.row():
-                                input_langchain_chatchat_llm_model_name = ui.input(label='LLM模型', value=config.get("langchain_chatchat", "llm", "model_name"), placeholder='本地加载的LLM模型名')
-                                input_langchain_chatchat_llm_temperature = ui.input(label='温度', value=config.get("langchain_chatchat", "llm", "temperature"), placeholder='采样温度，控制输出的随机性，必须为正数\n取值范围是：(0.0,1.0]，不能等于 0,默认值为 0.95\n值越大，会使输出更随机，更具创造性；值越小，输出会更加稳定或确定\n建议您根据应用场景调整 top_p 或 temperature 参数，但不要同时调整两个参数')
-                                input_langchain_chatchat_llm_max_tokens = ui.input(label='max_tokens', value=config.get("langchain_chatchat", "llm", "max_tokens"), placeholder='大于0的正整数，不建议太大，你可能会爆显存')
-                                input_langchain_chatchat_llm_prompt_name = ui.input(label='Prompt模板', value=config.get("langchain_chatchat", "llm", "prompt_name"), placeholder='本地存在的提示词模板文件名')
+                                input_langchain_chatchat_llm_model_name = ui.input(label='LLM model', value=config.get("langchain_chatchat", "llm", "model_name"), placeholder='Name of the locally loaded LLM model')
+                                input_langchain_chatchat_llm_temperature = ui.input(label='Temperature', value=config.get("langchain_chatchat", "llm", "temperature"), placeholder='Sampling temperature, controls output randomness, must be positive\nRange: (0.0, 1.0], cannot be 0, default 0.95\nHigher values make the output more random and creative; lower values make it more stable or deterministic\nIt is recommended to adjust either top_p or temperature for your use case, but not both at the same time')
+                                input_langchain_chatchat_llm_max_tokens = ui.input(label='max_tokens', value=config.get("langchain_chatchat", "llm", "max_tokens"), placeholder='Positive integer greater than 0. Not recommended to set too high, you may run out of VRAM')
+                                input_langchain_chatchat_llm_prompt_name = ui.input(label='Prompt template', value=config.get("langchain_chatchat", "llm", "prompt_name"), placeholder='File name of a locally available prompt template')
                     with ui.row():
                         with ui.card().style(card_css):
-                            ui.label("知识库")
+                            ui.label("Knowledge base")
                             with ui.row():
-                                input_langchain_chatchat_knowledge_base_knowledge_base_name = ui.input(label='知识库名', value=config.get("langchain_chatchat", "knowledge_base", "knowledge_base_name"), placeholder='本地添加的知识库名，Run时会自动检索存在的知识库列表，输出到cmd，请自行查看')
-                                input_langchain_chatchat_knowledge_base_top_k = ui.input(label='匹配搜索结果条数', value=config.get("langchain_chatchat", "knowledge_base", "top_k"), placeholder='匹配搜索结果条数')
-                                input_langchain_chatchat_knowledge_base_score_threshold = ui.input(label='知识匹配分数阈值', value=config.get("langchain_chatchat", "knowledge_base", "score_threshold"), placeholder='0.00-2.00之间')
-                                input_langchain_chatchat_knowledge_base_model_name = ui.input(label='LLM模型', value=config.get("langchain_chatchat", "knowledge_base", "model_name"), placeholder='本地加载的LLM模型名')
-                                input_langchain_chatchat_knowledge_base_temperature = ui.input(label='温度', value=config.get("langchain_chatchat", "knowledge_base", "temperature"), placeholder='采样温度，控制输出的随机性，必须为正数\n取值范围是：(0.0,1.0]，不能等于 0,默认值为 0.95\n值越大，会使输出更随机，更具创造性；值越小，输出会更加稳定或确定\n建议您根据应用场景调整 top_p 或 temperature 参数，但不要同时调整两个参数')
-                                input_langchain_chatchat_knowledge_base_max_tokens = ui.input(label='max_tokens', value=config.get("langchain_chatchat", "knowledge_base", "max_tokens"), placeholder='大于0的正整数，不建议太大，你可能会爆显存')
-                                input_langchain_chatchat_knowledge_base_prompt_name = ui.input(label='Prompt模板', value=config.get("langchain_chatchat", "knowledge_base", "prompt_name"), placeholder='本地存在的提示词模板文件名')
+                                input_langchain_chatchat_knowledge_base_knowledge_base_name = ui.input(label='Knowledge base name', value=config.get("langchain_chatchat", "knowledge_base", "knowledge_base_name"), placeholder='Name of a locally added knowledge base. On run, the list of existing knowledge bases is retrieved and printed to the cmd, please check it there')
+                                input_langchain_chatchat_knowledge_base_top_k = ui.input(label='Number of matched results', value=config.get("langchain_chatchat", "knowledge_base", "top_k"), placeholder='Number of matched search results')
+                                input_langchain_chatchat_knowledge_base_score_threshold = ui.input(label='Knowledge match score threshold', value=config.get("langchain_chatchat", "knowledge_base", "score_threshold"), placeholder='Between 0.00 and 2.00')
+                                input_langchain_chatchat_knowledge_base_model_name = ui.input(label='LLM model', value=config.get("langchain_chatchat", "knowledge_base", "model_name"), placeholder='Name of the locally loaded LLM model')
+                                input_langchain_chatchat_knowledge_base_temperature = ui.input(label='Temperature', value=config.get("langchain_chatchat", "knowledge_base", "temperature"), placeholder='Sampling temperature, controls output randomness, must be positive\nRange: (0.0, 1.0], cannot be 0, default 0.95\nHigher values make the output more random and creative; lower values make it more stable or deterministic\nIt is recommended to adjust either top_p or temperature for your use case, but not both at the same time')
+                                input_langchain_chatchat_knowledge_base_max_tokens = ui.input(label='max_tokens', value=config.get("langchain_chatchat", "knowledge_base", "max_tokens"), placeholder='Positive integer greater than 0. Not recommended to set too high, you may run out of VRAM')
+                                input_langchain_chatchat_knowledge_base_prompt_name = ui.input(label='Prompt template', value=config.get("langchain_chatchat", "knowledge_base", "prompt_name"), placeholder='File name of a locally available prompt template')
                     with ui.row():
                         with ui.card().style(card_css):
                             ui.label("Search engine")
@@ -4634,12 +4634,11 @@ def goto_func_page():
                                     options=data_json, 
                                     value=config.get("langchain_chatchat", "search_engine", "search_engine_name")
                                 )
-                                input_langchain_chatchat_search_engine_top_k = ui.input(label='匹配搜索结果条数', value=config.get("langchain_chatchat", "search_engine", "top_k"), placeholder='匹配搜索结果条数')
-                                input_langchain_chatchat_search_engine_model_name = ui.input(label='LLM模型', value=config.get("langchain_chatchat", "search_engine", "model_name"), placeholder='本地加载的LLM模型名')
-                                input_langchain_chatchat_search_engine_temperature = ui.input(label='温度', value=config.get("langchain_chatchat", "search_engine", "temperature"), placeholder='采样温度，控制输出的随机性，必须为正数\n取值范围是：(0.0,1.0]，不能等于 0,默认值为 0.95\n值越大，会使输出更随机，更具创造性；值越小，输出会更加稳定或确定\n建议您根据应用场景调整 top_p 或 temperature 参数，但不要同时调整两个参数')
-                                input_langchain_chatchat_search_engine_max_tokens = ui.input(label='max_tokens', value=config.get("langchain_chatchat", "search_engine", "max_tokens"), placeholder='大于0的正整数，不建议太大，你可能会爆显存')
-                                input_langchain_chatchat_search_engine_prompt_name = ui.input(label='Prompt模板', value=config.get("langchain_chatchat", "search_engine", "prompt_name"), placeholder='本地存在的提示词模板文件名')
-            
+                                input_langchain_chatchat_search_engine_top_k = ui.input(label='Number of matched results', value=config.get("langchain_chatchat", "search_engine", "top_k"), placeholder='Number of matched search results')
+                                input_langchain_chatchat_search_engine_model_name = ui.input(label='LLM model', value=config.get("langchain_chatchat", "search_engine", "model_name"), placeholder='Name of the locally loaded LLM model')
+                                input_langchain_chatchat_search_engine_temperature = ui.input(label='Temperature', value=config.get("langchain_chatchat", "search_engine", "temperature"), placeholder='Sampling temperature, controls output randomness, must be positive\nRange: (0.0, 1.0], cannot be 0, default 0.95\nHigher values make the output more random and creative; lower values make it more stable or deterministic\nIt is recommended to adjust either top_p or temperature for your use case, but not both at the same time')
+                                input_langchain_chatchat_search_engine_max_tokens = ui.input(label='max_tokens', value=config.get("langchain_chatchat", "search_engine", "max_tokens"), placeholder='Positive integer greater than 0. Not recommended to set too high, you may run out of VRAM')
+                                input_langchain_chatchat_search_engine_prompt_name = ui.input(label='Prompt template', value=config.get("langchain_chatchat", "search_engine", "prompt_name"), placeholder='File name of a locally available prompt template')
             if config.get("webui", "show_card", "llm", "zhipu"):  
                 with ui.card().style(card_css):
                     ui.label("Zhipu AI")
@@ -6952,7 +6951,7 @@ def goto_func_page():
                 with ui.card().style(card_css):
                     ui.label("Large Language Model")
                     with ui.row():
-                        switch_webui_show_card_llm_chatgpt = ui.switch('ChatGPT/闻达', value=config.get("webui", "show_card", "llm", "chatgpt")).style(switch_internal_css)
+                        switch_webui_show_card_llm_chatgpt = ui.switch('ChatGPT/Wenda', value=config.get("webui", "show_card", "llm", "chatgpt")).style(switch_internal_css)
                         switch_webui_show_card_llm_zhipu = ui.switch('Zhipu AI', value=config.get("webui", "show_card", "llm", "zhipu")).style(switch_internal_css)
                         switch_webui_show_card_llm_chat_with_file = ui.switch('chat_with_file', value=config.get("webui", "show_card", "llm", "chat_with_file")).style(switch_internal_css)
                         switch_webui_show_card_llm_langchain_chatchat = ui.switch('langchain_chatchat', value=config.get("webui", "show_card", "llm", "langchain_chatchat")).style(switch_internal_css)
