@@ -75,7 +75,19 @@ def post_json(kind: str, data: dict) -> None:
     if out.get("code") != 200:
         log(f"[app] rejected: {out}")
 
+TOUR_URL = "http://127.0.0.1:8091/comment"
 
+
+def ping_tour(username: str, content: str) -> None:
+    """Tell product_tour.py a viewer commented (so it pauses and shows the comment on the overlay)."""
+    try:
+        urllib.request.urlopen(urllib.request.Request(
+            TOUR_URL,
+            data=json.dumps({"username": username, "content": content}).encode("utf-8"),
+            headers={"Content-Type": "application/json"}, method="POST"), timeout=1)
+    except Exception:
+        pass  # tour not running: ignore
+    
 async def send(kind: str, data: dict) -> None:
     try:
         await asyncio.to_thread(post_json, kind, data)
@@ -104,6 +116,7 @@ def make_client(user: str, gifts: bool, joins: bool, state: dict) -> TikTokLiveC
         if not accept_comment(text):
             return
         log(f"[chat] {nick}: {text}")
+        await asyncio.to_thread(ping_tour, nick, text)
         await send("comment", {"username": nick, "content": text})
 
     @client.on(OecLiveShoppingEvent)
