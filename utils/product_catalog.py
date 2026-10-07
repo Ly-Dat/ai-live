@@ -208,6 +208,11 @@ class ProductCatalog:
         ("stock_note", "answer_stock", ["con hang", "het hang", "con khong", "con size"]),
     ]
 
+    def buy_reply(self, product: Dict) -> str:
+        """Call-to-action for a buying signal: point at the cart (never at off-platform contact)."""
+        tpl = self.templates.get("answer_buy", "To order {name}, tap cart item {number} and check out in TikTok.")
+        return tpl.format(name=product["name"], number=product.get("order", ""))
+
     def quick_answer(self, text: str) -> Optional[str]:
         """Answer a simple, factual question straight from the catalog; None means 'let the LLM handle it'.
 

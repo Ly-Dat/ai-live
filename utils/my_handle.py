@@ -19,7 +19,7 @@ from .db import SQLiteDB
 from .my_translate import My_Translate
 
 from .luoxi_project.live_comment_assistant import send_msg_to_live_comment_assistant
-from . import tiktok_safety, product_catalog
+from . import tiktok_safety, product_catalog, live_analytics
 
 
 """
@@ -1340,6 +1340,18 @@ class My_handle(metaclass=SingletonMeta):
             )
         return self._tiktok_safety
 
+    def get_analytics(self):
+        """Lazily create the live analytics recorder (log/analytics/session-*.jsonl)."""
+        if getattr(self, "_analytics", None) is None:
+            try:
+                enable = My_handle.config.get("analytics", "enable")
+                enable = True if enable is None else bool(enable)
+                d = My_handle.config.get("analytics", "dir") or "log/analytics"
+            except Exception:
+                enable, d = True, "log/analytics"
+            self._analytics = live_analytics.LiveAnalytics(d, enable)
+        return self._analytics
+
     def product_handle(self, data):
         """The seller pinned / popped up a product in the TikTok live room (pushed by tiktok_bridge.py).
 
@@ -1360,6 +1372,7 @@ class My_handle(metaclass=SingletonMeta):
                 return
             if is_new:
                 logger.info(f"Added new product from the live room to the catalog: {product['name']}")
+            self.get_analytics().record("product_pop", product_id=product["id"], new=bool(is_new))
 
             if not My_handle.config.get("products", "pitch_on_pop"):
                 return
@@ -1375,6 +1388,7 @@ class My_handle(metaclass=SingletonMeta):
             if pitch is None:
                 logger.warning(f"Pinned-product pitch dropped by the safety filter: {product['name']}")
                 return
+            self.get_analytics().record("pitch", product_id=product["id"], source="pop")
             self.reread_handle({"username": "Streamer", "content": pitch}, type="reread")
         except Exception:
             logger.error(traceback.format_exc())
@@ -1413,6 +1427,11 @@ class My_handle(metaclass=SingletonMeta):
         if My_handle.config.get("filter", "tiktok_safety", "enable"):
             try:
                 safety = self.get_tiktok_safety()
+                hits = safety.check(content, scope)
+                if hits:
+                    self.get_analytics().record(
+                        "blocked", scope=scope, categories=sorted({h.category for h in hits}),
+                        action="drop" if any(h.action == "drop" for h in hits) else "mask")
                 tmp = safety.sanitize(content, scope)
                 if tmp is None:
                     logger.warning(f"TikTok safety filter dropped ({scope}): {content}")
@@ -3234,12 +3253,23 @@ class My_handle(metaclass=SingletonMeta):
             chat_type = My_handle.config.get("chat_type")
             # Simple factual product questions are answered straight from the catalog (fast, no LLM, nothing invented)
             quick_reply = None
-            if My_handle.config.get("products", "quick_answers"):
-                catalog = self.get_product_catalog()
-                if catalog is not None:
-                    quick_reply = catalog.quick_answer(data["content"])
-                    if quick_reply:
-                        logger.info(f"Quick product answer: {quick_reply}")
+            intent = live_analytics.classify_intent(data["content"])
+            matched_product = None
+            catalog = self.get_product_catalog()
+            if catalog is not None:
+                found = catalog.find_relevant(data["content"], 1)
+                matched_product = found[0] if found else None
+            if My_handle.config.get("products", "quick_answers") and catalog is not None:
+                quick_reply = catalog.quick_answer(data["content"])
+                if not quick_reply and intent == "buy" and matched_product:
+                    quick_reply = catalog.buy_reply(matched_product)
+                if quick_reply:
+                    logger.info(f"Quick product answer: {quick_reply}")
+            analytics = self.get_analytics()
+            analytics.record("comment", user=username, text=data["content"], intent=intent,
+                             product_id=matched_product["id"] if matched_product else None)
+            analytics.record("answer", source="quick" if quick_reply else "llm",
+                             product_id=matched_product["id"] if matched_product else None)
 
             if quick_reply:
                 resp_content = quick_reply
@@ -3368,6 +3398,7 @@ class My_handle(metaclass=SingletonMeta):
             # Deduplicate data within the specified time
             if self.is_data_repeat_in_limited_time("gift", data):
                 return None
+            self.get_analytics().record("gift", user=data.get("username"), gift=data.get("gift_name"), num=data.get("num"))
             
             # Record database
             if My_handle.config.get("database", "gift_enable"):
@@ -3478,6 +3509,7 @@ class My_handle(metaclass=SingletonMeta):
             # Deduplicate data within the specified time
             if self.is_data_repeat_in_limited_time("entrance", data):
                 return None
+            self.get_analytics().record("entrance", user=data.get("username"))
             
             # Record database
             if My_handle.config.get("database", "entrance_enable"):

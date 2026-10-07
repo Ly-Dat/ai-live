@@ -12,15 +12,26 @@ automatic TikTok LIVE seller:
 - Tour extras: AI disclosure line, follow/ask/cart reminders between products, `"active": false` to skip sold-out items.
 - Speaks Vietnamese (edge-tts `vi-VN-HoaiMyNeural`) and drives a Live2D avatar; the codebase and UI are English.
 
+## Why sellers use it
+
+- **Sells while you rest**: tours the whole cart on a loop, answers price / size / shipping / returns instantly from your own catalog.
+- **Turns buying signals into action**: "chốt đơn", "lấy 1 cái" and similar comments get a call-to-action that points to the cart item.
+- **Stays inside TikTok's rules**: two-way compliance filter, AI-disclosure line, no off-platform contact or payment talk.
+- **Shows what worked**: Dashboard tab and `python report_session.py` list what viewers asked, which products drew interest and what the filter caught.
+- **Cheap to run**: quick answers skip the LLM entirely.
+
 ## Architecture
 
+```mermaid
+flowchart LR
+    TT[TikTok LIVE] --> BR[tiktok_bridge.py] -- POST /send --> APP[main.py: filters, intent, catalog, LLM]
+    TOUR[product_tour.py] -- POST /send --> APP
+    CAT[(products.json)] <--> APP
+    APP --> OUT[TTS + Live2D] --> TT
+    APP --> LOG[(analytics .jsonl)] --> DASH[Web UI Dashboard + report]
 ```
-TikTok LIVE --> tiktok_bridge.py (TikTokLive 7.x, own venv) --POST /send--> main.py :8082
-                                                                              |
-product_tour.py --POST /send (type=reread)---------------------------------->|
-                                                                              v
-                    My_handle: filters (badwords + TikTok safety) -> LLM (+ product context) -> TTS -> Live2D
-```
+
+Full write-up with the message pipeline, module table and roadmap: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Quick start
 
@@ -47,7 +58,7 @@ TikTok does **not** push the whole shopping cart over the live websocket - only 
 Auto-imported products only have a name and price, so add `highlights`, `faq`, etc. by hand for better pitches.
 Run the bridge with `--debug-cart cart.jsonl` once in a real live to capture the raw shopping events: TikTok's
 `OecLiveShoppingMessageV2` may carry more product detail, and that file shows what is available.
-A seller-side route to the full cart would be the TikTok Shop Partner API (requires an approved app); not implemented.
+3. **TikTok Shop Partner API (seller account).** `python sync_shop_products.py [--details] [--dry-run]` pulls the real catalog; put credentials in `tiktok_shop_credentials.json` or `TTS_*` env vars. Needs an approved app; not yet verified against a live shop.
 
 ## Configuration
 
@@ -79,3 +90,9 @@ A seller-side route to the full cart would be the TikTok Shop Partner API (requi
 ## Supported platforms
 
 Only `talk`, `tiktok`, `youtube` and `twitch` remain; the Chinese-platform listeners (Bilibili, Douyin, Kuaishou, WeChat, etc.) were removed. Their old config sections in `config.json` are unused.
+
+## Live analytics
+
+Every comment, answer, blocked message and pitch is logged to `log/analytics/session-*.jsonl` (viewer names are salted hashes).
+View it in the web UI **Dashboard** tab, or run `python report_session.py [--out report.md]` after the live.
+Toggle with `config.json -> analytics.enable`.

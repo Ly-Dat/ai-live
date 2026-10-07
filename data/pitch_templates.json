@@ -31,6 +31,7 @@
   "answer_shipping": "{value}",
   "answer_return": "{value}",
   "answer_usage": "Cách dùng {name}: {value}",
+  "answer_buy": "Bạn muốn lấy {name} thì bấm vào giỏ hàng, chọn sản phẩm số {number} rồi đặt hàng ngay trong TikTok nhé.",
   "answer_stock": "{value}",
   "disclosure": "Mình là trợ lý AI của shop, nội dung livestream này được tạo bằng trí tuệ nhân tạo nhé cả nhà.",
   "interstitial": [
