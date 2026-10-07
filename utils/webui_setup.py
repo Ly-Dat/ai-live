@@ -43,12 +43,21 @@ def build_setup_tab(config):
     with ui.stepper().props("vertical").classes("w-full") as stepper:
         # ------------------------------------------------------------------ 1 shop
         with ui.step("Your shop"):
-            shop = ui.input("Shop name", value=setup["shop_name"]).classes("w-96")
-            user = ui.input("TikTok username that goes live (with or without @)", value=setup["tiktok_username"]).classes("w-96")
+            mode = ui.toggle({"seller": "I sell products", "creator": "I'm a creator (no cart)"}, value=setup.get("mode", "seller"))
+            ui.label("Creators get a chat host with no product pitches; sellers get the cart, tour and flash sales.").classes("lv-sub")
+            shop = ui.input("Shop or channel name", value=setup["shop_name"]).classes("w-full").style("max-width:384px")
+            user = ui.input("TikTok username that goes live (with or without @)", value=setup["tiktok_username"]).classes("w-full").style("max-width:384px")
             with ui.row():
                 gifts = ui.switch("Thank viewers for gifts and follows", value=setup["gifts"])
                 joins = ui.switch("Greet new viewers (noisy in big rooms)", value=setup["joins"])
+            returning_sw = ui.switch("Welcome returning viewers (remembers a hashed id, never the name)", value=bool(setup.get("returning_viewers")))
+            ui.button("Forget all remembered viewers", on_click=lambda: _forget()).props("flat dense no-caps color=negative")
             msg1 = ui.label("").classes("text-negative")
+
+            def _forget():
+                from . import returning
+                returning.ViewerBook(os.path.join(ROOT, "data", "viewers.json")).forget_all()
+                ui.notify("All remembered viewers were deleted.", type="positive")
 
             def next1():
                 problems = setup_wizard.validate({"tiktok_username": user.value})
@@ -60,6 +69,8 @@ def build_setup_tab(config):
         # ------------------------------------------------------------------ 2 products
         with ui.step("Products"):
             n = len(product_catalog.ProductCatalog(products_path, templates_path).products) if os.path.exists(products_path) else 0
+            products_note = ui.label("Creator mode: you can skip this step, no products are needed.").classes("text-positive")
+            products_note.set_visibility(setup.get("mode") == "creator")
             count_lbl = ui.label(f"The catalog has {n} product(s). Upload your Seller Center export (CSV/XLSX) or edit them in the Products tab.")
 
             async def on_upload(e):
@@ -71,15 +82,24 @@ def build_setup_tab(config):
                         subprocess.run, [sys.executable, "import_products.py", path, "--products", products_path],
                         cwd=ROOT, capture_output=True, text=True)
                 ui.notify((res.stdout or res.stderr or "done").strip()[-300:], type="positive" if res.returncode == 0 else "negative")
-            ui.upload(on_upload=on_upload, auto_upload=True).props('accept=".csv,.xlsx" flat bordered').classes("w-96")
+            ui.upload(on_upload=on_upload, auto_upload=True).props('accept=".csv,.xlsx" flat bordered').classes("w-full").style("max-width:384px")
             with ui.stepper_navigation():
                 ui.button("Next", on_click=stepper.next)
                 ui.button("Back", on_click=stepper.previous).props("flat")
 
         # ------------------------------------------------------------------ 3 persona
         with ui.step("Voice and persona"):
-            radio = ui.radio({pid: f"{p['name']} - {p['description']}" for pid, p in pmap.items()},
-                             value=setup["persona_id"] if setup["persona_id"] in pmap else "friendly_girl")
+            def persona_options(m):
+                return {p["id"]: f"{p['name']} - {p['description']}" for p in personas.for_mode(pdata, m)}
+            opts = persona_options(setup.get("mode", "seller"))
+            radio = ui.radio(opts, value=setup["persona_id"] if setup["persona_id"] in opts else next(iter(opts)))
+
+            def on_mode(e):
+                o = persona_options(mode.value)
+                radio.set_options(o, value=radio.value if radio.value in o else next(iter(o)))
+                products_note.set_visibility(mode.value == "creator")
+                auto_tour.set_value(auto_tour.value and mode.value != "creator")
+            mode.on_value_change(on_mode)
 
             async def preview():
                 p = pmap[radio.value]
@@ -102,7 +122,9 @@ def build_setup_tab(config):
 
             def save_answers():
                 answers = dict(setup, shop_name=shop.value or "", tiktok_username=setup_wizard.clean_username(user.value),
-                               persona_id=radio.value, gifts=gifts.value, joins=joins.value)
+                               persona_id=radio.value, gifts=gifts.value, joins=joins.value,
+                               mode=mode.value, returning_viewers=bool(returning_sw.value),
+                               auto_tour=bool(setup.get("auto_tour", True)) and mode.value != "creator")
                 setup_wizard.save_setup(answers)
                 changes = setup_wizard.apply_setup(cfg_path, products_path, personas_path, answers)
                 return answers, changes
@@ -161,7 +183,7 @@ def build_setup_tab(config):
                 answers.update({"tour_min_minutes": tour_min.value or 5, "tour_max_minutes": tour_max.value or 10,
                                 "tour_quiet": tour_quiet.value or 2})
                 setup_wizard.save_setup(answers)
-                if auto_tour.value:
+                if auto_tour.value and answers.get("mode") != "creator":
                     PM.start("tour", setup_wizard.tour_command(answers))
                 ui.notify("Started. Watch the log below.", type="positive")
                 refresh()

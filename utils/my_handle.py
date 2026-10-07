@@ -3587,13 +3587,31 @@ class My_handle(metaclass=SingletonMeta):
 
 
     # Entrance handling
+    def _get_viewer_book(self):
+        """The returning-viewer book, or None when the seller has not opted in."""
+        from utils import returning, setup_wizard
+        if not setup_wizard.load_setup().get("returning_viewers"):
+            return None
+        if getattr(My_handle, "_viewer_book", None) is None:
+            My_handle._viewer_book = returning.ViewerBook(os.path.join(setup_wizard.ROOT, "data", "viewers.json"))
+        return My_handle._viewer_book
+
     def entrance_handle(self, data):
         try:
             # Deduplicate data within the specified time
             if self.is_data_repeat_in_limited_time("entrance", data):
                 return None
             self.get_analytics().record("entrance", user=data.get("username"))
-            
+
+            # Opt-in "welcome back" (hashed viewer book, off unless the seller enables it in Setup)
+            returning_visits = 0
+            try:
+                book = self._get_viewer_book()
+                if book is not None:
+                    returning_visits = book.visit(data.get("username") or "")
+            except Exception as e:
+                logger.debug(f"returning viewers: {e}")
+
             # Record database
             if My_handle.config.get("database", "entrance_enable"):
                 insert_data_sql = '''
@@ -3622,10 +3640,19 @@ class My_handle(metaclass=SingletonMeta):
 
             # logger.debug(f"[{data['username']}]: {data['content']}")
         
-            if not My_handle.config.get("thanks")["entrance_enable"]:
+            if not My_handle.config.get("thanks")["entrance_enable"] and not returning_visits:
                 return None
 
-            if My_handle.config.get("thanks", "entrance_random"):
+            welcome_back = None
+            if returning_visits:
+                from utils import returning as _returning
+                welcome_back = _returning.greeting(data['username'], returning_visits)
+
+            if welcome_back:
+                resp_content = welcome_back
+            elif not My_handle.config.get("thanks")["entrance_enable"]:
+                return None
+            elif My_handle.config.get("thanks", "entrance_random"):
                 resp_content = self.thanks_fill(random.choice(My_handle.config.get("thanks", "entrance_copy")), data)
             else:
                 # Check whether the class variable list has data; if not, copy the data and then take the first item in order

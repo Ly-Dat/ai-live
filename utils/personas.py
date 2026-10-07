@@ -12,8 +12,15 @@ def get(data: Dict, persona_id: str) -> Optional[Dict]:
     return next((p for p in data.get("personas", []) if p["id"] == persona_id), None)
 
 
+def for_mode(data: Dict, mode: str = "seller") -> List[Dict]:
+    """Personas for 'seller' (default) or 'creator' (no cart: just-chatting, music, study, gaming lives)."""
+    want = "creator" if mode == "creator" else "seller"
+    return [p for p in data.get("personas", []) if p.get("mode", "seller") == want]
+
+
 def build_before_prompt(data: Dict, persona: Dict) -> str:
-    return f"{persona['style']} {data['base_rules']}"
+    rules = data.get("creator_rules") if persona.get("mode") == "creator" and data.get("creator_rules") else data["base_rules"]
+    return f"{persona['style']} {rules}"
 
 
 def apply_to_config(cfg: Dict, data: Dict, persona_id: str) -> List[str]:

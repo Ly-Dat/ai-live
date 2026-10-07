@@ -48,6 +48,11 @@ body{ background:var(--lv-bg) !important; color:var(--lv-text); }
 .lv-pill.warn .lv-dot{ background:var(--lv-warn); }
 
 /* ---- sidebar ---- */
+.lv-bottomnav{ display:none !important; background:color-mix(in srgb,var(--lv-surface) 92%,transparent) !important; backdrop-filter:blur(14px);
+  border-top:1px solid var(--lv-border); padding:4px 6px calc(4px + env(safe-area-inset-bottom)); }
+.lv-bottomnav .lv-bn{ flex:1; min-height:48px; min-width:44px; color:var(--lv-muted) !important; font-size:11px; font-weight:600; }
+.lv-bottomnav .lv-bn.active{ color:var(--lv-accent) !important; }
+@media (max-width:899px){ .lv-bottomnav{ display:flex !important; justify-content:space-around; } }
 .lv-drawer{ background:var(--lv-surface) !important; border-right:1px solid var(--lv-border) !important; }
 .lv-drawer .q-scrollarea__content{ padding:14px 12px 24px; }
 .lv-group{ font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--lv-muted);
@@ -188,11 +193,13 @@ def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark
     """Header + sidebar. `tabs` is the (hidden) ui.tabs; `nav` is [(group, [(label, icon, tab), ...]), ...].
     Returns select(tab) so other code can navigate."""
     buttons: Dict[object, ui.button] = {}
+    bottom: Dict[object, ui.button] = {}
 
     def select(tab):
         tabs.set_value(tab)
-        for t, b in buttons.items():
-            b.classes(add="active" if t is tab else None, remove=None if t is tab else "active")
+        for group in (buttons, bottom):
+            for t, b in group.items():
+                b.classes(add="active" if t is tab else None, remove=None if t is tab else "active")
 
     with ui.header(elevated=False).classes("lv-header items-center justify-between no-wrap"):
         with ui.element("div").classes("lv-brand"):
@@ -250,6 +257,15 @@ def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark
                 shown += vis
             glabel.set_visibility(shown > 0)
     search.on("update:model-value", apply_filter)
+
+    # Phone layout: the five things a seller needs, one tap away (the drawer holds the rest).
+    flat = {label: (icon, tab) for _, items in nav for label, icon, tab in items}
+    with ui.footer(fixed=True, elevated=False).classes("lv-bottomnav items-center no-wrap"):
+        for label in ("Home", "Setup", "Dashboard", "Products"):
+            if label in flat:
+                icon, tab = flat[label]
+                bottom[tab] = ui.button(label, icon=icon, on_click=lambda t=tab: select(t)).props("flat stack no-caps dense").classes("lv-bn")
+        ui.button("More", icon="menu", on_click=lambda: drawer.toggle()).props("flat stack no-caps dense").classes("lv-bn")
 
     select.by_label = {label: tab for _, items in nav for label, _, tab in items}
     return select

@@ -8,7 +8,7 @@ import os
 
 from nicegui import ui
 
-from . import home_status, live_analytics, milestones, recap, setup_wizard, starter, webui_mascot
+from . import home_status, live_analytics, milestones, recap, recap_card, setup_wizard, starter, webui_mascot
 from .webui_theme import port_open
 
 
@@ -32,12 +32,19 @@ def _facts(config):
         except Exception:
             voice_ok = False
     return {"tiktok_username": setup.get("tiktok_username"), "product_count": count, "voice_ok": voice_ok,
-            "api_ok": port_open(config.get("api_port")), "bridge_on": PM.running("bridge")}, shop, count, engine
+            "api_ok": port_open(config.get("api_port")), "bridge_on": PM.running("bridge"),
+            "mode": setup.get("mode", "seller")}, shop, count, engine
 
 
 def build_home_tab(config, go):
     """`go(tab_label)` switches to another tab ("Setup", "Products", "Voice", "Dashboard", "Live tools")."""
     log_dir = config.get("analytics", "dir") or "log/analytics"
+
+    def pdata_shop():
+        try:
+            return json.load(open(config.get("products", "path") or "data/products.json", encoding="utf-8")).get("shop_name", "")
+        except Exception:
+            return ""
 
     def load_starter():
         path = config.get("products", "path") or "data/products.json"
@@ -122,7 +129,20 @@ def build_home_tab(config, go):
                 with ui.row().classes("no-wrap items-start").style("gap:8px;margin-top:6px"):
                     ui.icon("tips_and_updates").style("color:var(--lv-accent);font-size:18px;margin-top:2px")
                     ui.label(t).style("line-height:1.45;font-size:14px")
-            ui.button("Open dashboard", icon="arrow_forward", on_click=lambda: go("Dashboard")).props("flat no-caps color=primary").style("margin-top:8px")
+            def save_card():
+                try:
+                    st = recap_card.card_stats(s, names, setup_wizard.load_setup().get("shop_name") or pdata_shop(), run)
+                    out = os.path.join("out", "recap-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".png")
+                    recap_card.render_card(st, out)
+                    with open(out, "rb") as fh:
+                        ui.download(fh.read(), os.path.basename(out))
+                    ui.notify("Recap image saved in the out folder and downloaded.", type="positive")
+                except Exception as e:
+                    ui.notify(f"Could not make the image: {e}", type="negative")
+
+            with ui.row().style("gap:4px;margin-top:8px"):
+                ui.button("Open dashboard", icon="arrow_forward", on_click=lambda: go("Dashboard")).props("flat no-caps color=primary")
+                ui.button("Save recap image", icon="image", on_click=save_card).props("flat no-caps color=primary")
 
     @ui.refreshable
     def progress_card():
@@ -158,12 +178,19 @@ def build_home_tab(config, go):
 
     ui.label("Quick actions").style("font-weight:700;font-size:16px;margin:26px 0 10px")
     with ui.row().classes("w-full").style("gap:14px"):
-        for icon, title, sub, tab in [
+        creator = setup_wizard.load_setup().get("mode") == "creator"
+        actions = [
+            ("tune", "Choose your host", "Chat persona and voice", "Setup"),
+            ("record_voice_over", "Try a voice", "Free Vietnamese voices", "Voice"),
+            ("rocket_launch", "Go live", "Start the TikTok bridge", "Setup"),
+            ("insights", "See stats", "What viewers asked", "Dashboard"),
+        ] if creator else [
             ("add_shopping_cart", "Add a product", "Cart, facts and pitch", "Products"),
             ("bolt", "Flash sale", "Timed announcements", "Live tools"),
             ("record_voice_over", "Try a voice", "Free Vietnamese voices", "Voice"),
             ("insights", "See stats", "What viewers asked", "Dashboard"),
-        ]:
+        ]
+        for icon, title, sub, tab in actions:
             with ui.card().classes("lv-card lv-action").style("flex:1 1 200px;padding:18px;cursor:pointer").on("click", lambda t=tab: go(t)):
                 with ui.element("div").classes("lv-ico"):
                     ui.icon(icon)

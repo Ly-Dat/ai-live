@@ -14,6 +14,7 @@ STEPS = [
 
 
 def checklist(facts: Dict) -> List[Dict]:
+    mode_steps = [s for s in STEPS if not (facts.get("mode") == "creator" and s[0] == "products")]
     ok = {
         "shop": bool(str(facts.get("tiktok_username") or "").strip()),
         "products": int(facts.get("product_count") or 0) > 0,
@@ -21,7 +22,7 @@ def checklist(facts: Dict) -> List[Dict]:
         "app": bool(facts.get("api_ok")),
         "bridge": bool(facts.get("bridge_on")),
     }
-    return [{"id": i, "label": l, "ok": ok[i], "hint": h, "tab": t} for i, l, h, t in STEPS]
+    return [{"id": i, "label": l, "ok": ok[i], "hint": h, "tab": t} for i, l, h, t in mode_steps]
 
 
 def progress(items: List[Dict]) -> int:

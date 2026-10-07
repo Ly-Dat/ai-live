@@ -26,6 +26,8 @@ DEFAULT_SETUP = {
     "tour_min_minutes": 5,
     "tour_max_minutes": 10,
     "tour_quiet": 2,
+    "mode": "seller",            # "seller" (cart, pitches) or "creator" (just chatting, no products)
+    "returning_viewers": False,  # opt-in welcome-back greetings (hashed viewer book)
 }
 
 
@@ -71,6 +73,10 @@ def apply_setup(config_path: str, products_path: str, personas_path: str, answer
     changes.append(f"room_display_id = {cfg['room_display_id']}")
     persona_changes = personas.apply_to_config(cfg, personas.load(personas_path), answers.get("persona_id", "friendly_girl"))
     changes += persona_changes
+    creator = answers.get("mode") == "creator"
+    if isinstance(cfg.get("products"), dict):
+        cfg["products"]["enable"] = not creator
+        changes.append(f"products.enable = {not creator}")
     text = json.dumps(cfg, ensure_ascii=False, indent=2)
     with open(config_path, "w", encoding="utf-8", newline="") as f:
         f.write(text.replace("\n", "\r\n") if crlf else text)
@@ -137,7 +143,7 @@ def bridge_command(setup: Dict, python: str) -> List[str]:
     cmd = [python, "tiktok_bridge.py", clean_username(setup["tiktok_username"])]
     if setup.get("gifts"):
         cmd.append("--gifts")
-    if setup.get("joins"):
+    if setup.get("joins") or setup.get("returning_viewers"):
         cmd.append("--joins")
     return cmd
 
