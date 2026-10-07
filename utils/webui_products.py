@@ -17,13 +17,33 @@ import subprocess
 import sys
 import tempfile
 
-from nicegui import ui
+from nicegui import ui, run, app
 
 from . import catalog_enrich, product_catalog, tiktok_safety
 from .webui_theme import page_title
 
+from .tiktok_fetch import fetch_tiktok_product, _download_images, _money, IMG_DIR
+
+import time
+from pathlib import Path
+
+NEW_PRODUCT_DEFAULTS = {
+    "shipping": "Shop gửi hàng qua TikTok Shop, thời gian giao tuỳ khu vực.",
+    "return_policy": "Được đổi trả theo chính sách của TikTok Shop.",
+    "stock_note": "Số lượng có hạn trong phiên live này.",
+}
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
+IMG_URL = "/product_images"
+IMG_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+
+
+async def _read_upload(e):
+    """Works with NiceGUI 1.x/2.x (e.content) and 3.x (e.file)."""
+    if hasattr(e, "file"):
+        return e.file.name, await e.file.read()
+    return e.name, e.content.read()
 
 def _lines(text: str):
     return [x.strip() for x in (text or "").splitlines() if x.strip()]
@@ -49,7 +69,12 @@ def build_products_tab(config):
     terms_path = config.get("filter", "tiktok_safety", "terms_path") or "data/tiktok_policy_terms.json"
     api_url = f'http://127.0.0.1:{config.get("api_port")}/send'
     state = {"catalog": None, "selected": None}
-
+    IMG_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        app.add_static_files(IMG_URL, str(IMG_DIR))
+    except Exception:
+        pass
+    
     def load():
         state["catalog"] = product_catalog.ProductCatalog(products_path, templates_path)
         return state["catalog"]
@@ -88,8 +113,23 @@ def build_products_tab(config):
         with ui.card().classes('lv-card').style('width:49%;padding:18px;min-width:0'):
             ui.label('Cart products (in the order the streamer introduces them)').classes('text-bold')
             table = ui.table(columns=columns, rows=rows(), row_key='idx', selection='single').classes('w-full')
+
+            # ---- dialog must be created BEFORE the Add button uses it ----
+            with ui.dialog() as add_dialog, ui.card().classes('w-96'):
+                link = ui.input('TikTok product link (empty = blank product)').classes('w-full')
+
+                async def do_add():
+                    add_dialog.close()
+                    v = link.value or ""
+                    link.value = ""
+                    await add_product(v)
+
+                link.on('keydown.enter', do_add)
+                ui.button('Add', on_click=do_add)
+
             with ui.row():
                 ui.button('New', on_click=lambda: new_product())
+                ui.button('Add', icon='add', on_click=add_dialog.open)
                 ui.button('Move up', on_click=lambda: move(-1))
                 ui.button('Move down', on_click=lambda: move(1))
                 ui.button('Reload file', on_click=lambda: (load(), refresh_table(), ui.notify('Reloaded', type='info')))
@@ -127,6 +167,53 @@ def build_products_tab(config):
             f["return_policy"] = ui.input('Returns').classes('w-full')
             f["stock_note"] = ui.input('Stock note').classes('w-full')
             f["faq"] = ui.textarea('FAQ (one per line: question || answer)').classes('w-full')
+            ui.label('Images')
+
+            @ui.refreshable
+            def gallery():
+                i, cat = state["selected"], state["catalog"]
+                p = cat.products[i] if i is not None and 0 <= i < len(cat.products) else None
+                with ui.row().classes('items-center gap-2'):
+                    if not p or not p.get("images"):
+                        ui.label('No images yet').classes('text-grey')
+                    else:
+                        for path in list(p["images"]):
+                            with ui.card().tight().classes('w-28'):
+                                ui.image(f"{IMG_URL}/{Path(path).name}").classes('h-28 object-cover')
+                                ui.button(icon='delete', on_click=lambda _, path=path: remove_image(path)) \
+                                    .props('flat dense color=negative')
+            gallery()
+
+            async def on_img_upload(e):
+                p = selected_product()
+                if p is None:
+                    ui.notify('Select a product first', type='warning')
+                    return
+                name, content = await _read_upload(e)
+                ext = Path(name).suffix.lower()
+                if ext not in IMG_EXT:
+                    ui.notify(f'Unsupported file type: {ext}', type='negative')
+                    return
+                fname = f"{p.get('id') or 'product'}_{int(time.time() * 1000)}{ext}"
+                (IMG_DIR / fname).write_bytes(content)
+                p.setdefault("images", []).append(f"{IMG_DIR.as_posix()}/{fname}")
+                persist()
+                gallery.refresh()
+
+            def remove_image(path):
+                p = selected_product()
+                if p is None:
+                    return
+                p["images"].remove(path)
+                try:
+                    Path(path).unlink()
+                except OSError:
+                    pass
+                persist()
+                gallery.refresh()
+
+            ui.upload(label='Add images', multiple=True, auto_upload=True, on_upload=on_img_upload) \
+                .props('accept=image/* flat bordered').classes('w-full')
             with ui.row():
                 ui.button('Save product', on_click=lambda: save_product())
                 ui.button('Say pitch now', on_click=lambda: pitch_now()).props('color=secondary')
@@ -152,7 +239,16 @@ def build_products_tab(config):
         f["return_policy"].value = p.get("return_policy", "")
         f["stock_note"].value = p.get("stock_note", "")
         f["faq"].value = _faq_to_text(p.get("faq", []))
-
+        gallery.refresh()
+        
+    def clear_form():
+        for k, w in f.items():
+            if k == "active":
+                w.value = True
+            else:
+                w.value = ""
+        gallery.refresh()
+        
     def on_select(e):
         sel = table.selected
         if sel:
@@ -160,6 +256,8 @@ def build_products_tab(config):
             fill_form(selected_product())
         else:
             state["selected"] = None
+            clear_form()
+            
     table.on('selection', on_select)
 
     def save_product():
@@ -182,6 +280,8 @@ def build_products_tab(config):
         })
         p.pop("auto_imported", None)  # edited by a human now
         persist()
+        gallery.refresh()
+        ui.notify('Deleted', type='info')
         ui.notify('Saved', type='positive')
 
     def persist():
@@ -197,17 +297,58 @@ def build_products_tab(config):
         cat.products.append({"id": f"NEW{len(cat.products) + 1:03d}", "order": len(cat.products) + 1,
                              "name": "New product", "aliases": [], "price": "", "original_price": "",
                              "description": "", "highlights": [], "sizes_colors": "", "how_to_use": "",
-                             "shipping": "", "return_policy": "", "stock_note": "", "faq": []})
+                             "shipping": "", "return_policy": "", "stock_note": "", "faq": [], "images": []})
         persist()
         state["selected"] = len(cat.products) - 1
         fill_form(cat.products[-1])
 
+    async def add_product(raw: str = ""):
+        info = {}
+        raw = (raw or "").strip()
+        if raw.startswith("http"):
+            ui.notify("Reading the product in Chrome... if a check appears there, solve it.", timeout=8000)
+            try:
+                info = await run.io_bound(fetch_tiktok_product, raw)
+            except Exception as ex:
+                ui.notify(f"Browser problem: {ex}", type="negative", timeout=12000)
+            if not info.get("name"):
+                ui.notify("Couldn't read that page. Blank product created, fill it in manually.",
+                          type="warning", timeout=8000)
+        elif raw:
+            try:
+                info = json.loads(raw)
+            except ValueError:
+                ui.notify("Not a link or valid product data. Blank product created.", type="warning")
+
+        cat = state["catalog"]
+        n = len(cat.products) + 1
+        existing = {p.get("id") for p in cat.products}
+        while f"P{n:03d}" in existing:
+            n += 1
+        pid = f"P{n:03d}"
+        IMG_DIR.mkdir(parents=True, exist_ok=True)
+        imgs = await run.io_bound(_download_images, pid, info.get("images", []))
+        cat.products.append({
+            **NEW_PRODUCT_DEFAULTS,
+            "id": pid, "order": len(cat.products) + 1,
+            "name": info.get("name") or "New product", "aliases": [],
+            "price": _money(info.get("price")), "original_price": _money(info.get("original_price")),
+            "description": info.get("description", ""), "intro": info.get("intro", ""),
+            "highlights": [], "sizes_colors": info.get("sizes_colors", ""), "how_to_use": "",
+            "faq": [], "images": imgs, "active": True,
+        })
+        persist()                                   # renumbers order and saves data/products.json
+        state["selected"] = len(cat.products) - 1
+        fill_form(cat.products[-1])
+        
     def delete_product():
         i = state["selected"]
         if i is None:
             return
         del state["catalog"].products[i]
         state["selected"] = None
+        table.selected.clear()
+        clear_form()
         persist()
         ui.notify('Deleted', type='info')
 

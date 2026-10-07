@@ -33,6 +33,7 @@ from TikTokLive.events import (
     GiftEvent,
     JoinEvent,
 )
+from TikTokLive.events import OecLiveShoppingEvent
 
 API_URL = "http://127.0.0.1:8082/send"
 IGNORE = set()
