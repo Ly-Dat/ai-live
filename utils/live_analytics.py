@@ -148,6 +148,7 @@ def summarize(events: Iterable[Dict], hot_window_sec: int = 300) -> Dict:
         "comments": len(comments),
         "unique_viewers": len({e.get("user") for e in comments if e.get("user")}),
         "sales_comments": len(sales_comments),
+        "sales_unmatched": sum(1 for e in sales_comments if not e.get("product_id")),
         "buy_intent": intents.get("buy", 0),
         "intents": dict(intents.most_common()),
         "answered": answered,

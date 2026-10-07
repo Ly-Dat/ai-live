@@ -40,6 +40,9 @@ def recap(s: Dict, names: Optional[Dict[str, str]] = None) -> Dict:
         pid, intents = ranked[-1]
         if sum(intents.values()) <= 1 and len(ranked) >= 3:
             tips.append(f"{names.get(pid, pid)} got almost no interest. Reword its pitch or move it later.")
+    un = s.get("sales_unmatched", 0)
+    if un >= 3:
+        tips.append(f"{un} buying questions were not about a specific product. Pin the product on screen so viewers say which one.")
     blocked = s.get("blocked", 0)
     if blocked:
         cats = s.get("blocked_by_category") or {}
