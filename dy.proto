@@ -29,7 +29,7 @@ message Message{
     string wrdsSubKey = 8;
 }
 
-// 聊天
+// Chat
 message ChatMessage {
   Common common = 1;
   User user = 2;
@@ -102,7 +102,7 @@ message RoomUserSeqMessageContributor {
   string exactlyScore = 7;
 }
 
-// 礼物消息
+// Gift message
 message GiftMessage {
   Common common = 1;
   uint64 giftId = 2;
@@ -163,7 +163,7 @@ message GiftStruct {
   //  specialEffectsMap = 20;
   Image icon = 21;
   uint32 actionType = 22;
-  // fixme 后面的就不写了还有几十个属性
+  // fixme: the rest are omitted; there are dozens more fields
 
 }
 
@@ -196,7 +196,7 @@ message TextEffectDetail {
   uint32 strokeWidth = 15;
 }
 
-// 成员消息
+// Member message
 message MemberMessage {
   Common common = 1;
   User user = 2;
@@ -312,7 +312,7 @@ message TextFormat {
   bool useRemoteClor = 8;
 }
 
-// 点赞
+// Like
 message LikeMessage {
   Common common = 1;
   uint64 count = 2;
@@ -560,7 +560,7 @@ message PreMessage {
   uint32 inboxType = 6;
   string buildNumber = 7;
   SendMessageBody sendMessageBody = 8;
-  // 字段名待定
+  // Field name TBD
   string aa = 9;
   string devicePlatform = 11;
   repeated HeadersList headers = 15;

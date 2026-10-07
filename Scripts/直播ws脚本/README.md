@@ -1,3 +1,3 @@
-此文件夹存放直播弹幕监听的JS脚本。  
-如何使用？  
-浏览器打开你需要监听的直播间，然后F12打开控制台，粘贴脚本里的代码到控制台，回车运行  
+This folder contains JS scripts for listening to live-stream danmaku (chat messages).  
+How to use?  
+Open the live room you want to monitor in your browser, press F12 to open the console, paste the script code into the console, and press Enter to run it.  

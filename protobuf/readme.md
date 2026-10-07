@@ -1,18 +1,18 @@
 
-# 生成protobuf的Python版结构体脚本
-## 声明：本代码库所有代码均只用于学习研究交流，严禁用于包括但不限于商业谋利、破坏系统、盗取个人信息等不良不法行为，违反此声明使用所产生的一切后果均由违反声明使用者承担。
-## 侵权或涉及相关利益请联系作者：[微博](https://weibo.com/u/7751075499)、[B站](https://space.bilibili.com/4690313)、[邮箱](mailto:kukushka@126.com)
-> 2024年1月2日
+# Script for generating the Python protobuf structures
+## Disclaimer: All code in this repository is for learning, research, and exchange only. It must not be used for illegal or harmful purposes, including but not limited to commercial profit, system sabotage, or stealing personal information. Any consequences arising from violating this disclaimer are borne by the violator.
+## For infringement or related-interest issues, contact the author: [Weibo](https://weibo.com/u/7751075499), [Bilibili](https://space.bilibili.com/4690313), [Email](mailto:kukushka@126.com)
+> January 2, 2024
 
-## 0.安装[betterproto](https://github.com/danielgtaylor/python-betterproto)
+## 0. Install [betterproto](https://github.com/danielgtaylor/python-betterproto)
 ```shell
 pip install betterproto
 ```
-注意`betterproto`版本为`2.0.0b6`，必须为2.0以上版本
-## 1.在当前目录下打开终端，输入：
+Note: the `betterproto` version is `2.0.0b6`; it must be 2.0 or above.
+## 1. Open a terminal in the current directory and run:
 ```shell
 protoc -I . --python_betterproto_out=. douyin.proto
 ```
-当前目录下生成文件`douyin.py`和`__init__.py`即为成功（此程序已经生成可用）。
+If `douyin.py` and `__init__.py` are generated in the current directory, it succeeded (they have already been generated and are ready to use).
 
 ## Done

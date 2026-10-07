@@ -1,2 +1,2 @@
-`bg.png` 为GUI使用的背景图片，用户可以自行替换自己心仪的图片来自定义背景。  
-`main.ui` 为GUI的布局文件，用户可以自行修改布局。  
+`bg.png` is the background image used by the GUI; users can replace it with an image of their choice to customize the background.  
+`main.ui` is the GUI layout file; users can modify the layout as they wish.  

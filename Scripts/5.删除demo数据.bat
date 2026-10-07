@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul 2>&1
 
-REM 设置文件列表，可以包含多个文件路径和文件夹路径，每个路径用空格分隔
+REM Set the file list; it can contain multiple file and folder paths, separated by spaces
 set "file_list="
 set "file_list=%file_list% data\copywriting\test.txt data\copywriting\测试文案.txt data\copywriting\测试文案2.txt data\copywriting\测试文案3.txt data\copywriting\达达利亚.txt data\copywriting\吐槽.txt data\copywriting\伊卡日语介绍.txt"
 set "file_list=%file_list% data\copywriting2\test.txt data\copywriting2\test2.txt data\copywriting2\测试文案.txt"
@@ -14,25 +14,25 @@ set "file_list=%file_list% out\本地问答音频\关键词1.wav out\本地问�
 set "file_list=%file_list% out\song\把回忆拼好给你.mp3"
 set "folder_list=预留变量"
 
-REM 循环遍历文件列表并删除文件
+REM Loop over the file list and delete the files
 for %%F in (%file_list%) do (
     if exist "%%F" (
         del /f /q "%%F"
-        echo 删除文件 '%%F' 成功。
+        echo Deleted file '%%F' successfully.
     ) else (
-        echo 文件 '%%F' 不存在，无需删除。
+        echo File '%%F' does not exist, nothing to delete.
     )
 )
 
-REM 循环遍历文件夹列表并删除文件夹
+REM Loop over the folder list and delete the folders
 for %%D in (%folder_list%) do (
     if exist "%%D" (
         rd /s /q "%%D"
-        echo 删除文件夹 '%%D' 成功。
+        echo Deleted folder '%%D' successfully.
     ) else (
-        echo 文件夹 '%%D' 不存在，无需删除。
+        echo Folder '%%D' does not exist, nothing to delete.
     )
 )
 
-REM 这里是脚本的其他部分，不会因为文件或文件夹不存在而受影响，可以继续运行。
+REM The rest of the script is unaffected by missing files or folders and can continue running.
 pause

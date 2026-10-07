@@ -1,26 +1,26 @@
 FROM docker.io/library/python:3.10
 
-# 设置工作目录
+# Set the working directory
 WORKDIR .
 
-# 复制应用程序文件到容器中
+# Copy application files into the container
 COPY . .
 
 
-# 安装应用程序依赖项
+# Install application dependencies
 RUN apt-get update && \
     apt-get install -y portaudio19-dev ffmpeg libasound2-dev
 
 RUN pip install requests
 
-# docker跑ai vtb不太行，声卡加载有问题，pyautogui加载也有问题（模拟键鼠）
+# Running the AI VTuber in Docker does not work well: sound card loading is problematic, and pyautogui (keyboard/mouse simulation) also fails to load
 RUN pip install -r requirements.txt -i https://pypi.org/simple/ 
 
-# 设置环境变量（如果需要）
+# Set environment variables (if needed)
 
-# 暴露应用程序的端口（如果需要）
+# Expose the application port (if needed)
 EXPOSE 8081
 EXPOSE 8082
 
-# 启动应用程序
+# Start the application
 CMD ["python", "webui.py"]

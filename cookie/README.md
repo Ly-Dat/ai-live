@@ -1,2 +1,2 @@
-此处存放cookie文件。  
-快手的cookie文件，因为监听服务被噶噶检测，所以每次用完后，第二次使用时需要删除json文件，重新创建。  
+Cookie files are stored here.  
+Kuaishou cookie file: because the listening service gets detected, delete the json file after each use and recreate it the next time you use it.  

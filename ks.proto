@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package kuaishouPubf;
 
-// 进入房间
+// Enter room
 message CSWebEnterRoom {
   int64 payloadType = 1;
   message Payload {
@@ -17,21 +17,21 @@ message CSWebEnterRoom {
   Payload payload = 3;
 }
 
-// 进入房间后应答包
+// Response packet after entering the room
 message SCWebEnterRoomAck {
   uint64 minReconnectMs = 1;
   uint64 maxReconnectMs = 2;
   uint64 heartbeatIntervalMs = 3;
 }
 
-// 用户信息包
+// User info packet
 message SimpleUserInfo {
   string principalId = 1;
   string userName = 2;
   string headUrl = 3;
 }
 
-// 观看用户信息
+// Viewer info
 message WebWatchingUserInfo {
   SimpleUserInfo user = 1;
   bool offline = 2;
@@ -40,14 +40,14 @@ message WebWatchingUserInfo {
   string displayKsCoin = 5;
 }
 
-// 观看用户数
+// Viewer count
 message SCWebLiveWatchingUsers {
   repeated WebWatchingUserInfo watchingUser = 1;
   string displayWatchingCount = 2;
   uint64 pendingDuration = 3;
 }
 
-// 心跳包
+// Heartbeat packet
 message CSWebHeartbeat {
   int64 payloadType = 1;
   message Payload {
@@ -56,14 +56,14 @@ message CSWebHeartbeat {
   Payload payload = 3;
 }
 
-// 消息主体包
+// Message body packet
 message SocketMessage {
   PayloadType payloadType = 1;
   CompressionType compressionType = 2;
   bytes payload = 3;
 }
 
-// 心跳包响应
+// Heartbeat response
 message SCHeartbeatAck {
   uint64 timestamp = 1;
   uint64 clientTimestamp = 2;
@@ -187,7 +187,7 @@ enum CompressionType {
   AES = 3;
 }
 
-// 弹幕数据包返回类型
+// Return type of the danmaku data packet
 enum PayloadType {
  PAYLOAD_TYPE_UNKNOWN = 0;
  CS_HEARTBEAT = 1;

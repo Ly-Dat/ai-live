@@ -8,5 +8,5 @@ pip install -r requirements_bilibili.txt -i https://pypi.python.org/simple/
 pip install -r requirements_dy.txt -i https://pypi.python.org/simple/
 pip install -r requirements_ks.txt -i https://pypi.python.org/simple/
 
-echo 如果都成功了，那没事了，如果有失败的，请手动补装
+echo If everything succeeded you're done; if any failed, please install them manually
 @REM cmd /k
