@@ -3,7 +3,7 @@ openai
 pygame
 edge-tts==6.1.6
 langid
-aiohttp==3.9.1
+aiohttp>=3.9.2
 asyncio
 slack_sdk==3.21.3
 profanity==1.1

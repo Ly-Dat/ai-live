@@ -381,3 +381,19 @@ class Data_Analysis:
         except Exception as e:
             logger.error(traceback.format_exc())
             return None
+
+
+
+def _empty_if_none(fn):
+    """Chart option getters return None when there is no data yet (fresh install). ui.echart needs a dict."""
+    import functools
+
+    @functools.wraps(fn)
+    def wrapper(*a, **kw):
+        res = fn(*a, **kw)
+        return {} if res is None else res
+    return wrapper
+
+
+for _name in [n for n in dir(Data_Analysis) if n.startswith("get_") and n.endswith("_option")]:
+    setattr(Data_Analysis, _name, _empty_if_none(getattr(Data_Analysis, _name)))

@@ -37,7 +37,9 @@ Full write-up with the message pipeline, module table and roadmap: [docs/ARCHITE
 
 ## Quick start (sellers)
 
-1. Install Python 3.10+ and run `pip install -r requirements.txt` once.
+1. Install **Python 3.10 or 3.11** (3.12+ is not supported by the pinned packages), then once:
+   `py -3.11 -m venv venv` and `venv\Scripts\python.exe -m pip install -r requirements-lite.txt`.
+   `start.bat` uses `venv` automatically. (`requirements.txt` is the original full list and has conflicting pins.)
 2. Double-click **`start.bat`** (or `python launcher.py`). It starts the app and opens the control panel.
 3. Follow the **Setup** tab: shop and TikTok username, upload your products (CSV/XLSX), pick a voice and persona, run the dry run, press **Start**.
    The first Start creates the TikTok bridge environment (`venv_tt`) automatically.
