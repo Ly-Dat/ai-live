@@ -79,10 +79,24 @@ def build_products_tab(config):
         state["catalog"] = product_catalog.ProductCatalog(products_path, templates_path)
         return state["catalog"]
 
+    def write_starter():
+        import json as _json
+        from . import starter
+        os.makedirs(os.path.dirname(products_path) or ".", exist_ok=True)
+        with open(products_path, "w", encoding="utf-8") as fh:
+            _json.dump(starter.starter_catalog(), fh, ensure_ascii=False, indent=2)
+
     try:
         load()
     except Exception as e:
-        ui.label(f"Cannot load {products_path}: {e}").classes('text-red')
+        with ui.card().classes('lv-card w-full').style('padding:24px;gap:8px'):
+            ui.label("The products file could not be opened").style("font-weight:700;font-size:18px")
+            ui.label(f"{products_path}: {e}").classes('lv-sub').style("margin:0")
+            if not os.path.exists(products_path):
+                ui.label("It does not exist yet. Start with three sample products, then replace them with yours.").classes('lv-sub').style("margin:0")
+                ui.button("Create sample catalog", icon="auto_awesome", on_click=lambda: (write_starter(), ui.notify("Created. Reopen this tab.", type="positive"))).props("unelevated color=primary no-caps")
+            else:
+                ui.label("The file exists but is not valid JSON. Fix it by hand or restore it from git; nothing was overwritten.").classes('lv-sub').style("margin:0")
         return
 
     columns = [
@@ -107,12 +121,31 @@ def build_products_tab(config):
     def refresh_table():
         table.rows = rows()
         table.update()
+        has = bool(state["catalog"].products)
+        table.set_visibility(has)
+        empty_box.set_visibility(not has)
+
+    def use_starter():
+        if state["catalog"].products:
+            ui.notify("You already have products; nothing was changed.", type="warning")
+            return
+        write_starter()
+        load()
+        refresh_table()
+        ui.notify("3 sample products added. Edit or replace them any time.", type="positive")
 
     page_title('Products', 'Your cart as the AI knows it. Edit facts here; the host only says what is written.')
     with ui.row().classes('w-full items-start no-wrap'):
         with ui.card().classes('lv-card').style('width:49%;padding:18px;min-width:0'):
             ui.label('Cart products (in the order the streamer introduces them)').classes('text-bold')
+            with ui.column().classes('items-center w-full').style('padding:14px 0;gap:6px') as empty_box:
+                ui.icon('shopping_bag').style('font-size:40px;color:var(--lv-muted)')
+                ui.label('Your cart is empty').style('font-weight:700')
+                ui.label('Add one product, import a spreadsheet below, or start with three samples to hear how the host pitches.').classes('lv-sub').style('text-align:center;margin:0')
+                ui.button('Start with 3 samples', icon='auto_awesome', on_click=lambda: use_starter()).props('unelevated color=primary no-caps')
             table = ui.table(columns=columns, rows=rows(), row_key='idx', selection='single').classes('w-full')
+            table.set_visibility(bool(state["catalog"].products))
+            empty_box.set_visibility(not state["catalog"].products)
 
             # ---- dialog must be created BEFORE the Add button uses it ----
             with ui.dialog() as add_dialog, ui.card().classes('w-96'):

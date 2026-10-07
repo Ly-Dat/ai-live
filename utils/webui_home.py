@@ -5,10 +5,11 @@ glance, quick actions and a tip. Everything refreshes every few seconds.
 import datetime
 import json
 import os
+import time
 
-from nicegui import ui
+from nicegui import app, ui
 
-from . import habit, home_status, live_analytics, milestones, recap, recap_card, setup_wizard, starter, webui_mascot
+from . import habit, home_status, live_analytics, milestones, personas, recap, recap_card, setup_wizard, starter, webui_mascot
 from .webui_theme import port_open
 
 
@@ -160,6 +161,65 @@ def build_home_tab(config, go):
                 ui.linear_progress(value=m["fraction"], show_value=False, size="8px").props("rounded")
                 ui.label(f"{m['left']} more {m['noun']} to reach {m['goal']}.").classes("lv-sub").style("margin:6px 0 0;font-size:13px")
 
+    def welcome_card():
+        """First visit only: value before any setup. Hear the host, see the dry run, then continue."""
+        files = [f for f in (os.listdir(log_dir) if os.path.isdir(log_dir) else []) if f.startswith("session-")]
+        if files or setup_wizard.load_setup().get("welcome_dismissed"):
+            return
+        try:
+            from .webui_voice import PREVIEW_DIR
+            os.makedirs(PREVIEW_DIR, exist_ok=True)
+            app.add_static_files("/lv_preview", PREVIEW_DIR)
+            pdata = personas.load(os.path.join(setup_wizard.ROOT, "data", "personas.json"))
+        except Exception:
+            return
+        mode = setup_wizard.load_setup().get("mode", "seller")
+        plist = personas.for_mode(pdata, mode)
+        if not plist:
+            return
+        pmap = {p["id"]: p for p in plist}
+        current = setup_wizard.load_setup().get("persona_id")
+        with ui.card().classes("lv-card w-full").style("padding:20px 22px;border:1px solid var(--lv-accent)") as box:
+            with ui.row().classes("items-center justify-between w-full no-wrap"):
+                with ui.column().style("gap:2px"):
+                    ui.label("Welcome. Meet your AI host in 10 seconds").style("font-weight:800;font-size:18px")
+                    ui.label("No account, no TikTok connection needed yet. Pick a style and listen.").classes("lv-sub").style("margin:0")
+                ui.button(icon="close", on_click=lambda: dismiss()).props("flat round dense").tooltip("Hide this")
+            pick = ui.select({pid: p["name"] for pid, p in pmap.items()}, value=current if current in pmap else next(iter(pmap)),
+                             label="Host style").props("dense outlined").classes("w-full").style("margin-top:10px")
+            blurb = ui.label(pmap[pick.value]["description"]).classes("lv-sub").style("margin:0 0 6px")
+            slot = ui.element("div").classes("w-full")
+            note = ui.label("").classes("lv-sub").style("margin:4px 0 0")
+
+            def on_pick(e):
+                blurb.set_text(pmap[pick.value]["description"])
+                setup_wizard.save_setup(dict(setup_wizard.load_setup(), persona_id=pick.value))
+            pick.on_value_change(on_pick)
+
+            async def hear():
+                p = pmap[pick.value]
+                fname = f"welcome-{p['id']}.mp3"
+                path = os.path.join(PREVIEW_DIR, fname)
+                note.set_text("Preparing the voice...")
+                try:
+                    if not os.path.exists(path):
+                        import edge_tts
+                        await edge_tts.Communicate(text=p["sample"], voice=p["voice"], rate=p.get("rate", "+0%")).save(path)
+                    slot.clear()
+                    with slot:
+                        ui.audio(f"/lv_preview/{fname}?t={int(time.time())}").props("controls autoplay").classes("w-full")
+                    note.set_text(f"\u201c{p['sample']}\u201d")
+                except Exception as e:
+                    note.set_text(f"Could not play the preview (needs internet for edge-tts): {type(e).__name__}")
+
+            with ui.row().style("gap:8px;margin-top:6px;flex-wrap:wrap"):
+                ui.button("Hear your host", icon="play_arrow", on_click=hear).props("unelevated color=primary no-caps")
+                ui.button("See how it handles viewers", icon="science", on_click=lambda: go("Setup")).props("outline no-caps")
+
+            def dismiss():
+                setup_wizard.save_setup(dict(setup_wizard.load_setup(), welcome_dismissed=True))
+                box.set_visibility(False)
+
     @ui.refreshable
     def plan_card():
         path = live_analytics.latest_session_file(log_dir)
@@ -219,6 +279,7 @@ def build_home_tab(config, go):
                 webui_mascot.mascot("cat", 96)
             hero_and_steps()
         with ui.column().style("flex:2;min-width:300px;gap:16px"):
+            welcome_card()
             last_session()
             progress_card()
             plan_card()

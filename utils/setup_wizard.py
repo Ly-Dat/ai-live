@@ -26,6 +26,7 @@ DEFAULT_SETUP = {
     "tour_min_minutes": 5,
     "tour_max_minutes": 10,
     "tour_quiet": 2,
+    "welcome_dismissed": False,  # first-run welcome card on Home
     "weekly_goal": 3,            # lives per week the seller wants to hit (their own target)
     "mode": "seller",            # "seller" (cart, pitches) or "creator" (just chatting, no products)
     "returning_viewers": False,  # opt-in welcome-back greetings (hashed viewer book)

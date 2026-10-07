@@ -30,14 +30,14 @@ def build_dashboard_tab(config):
         ui.icon("insights").style("font-size:48px;color:var(--lv-muted)")
         ui.label("No live session yet").style("font-weight:700;font-size:18px")
         ui.label("Go live (or run the dry run in Setup) and this page fills in on its own: questions, buying signals, hot products and blocked comments.").classes("lv-sub").style("text-align:center;max-width:520px;margin:0")
-    with ui.row().classes("w-full").style("gap:14px;margin-top:10px"):
+    with ui.row().classes("w-full").style("gap:14px;margin-top:10px") as tiles_row:
         tiles = {}
         for key, label, icon in [("comments", "Comments", "chat_bubble"), ("unique_viewers", "Viewers", "groups"),
                                  ("sales_comments", "Shop questions", "shopping_cart"), ("buy_intent", "Buying signals", "local_fire_department"),
                                  ("answered", "AI answers", "smart_toy"), ("blocked", "Blocked", "shield")]:
             tiles[key] = stat_card(label, icon)
     hot = ui.label("").classes("lv-chip hot").style("margin:14px 0 0")
-    with ui.row().classes("w-full").style("gap:16px;flex-wrap:nowrap;margin-top:14px;align-items:flex-start"):
+    with ui.row().classes("w-full").style("gap:16px;flex-wrap:nowrap;margin-top:14px;align-items:flex-start") as lower_row:
       with ui.card().classes("lv-card").style("flex:3;padding:16px;min-width:0"):
         ui.label("Product interest").style("font-weight:700;font-size:16px")
         interest = ui.table(columns=[
@@ -54,11 +54,18 @@ def build_dashboard_tab(config):
 
     def refresh():
         path = live_analytics.latest_session_file(log_dir)
-        if not path:
-            status.set_visibility(False); empty.set_visibility(True)
+        has = bool(path)
+        for el in (tiles_row, hot, lower_row, export_btn):
+            el.set_visibility(has)   # no rows of zeros before the first live
+        empty.set_visibility(not has)
+        status.set_visibility(has)
+        if not has:
             return
-        status.set_visibility(True); empty.set_visibility(False)
-        s = live_analytics.summarize(live_analytics.load_events(path))
+        try:
+            s = live_analytics.summarize(live_analytics.load_events(path))
+        except Exception as e:
+            status.set_text(f"Could not read {os.path.basename(path)} ({type(e).__name__}); showing nothing for now.")
+            return
         nm, _ = names()
         status.set_text(f"Session file: {os.path.basename(path)} | {s['duration_min']} min")
         for k, t in tiles.items():
@@ -79,6 +86,6 @@ def build_dashboard_tab(config):
         open(out, "w", encoding="utf-8").write(md)
         ui.notify(f"Report saved: {out}", type="positive")
 
-    ui.button("Export report (.md)", icon="download", on_click=export).style("margin-top:16px")
+    export_btn = ui.button("Export report (.md)", icon="download", on_click=export).style("margin-top:16px")
     ui.timer(5.0, refresh)
     refresh()
