@@ -156,6 +156,26 @@ def _poll_card():
         refresh()
 
 
+def _sales_card():
+    from . import sales
+    cfg = sales.load_settings()
+    with ui.card().classes("lv-card w-full").style("padding:20px"):
+        ui.label("Thank the room for sales").style("font-weight:700;font-size:16px")
+        ui.label("TikTok never tells us who bought, only a sold counter per product. When that counter really goes up, "
+                 "the host thanks everyone (no names, no made-up numbers). Off by default.").classes("lv-sub")
+        with ui.row().classes("items-end"):
+            on = ui.switch("Thank the room when sales go up", value=cfg["enable"])
+            step = ui.number("At least this many new sales", value=cfg["step"], min=1, max=100).classes("w-52")
+            cool = ui.number("Not more often than (seconds)", value=cfg["cooldown"], min=30, max=900).classes("w-56")
+        note = ui.label("").classes("lv-chip")
+
+        def save():
+            sales.save_settings({"enable": bool(on.value), "step": int(step.value or 5),
+                                 "cooldown": int(cool.value or 120)})
+            note.text = "Saved. " + ("On" if on.value else "Off")
+        ui.button("Save", on_click=save).props("unelevated no-caps")
+
+
 def build_tools_tab(config):
     page_title("Live tools", "Flash sales, giveaways and polls that the AI host runs for you. Every line goes through the TikTok safety filter.")
     _flash_card(config)
@@ -164,3 +184,5 @@ def build_tools_tab(config):
             _giveaway_card()
         with ui.column().style("flex:1;min-width:320px"):
             _poll_card()
+    with ui.column().classes("w-full").style("margin-top:16px"):
+        _sales_card()

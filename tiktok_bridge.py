@@ -128,6 +128,16 @@ def make_client(user: str, gifts: bool, joins: bool, state: dict) -> TikTokLiveC
             # Raw dump for investigating richer cart data (the V2 message may carry the full product list)
             with open(DEBUG_CART, "a", encoding="utf-8") as f:
                 f.write(repr(event) + "\n")
+        # Anonymous "sold N" counters (TikTok never says who bought); the app turns rises into a thank-you
+        try:
+            info = event.atmosphere_tag_info
+            tags = [{"product_id": str(t.product_id), "desc": t.tag_desc, "count": int(t.count)}
+                    for t in (info.atmosphere_tags if info else [])]
+            if tags:
+                await send("sales", {"tags": tags})
+        except Exception as e:
+            if DEBUG_CART:
+                log(f"[sales] could not read tags: {e}")
         pop = event.pop_product
         if pop is None or not (pop.title or "").strip():
             return

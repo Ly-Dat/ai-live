@@ -1394,6 +1394,41 @@ class My_handle(metaclass=SingletonMeta):
         except Exception:
             logger.error(traceback.format_exc())
 
+    def sales_handle(self, data):
+        """Anonymous sold-counter updates from the live room: thank the room when real sales happened (opt-in)."""
+        try:
+            from . import sales
+            cfg = sales.load_settings()
+            if not cfg["enable"]:
+                return
+            watcher = self.__dict__.setdefault("_sales_watcher", sales.SalesWatcher())
+            now = time.time()
+            gained = None
+            product_id = ""
+            for tag in data.get("tags") or []:
+                got = watcher.update(tag.get("product_id"), tag.get("desc"), tag.get("count"), now,
+                                     step=cfg["step"], cooldown=cfg["cooldown"])
+                if got:
+                    gained, product_id = got, str(tag.get("product_id"))
+                    break
+            if not gained:
+                return
+            name = "sản phẩm này"
+            catalog = self.get_product_catalog()
+            if catalog is not None:
+                product = next((p for p in catalog.products if str(p.get("id")) == product_id), None)
+                if product:
+                    name = product["name"]
+                    self.set_current_product(product)
+            text = random.choice(sales.TEMPLATES).format(product=name, n=gained)
+            text = self.prohibitions_handle(text, scope="output")
+            if text is None:
+                return
+            self.get_analytics().record("shoutout", kind="sales", n=int(gained))
+            self.reread_handle({"username": "Streamer", "content": text}, type="reread")
+        except Exception:
+            logger.error(traceback.format_exc())
+
     def current_product_name(self):
         """Name of the product being shown right now (last pinned / pitched), for thank-you lines."""
         name = getattr(self, "_current_product", None)

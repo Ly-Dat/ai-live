@@ -214,6 +214,8 @@ def start_server():
                         my_handle.product_handle(data_json)
                     elif data_json["type"] == "follow":
                         my_handle.follow_handle(data_json)
+                    elif data_json["type"] == "sales":
+                        my_handle.sales_handle(data_json)
 
                     return CommonResult(code=200, message="Success")
                 except Exception as e:
