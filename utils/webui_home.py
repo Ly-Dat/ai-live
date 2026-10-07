@@ -8,7 +8,7 @@ import os
 
 from nicegui import ui
 
-from . import home_status, live_analytics, setup_wizard
+from . import home_status, live_analytics, recap, setup_wizard
 from .webui_theme import port_open
 
 
@@ -76,7 +76,7 @@ def build_home_tab(config, go):
     def last_session():
         path = live_analytics.latest_session_file(log_dir)
         with ui.card().classes("lv-card w-full").style("padding:18px 20px"):
-            ui.label("Last live session").style("font-weight:700;font-size:16px")
+            ui.label("Last live recap").style("font-weight:700;font-size:16px")
             if not path:
                 with ui.column().classes("items-center w-full").style("padding:18px 0;gap:6px"):
                     ui.icon("insights").style("font-size:40px;color:var(--lv-muted)")
@@ -85,12 +85,26 @@ def build_home_tab(config, go):
                     ui.button("Try the dry run", icon="science", on_click=lambda: go("Setup")).props("flat no-caps color=primary")
                 return
             s = live_analytics.summarize(live_analytics.load_events(path))
-            ui.label(f"{s['duration_min']} min").classes("lv-sub").style("margin:0 0 8px")
-            with ui.row().style("gap:10px"):
-                for label, key in [("Comments", "comments"), ("Viewers", "unique_viewers"), ("Buying signals", "buy_intent")]:
-                    with ui.column().style("gap:0;min-width:96px"):
-                        ui.label(str(s[key])).classes("lv-stat-value")
-                        ui.label(label).classes("lv-stat-label")
+            try:
+                pdata = json.load(open(config.get("products", "path") or "data/products.json", encoding="utf-8"))
+                names = {p["id"]: p["name"] for p in pdata.get("products", [])}
+            except Exception:
+                names = {}
+            r = recap.recap(s, names)
+            today = datetime.date.today()
+            dates = recap.session_dates(os.listdir(log_dir))
+            run, week = recap.streak(dates, today), recap.week_count(dates, today)
+            with ui.row().style("gap:6px"):
+                ui.label(f"{s['duration_min']} min").classes("lv-chip")
+                if run >= 2:
+                    ui.label(f"{run}-day streak").classes("lv-chip hot")
+                ui.label(f"{week} live{'s' if week != 1 else ''} this week").classes("lv-chip")
+            ui.label(r["headline"]).style("margin:10px 0 6px;font-weight:600")
+            ui.label("Do this next live").classes("lv-stat-label").style("margin-top:6px")
+            for t in r["tips"]:
+                with ui.row().classes("no-wrap items-start").style("gap:8px;margin-top:6px"):
+                    ui.icon("tips_and_updates").style("color:var(--lv-accent);font-size:18px;margin-top:2px")
+                    ui.label(t).style("line-height:1.45;font-size:14px")
             ui.button("Open dashboard", icon="arrow_forward", on_click=lambda: go("Dashboard")).props("flat no-caps color=primary").style("margin-top:8px")
 
     with ui.row().classes("w-full").style("gap:18px;flex-wrap:wrap;align-items:flex-start"):

@@ -78,6 +78,7 @@ Key design rules:
 | `utils/simulator.py`, `simulate_live.py`, `data/sim_scenario.json` | Demo / regression | offline verdicts (blocked / quick / buy_cta / llm) per comment, with `expect` checks used by tests |
 | `utils/vieneu_tts.py`, `voice_server.py` | Free local Vietnamese TTS | HTTP client for a VieNeu OpenAI-style server in its own `venv_voice`; PCM wrapped as WAV; falls back to edge-tts when unreachable |
 | `utils/webui_home.py`, `utils/home_status.py` | Home tab | readiness checklist, next action, last session, quick actions; checklist logic is pure and unit tested |
+| `utils/recap.py` | Post-live recap | rule-based tips from one session summary, plus streak / weekly count from session file names; pure, unit tested |
 | `utils/webui_theme.py`, `utils/webui_voice.py` | UI shell and Voice tab | CSS variables, dark/light, sidebar nav, status pills; voice lab with preview and server start/stop |
 
 ## 4. Data

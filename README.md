@@ -77,7 +77,7 @@ Run the bridge with `--debug-cart cart.jsonl` once in a real live to capture the
 
 ## Control panel
 
-The web UI opens on **Home**: a readiness checklist with one-click fixes, a LIVE badge in the header when the TikTok bridge runs, last-session stats, and sidebar search across all settings. Dark and light themes.
+The web UI opens on **Home**: a readiness checklist with one-click fixes, a LIVE badge in the header when the TikTok bridge runs, last-session stats, and sidebar search across all settings. After a live, Home shows a recap with concrete "do this next live" tips, a streak and lives-this-week count. Dark and light themes.
 
 ## Voices (free)
 
