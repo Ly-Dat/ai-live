@@ -19,7 +19,7 @@ import tempfile
 
 from nicegui import ui, run, app
 
-from . import catalog_enrich, product_catalog, tiktok_safety
+from . import catalog_enrich, pitch_draft, product_catalog, tiktok_safety
 from .webui_theme import page_title
 
 from .tiktok_fetch import fetch_tiktok_product, _download_images, _money, IMG_DIR
@@ -30,7 +30,8 @@ from pathlib import Path
 NEW_PRODUCT_DEFAULTS = {
     "shipping": "Shop gửi hàng qua TikTok Shop, thời gian giao tuỳ khu vực.",
     "return_policy": "Được đổi trả theo chính sách của TikTok Shop.",
-    "stock_note": "Số lượng có hạn trong phiên live này.",
+    # no default stock claim: "limited stock" must be true, so the seller types it themselves
+    "stock_note": "",
 }
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -192,6 +193,7 @@ def build_products_tab(config):
                 f["price"] = ui.input('Price').classes('w-40')
                 f["original_price"] = ui.input('Original price').classes('w-40')
                 f["active"] = ui.switch('Active (include in tour)', value=True)
+            f["intro"] = ui.textarea('Intro line (spoken first; keep it to one short sentence)').classes('w-full')
             f["description"] = ui.textarea('Description').classes('w-full')
             f["highlights"] = ui.textarea('Highlights (one per line)').classes('w-full')
             f["sizes_colors"] = ui.input('Sizes / colours').classes('w-full')
@@ -251,6 +253,7 @@ def build_products_tab(config):
                 ui.button('Save product', on_click=lambda: save_product())
                 ui.button('Say pitch now', on_click=lambda: pitch_now()).props('color=secondary')
                 ui.button('Draft with AI', on_click=lambda: draft_ai()).props('color=secondary outline')
+                ui.button('Check pitch length', on_click=lambda: check_pitch()).props('color=secondary outline')
                 ui.button('Delete', on_click=lambda: delete_product()).props('color=negative')
 
     def selected_product():
@@ -266,6 +269,7 @@ def build_products_tab(config):
         f["active"].value = p.get("active", True)
         f["description"].value = p.get("description", "")
         f["highlights"].value = "\n".join(p.get("highlights", []))
+        f["intro"].value = p.get("intro", "")
         f["sizes_colors"].value = p.get("sizes_colors", "")
         f["how_to_use"].value = p.get("how_to_use", "")
         f["shipping"].value = p.get("shipping", "")
@@ -306,6 +310,7 @@ def build_products_tab(config):
             "aliases": [a.strip() for a in f["aliases"].value.split(",") if a.strip()],
             "price": f["price"].value.strip(), "original_price": f["original_price"].value.strip(),
             "active": bool(f["active"].value), "description": f["description"].value.strip(),
+            "intro": f["intro"].value.strip(),
             "highlights": _lines(f["highlights"].value), "sizes_colors": f["sizes_colors"].value.strip(),
             "how_to_use": f["how_to_use"].value.strip(), "shipping": f["shipping"].value.strip(),
             "return_policy": f["return_policy"].value.strip(), "stock_note": f["stock_note"].value.strip(),
@@ -411,6 +416,44 @@ def build_products_tab(config):
             ui.notify('Pitch sent to the streamer', type='positive')
         except Exception as e:
             ui.notify(f'Cannot reach the app at {api_url}: {e}', type='negative')
+
+    def check_pitch():
+        """How long the host talks per product, and a no-AI shortening built only from the seller's own words."""
+        p = selected_product()
+        if p is None:
+            ui.notify("Select a product first", type="warning")
+            return
+        cat = state["catalog"]
+        secs = pitch_draft.spoken_seconds(cat.build_pitch(p, 0))
+        prop = pitch_draft.shorten(p)
+        new_secs = pitch_draft.spoken_seconds(cat.build_pitch(dict(p, **prop), 0))
+        with ui.dialog() as dlg, ui.card().classes("w-[36rem]"):
+            ui.label("Pitch length").classes("text-bold")
+            ui.label(f"The host takes about {secs} s to say this product. Viewers tend to leave after about "
+                     f"{pitch_draft.TARGET_S} s, so shorter is better.")
+            stock = (p.get("stock_note") or "").lower()
+            if any(w in stock for w in ("có hạn", "co han", "limited", "sắp hết", "sap het")):
+                ui.label("Heads-up: the stock note says stock is limited. Keep it only if that is true.").style("color:#f59e0b")
+            if new_secs < secs - 3:
+                ui.label(f"Shorter version: about {new_secs} s (your own sentences, nothing added):").classes("text-bold")
+                if prop["intro"] != (p.get("intro") or ""):
+                    ui.label("Intro: " + prop["intro"])
+                if prop["description"] != (p.get("description") or ""):
+                    ui.label("Description: " + prop["description"])
+                if prop["highlights"] != (p.get("highlights") or []):
+                    ui.label("Highlights: " + " | ".join(prop["highlights"]))
+
+                def apply():
+                    f["intro"].value = prop["intro"]
+                    f["description"].value = prop["description"]
+                    f["highlights"].value = "\n".join(prop["highlights"])
+                    dlg.close()
+                    ui.notify("Applied to the form. Press Save product to keep it.", type="positive")
+                ui.button("Apply to form", on_click=apply)
+            else:
+                ui.label("Nothing obvious to cut from the intro and description. Price, sizes, shipping and the call to action make up the rest.")
+            ui.button("Close", on_click=dlg.close).props("flat")
+        dlg.open()
 
     llm_url = api_url.replace("/send", "/llm")
 

@@ -97,7 +97,6 @@ def build_home_tab(config, go):
                         ui.button("Fix", on_click=lambda t=it["tab"]: go(t)).props("flat dense no-caps color=primary")
         return count, engine
 
-    @ui.refreshable
     def preflight_card():
         with ui.card().classes("lv-card w-full").style("padding:18px 20px"):
             ui.label("Pre-live check").style("font-weight:700;font-size:16px")
@@ -131,6 +130,7 @@ def build_home_tab(config, go):
             check()
             ui.timer(10.0, check)
 
+    @ui.refreshable
     def last_session():
         path = live_analytics.latest_session_file(log_dir)
         with ui.card().classes("lv-card w-full").style("padding:18px 20px"):
