@@ -13,6 +13,7 @@ Usage (inside the bridge venv):
 import argparse
 import asyncio
 import json
+import os
 import re
 import sys
 import time
@@ -67,6 +68,30 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
+STATUS_PATH = os.path.join("data", "bridge_status.json")
+STATUS = {"state": "starting", "failures": 0, "last_event_ts": 0.0, "last_error": "", "lib": ""}
+
+
+def set_status(**kw) -> None:
+    """Heartbeat file the web UI reads (see utils/bridge_health.py). Never raises: health must not break the bridge."""
+    STATUS.update(kw)
+    STATUS["updated"] = time.time()
+    try:
+        os.makedirs(os.path.dirname(STATUS_PATH), exist_ok=True)
+        tmp = STATUS_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(STATUS, f)
+        os.replace(tmp, STATUS_PATH)
+    except OSError:
+        pass
+
+
+async def heartbeat() -> None:
+    while True:
+        set_status()
+        await asyncio.sleep(15)
+
+
 def post_json(kind: str, data: dict) -> None:
     """POST {"type": kind, "data": {...}} to the app. Blocking; call via asyncio.to_thread."""
     body = json.dumps({"type": kind, "data": {"platform": "tiktok", **data}}).encode("utf-8")
@@ -103,6 +128,7 @@ def make_client(user: str, gifts: bool, joins: bool, state: dict) -> TikTokLiveC
     @client.on(ConnectEvent)
     async def on_connect(event: ConnectEvent):
         state["connected"] = True
+        set_status(state="connected", failures=0, last_error="", last_event_ts=time.time())
         log(f"[OK] Connected to @{user} (room {client.room_id})")
 
     @client.on(DisconnectEvent)
@@ -118,6 +144,7 @@ def make_client(user: str, gifts: bool, joins: bool, state: dict) -> TikTokLiveC
         if not accept_comment(text):
             return
         log(f"[chat] {nick}: {text}")
+        set_status(last_event_ts=time.time())
         await send("comment", {"username": nick, "content": text})
 
     @client.on(OecLiveShoppingEvent)
@@ -191,6 +218,12 @@ def make_client(user: str, gifts: bool, joins: bool, state: dict) -> TikTokLiveC
 
 async def main(user: str, gifts: bool, joins: bool) -> None:
     delay = 5
+    try:
+        from importlib.metadata import version
+        set_status(lib=version("TikTokLive"))
+    except Exception:
+        pass
+    asyncio.create_task(heartbeat())
     while True:
         state = {"connected": False}
         client = make_client(user, gifts, joins, state)
@@ -199,16 +232,19 @@ async def main(user: str, gifts: bool, joins: bool) -> None:
             await client.connect()  # returns when the connection ends
             log("Connection ended.")
         except UserOfflineError:
+            set_status(state="waiting_live")
             log(f"@{user} is not LIVE right now. Retrying in 30s.")
             await asyncio.sleep(30)
             continue
         except UserNotFoundError:
             raise SystemExit(f"User @{user} not found. Check the username (no @).")
         except SignatureRateLimitError as e:
+            set_status(state="rate_limited", last_error=str(e)[:200])
             log(f"[rate limit] {e}. Waiting 90s.")
             await asyncio.sleep(90)
             continue
         except Exception as e:
+            set_status(state="error", failures=STATUS["failures"] + 1, last_error=f"{type(e).__name__}: {e}"[:200])
             log(f"[ERROR] {type(e).__name__}: {e}")
         # reconnect with backoff; reset after a successful connection
         if state["connected"]:

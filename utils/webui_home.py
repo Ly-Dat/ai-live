@@ -9,7 +9,7 @@ import time
 
 from nicegui import app, ui
 
-from . import habit, home_status, preflight, live_analytics, milestones, personas, recap, recap_card, setup_wizard, starter, webui_mascot
+from . import bridge_health, habit, home_status, preflight, live_analytics, milestones, personas, recap, recap_card, setup_wizard, starter, webui_mascot
 from .webui_theme import port_open
 
 
@@ -112,7 +112,8 @@ def build_home_tab(config, go):
                     nop = sum(1 for p in data.get("products", []) if p.get("active", True) and not p.get("price"))
                 except Exception:
                     pass
-                rows = preflight.run(dict(facts, engine=engine, no_price=nop, own_voice=setup.get("own_voice")))
+                rows = preflight.run(dict(facts, engine=engine, no_price=nop, own_voice=setup.get("own_voice"),
+                                          bridge_health=bridge_health.assess(bridge_health.read())))
                 box.clear()
                 with box:
                     ui.label(preflight.summary(rows)).style("font-weight:600")

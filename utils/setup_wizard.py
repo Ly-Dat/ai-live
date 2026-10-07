@@ -117,7 +117,7 @@ def ensure_bridge_env(root: str = ROOT, log=print) -> str:
     log("Creating the TikTok bridge environment (venv_tt) ...")
     subprocess.check_call([sys.executable, "-m", "venv", os.path.join(root, "venv_tt")])
     py = bridge_python(root)
-    subprocess.check_call([py, "-m", "pip", "install", "--quiet", "TikTokLive>=7"])
+    subprocess.check_call([py, "-m", "pip", "install", "--quiet", "TikTokLive>=7,<8"])
     return py
 
 

@@ -31,6 +31,10 @@ def run(f: Dict) -> List[Dict]:
         if n and nop:
             add("prices", None, f"{nop} product{'s' if nop != 1 else ''} without a price",
                 "Price questions get a weaker answer when the price is empty.", "Products")
+    bh = f.get("bridge_health")
+    if bh and bh.get("level") in ("down", "warn") and f.get("bridge_on"):
+        add("bridge_health", False if bh["level"] == "down" else None, bh["message"],
+            "Use 'Ask the host' or the browser relay in Live tools until it recovers.", "Live tools")
     add("bridge", bool(f.get("bridge_on")), "Chat bridge is connected" if f.get("bridge_on") else "Chat bridge is not started",
         "Press Go live (the bridge only runs once you are live on TikTok).", "Setup")
     if f.get("own_voice") and engine != "vieneu":

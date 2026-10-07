@@ -177,6 +177,43 @@ def _sales_card():
         ui.button("Save", on_click=save).props("unelevated no-caps")
 
 
+def _fallback_card(config):
+    import asyncio, json, urllib.request
+    from . import bridge_health
+    api = f"http://127.0.0.1:{config.get('api_port') or 8082}/send"
+    with ui.card().classes("lv-card w-full").style("padding:20px"):
+        ui.label("If the TikTok connection breaks").style("font-weight:700;font-size:16px")
+        health = ui.label("").style("font-weight:600")
+        ui.label("TikTok can change things without warning and the chat library we use is unofficial. Two backups: type the "
+                 "question yourself below, or use the browser relay (tools/tiktok_chat_relay.user.js, instructions inside the file).").classes("lv-sub")
+        with ui.row().classes("items-end w-full").style("flex-wrap:nowrap"):
+            who = ui.input("Viewer name", value="viewer").classes("w-40")
+            msg = ui.input("Ask the host as a viewer", placeholder="e.g. ao size M con khong shop?").classes("grow")
+
+        async def ask():
+            text = (msg.value or "").strip()
+            if not text:
+                return
+            body = json.dumps({"type": "comment", "data": {"platform": "manual", "username": (who.value or "viewer").strip(),
+                                                          "content": text}}).encode()
+            req = urllib.request.Request(api, data=body, headers={"Content-Type": "application/json"})
+            try:
+                await asyncio.to_thread(urllib.request.urlopen, req, None, 10)
+                msg.value = ""
+                ui.notify("Sent to the host.", type="positive")
+            except Exception as e:
+                ui.notify(f"The app is not running: {e}", type="warning")
+        msg.on("keydown.enter", ask)
+        ui.button("Send", on_click=ask).props("unelevated no-caps")
+
+        def refresh():
+            r = bridge_health.assess(bridge_health.read())
+            health.text = r["message"]
+            health.style("color:" + {"ok": "#22c55e", "warn": "#f59e0b", "down": "#ef4444", "off": "var(--lv-muted)"}[r["level"]])
+        ui.timer(5.0, refresh)
+        refresh()
+
+
 def build_tools_tab(config):
     page_title("Live tools", "Flash sales, giveaways and polls that the AI host runs for you. Every line goes through the TikTok safety filter.")
     _flash_card(config)
@@ -187,3 +224,5 @@ def build_tools_tab(config):
             _poll_card()
     with ui.column().classes("w-full").style("margin-top:16px"):
         _sales_card()
+    with ui.column().classes("w-full").style("margin-top:16px"):
+        _fallback_card(config)
