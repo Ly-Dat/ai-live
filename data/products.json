@@ -31,8 +31,34 @@
       "shipping": "Shop gửi hàng qua TikTok Shop, thời gian giao tuỳ khu vực.",
       "return_policy": "Được đổi trả theo chính sách của TikTok Shop.",
       "stock_note": "Số lượng có hạn trong phiên live này.",
-      "id": "P002",
+      "id": "P003",
       "order": 2,
+      "name": "【nâng cấp】Băng vệ sinh dạng quần Bibatu (10 miếng) kháng khuẩn",
+      "aliases": [],
+      "price": "42.998₫",
+      "original_price": "177.998₫",
+      "description": "【nâng cấp】Băng vệ sinh dạng quần Bibatu (10 miếng) kháng khuẩn, chống tràn 360 độ, mềm mịn, thoáng khí, thấm hút tức thì, dùng ngày đêm cho phụ nữ và mẹ sau sinh",
+      "intro": "",
+      "highlights": [],
+      "sizes_colors": "Kích cỡ: M/L(10 miếng)40-75KG, XL/XXL(10 miếng)60-90KG",
+      "how_to_use": "",
+      "faq": [],
+      "images": [
+        "data/product_images/P003_1791376375204.webp",
+        "data/product_images/P003_1791376375584.webp",
+        "data/product_images/P003_1791376375746.webp",
+        "data/product_images/P003_1791376376042.webp",
+        "data/product_images/P003_1791376376189.webp",
+        "data/product_images/P003_1791376376421.webp"
+      ],
+      "active": true
+    },
+    {
+      "shipping": "Shop gửi hàng qua TikTok Shop, thời gian giao tuỳ khu vực.",
+      "return_policy": "Được đổi trả theo chính sách của TikTok Shop.",
+      "stock_note": "Số lượng có hạn trong phiên live này.",
+      "id": "P004",
+      "order": 3,
       "name": "ViViApparel dành cho nữ: áo cardigan tay dài thoải mái",
       "aliases": [],
       "price": "139.230₫",
@@ -44,12 +70,10 @@
       "how_to_use": "",
       "faq": [],
       "images": [
-        "data/product_images/P002_1791368338343.webp",
-        "data/product_images/P002_1791368338476.webp",
-        "data/product_images/P002_1791368338574.webp",
-        "data/product_images/P002_1791368338687.webp",
-        "data/product_images/P002_1791368338815.webp",
-        "data/product_images/P002_1791368338941.webp"
+        "data/product_images/P004_1791376790172.webp",
+        "data/product_images/P004_1791376790916.webp",
+        "data/product_images/P004_1791376792400.webp",
+        "data/product_images/P004_1791376793740.webp"
       ],
       "active": true
     }
