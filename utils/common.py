@@ -365,18 +365,28 @@ class Common:
 
     # Local sensitive word detection with the Aho-Corasick algorithm; pass in the sensitive word library file path and the text to check
     def check_sensitive_words2(self, file_path, text):
-        with open(file_path, 'r', encoding='utf-8') as file:
-            sensitive_words = [line.strip() for line in file.readlines()]
+        # The automaton is cached per file and rebuilt only when the file changes
+        # (this runs for every comment and every AI reply, so re-reading the file each time was wasteful)
+        cache = self.__dict__.setdefault("_badword_automata", {})
+        mtime = os.path.getmtime(file_path)
+        cached = cache.get(file_path)
+        if cached is None or cached[0] != mtime:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                sensitive_words = [line.strip() for line in file.readlines() if line.strip()]
 
-        # Create the Aho-Corasick automaton
-        automaton = ahocorasick.Automaton()
+            # Create the Aho-Corasick automaton and add the banned words
+            automaton = ahocorasick.Automaton()
+            for word in sensitive_words:
+                automaton.add_word(word, word)
 
-        # Add banned words to the automaton
-        for word in sensitive_words:
-            automaton.add_word(word, word)
-
-        # Build the automaton transition function and failure function
-        automaton.make_automaton()
+            # Build the automaton transition function and failure function
+            if len(automaton) > 0:
+                automaton.make_automaton()
+            cached = (mtime, automaton)
+            cache[file_path] = cached
+        automaton = cached[1]
+        if len(automaton) == 0:
+            return None
 
         # Search for banned words in the text
         for _, found_word in automaton.iter(text):
