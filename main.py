@@ -210,6 +210,8 @@ def start_server():
                         my_handle.gift_handle(data_json)
                     elif data_json["type"] == "entrance":
                         my_handle.entrance_handle(data_json)
+                    elif data_json["type"] == "product":
+                        my_handle.product_handle(data_json)
 
                     return CommonResult(code=200, message="Success")
                 except Exception as e:

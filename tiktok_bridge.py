@@ -36,6 +36,7 @@ from TikTokLive.events import (
 API_URL = "http://127.0.0.1:8082/send"
 IGNORE = set()
 MIN_LEN = 3          # drop comments shorter than this (e.g. ".", "ok")
+DEBUG_CART = None   # path to dump raw shopping events (--debug-cart)
 MAX_PER_10S = 6      # max comments forwarded per 10 seconds (0 = unlimited)
 _sent = deque()      # timestamps of forwarded comments
 
@@ -103,6 +104,27 @@ def make_client(user: str, gifts: bool, joins: bool, state: dict) -> TikTokLiveC
             return
         log(f"[chat] {nick}: {text}")
         await send("comment", {"username": nick, "content": text})
+
+    @client.on(OecLiveShoppingEvent)
+    async def on_product(event: OecLiveShoppingEvent):
+        """The seller pinned / popped up a product. TikTok does not push the whole cart over the websocket,
+        only the product being shown plus the total count, so the app builds its catalog from these events."""
+        if DEBUG_CART:
+            # Raw dump for investigating richer cart data (the V2 message may carry the full product list)
+            with open(DEBUG_CART, "a", encoding="utf-8") as f:
+                f.write(repr(event) + "\n")
+        pop = event.pop_product
+        if pop is None or not (pop.title or "").strip():
+            return
+        log(f"[product] {pop.title} - {pop.price} (cart size: {event.live_product_number})")
+        await send("product", {
+            "product_id": pop.product_id,
+            "title": pop.title,
+            "price": pop.price,
+            "image_url": pop.image_url,
+            "open_url": pop.open_url,
+            "live_product_number": event.live_product_number,
+        })
 
     if joins:
         @client.on(JoinEvent)
@@ -172,7 +194,9 @@ if __name__ == "__main__":
     p.add_argument("--joins", action="store_true", help="forward viewer joins (can be noisy)")
     p.add_argument("--min-len", type=int, default=MIN_LEN, help="drop comments shorter than N chars (default 3)")
     p.add_argument("--max-per-10s", type=int, default=MAX_PER_10S, help="max comments forwarded per 10s, 0 = unlimited (default 6)")
+    p.add_argument("--debug-cart", default=None, help="append raw shopping/cart events to this file")
     a = p.parse_args()
+    DEBUG_CART = a.debug_cart
     API_URL = a.api
     IGNORE = set(a.ignore)
     MIN_LEN = a.min_len

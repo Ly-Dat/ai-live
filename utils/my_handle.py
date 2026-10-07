@@ -1,4 +1,4 @@
-import os, sys, threading, json, random
+import os, sys, threading, json, random, time
 import difflib
 from datetime import datetime
 import traceback
@@ -1339,6 +1339,45 @@ class My_handle(metaclass=SingletonMeta):
                 My_handle.config.get("filter", "badwords", "replace") or "*",
             )
         return self._tiktok_safety
+
+    def product_handle(self, data):
+        """The seller pinned / popped up a product in the TikTok live room (pushed by tiktok_bridge.py).
+
+        Keeps products.json in sync with the live cart and, optionally, pitches the product right away.
+
+        Args:
+            data (dict): product_id, title, price, image_url, open_url, live_product_number
+        """
+        try:
+            catalog = self.get_product_catalog()
+            if catalog is None:
+                return
+            product, is_new = catalog.upsert_pop(data, auto_add=bool(My_handle.config.get("products", "auto_add")))
+            total = data.get("live_product_number")
+            if total:
+                logger.info(f"Live cart reports {total} products, catalog has {len(catalog.products)}")
+            if product is None:
+                return
+            if is_new:
+                logger.info(f"Added new product from the live room to the catalog: {product['name']}")
+
+            if not My_handle.config.get("products", "pitch_on_pop"):
+                return
+            # Debounce: TikTok re-sends the pop-up while a product stays pinned
+            now = time.time()
+            last = self.__dict__.setdefault("_last_product_pitch", {})
+            if now - last.get(product["id"], 0) < float(My_handle.config.get("products", "pitch_on_pop_cooldown") or 120):
+                return
+            last[product["id"]] = now
+
+            pitch = catalog.build_pitch(product, len(last))
+            pitch = self.prohibitions_handle(pitch, scope="output")
+            if pitch is None:
+                logger.warning(f"Pinned-product pitch dropped by the safety filter: {product['name']}")
+                return
+            self.reread_handle({"username": "Streamer", "content": pitch}, type="reread")
+        except Exception:
+            logger.error(traceback.format_exc())
 
     def get_product_catalog(self):
         """Lazily load the product catalog; returns None when the feature is disabled or the file is missing."""

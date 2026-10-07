@@ -30,6 +30,25 @@ product_tour.py --POST /send (type=reread)---------------------------------->|
 4. Start the TikTok bridge in its own venv: `python tiktok_bridge.py YOUR_TIKTOK_USERNAME --joins --gifts`
 5. Start the product tour: `python product_tour.py` (flags: `--gap`, `--pause`, `--rounds`, `--once`, `--cps`).
 
+## Getting the cart into the catalog
+
+TikTok does **not** push the whole shopping cart over the live websocket - only the product currently pinned/popped up
+(title, price, image, id) and the total product count. So there are two ways to fill `data/products.json`:
+
+1. **Pin products during the live (automatic).** `tiktok_bridge.py` forwards each pinned product to the app
+   (`type: "product"`). The app matches it to your catalog (by TikTok id, then by title) or adds it as
+   `"auto_imported": true`, logs `Live cart reports N products, catalog has M`, and - with `products.pitch_on_pop` -
+   immediately pitches it. Details you wrote by hand are never overwritten. Settings: `products.auto_add`,
+   `products.pitch_on_pop`, `products.pitch_on_pop_cooldown` (seconds).
+2. **Import a spreadsheet (before the live).** Export your products from Seller Center (or use your own sheet) and run
+   `python import_products.py export.xlsx` (CSV works too; `.xlsx` needs `pip install openpyxl`). English and Vietnamese
+   headers are recognised; existing entries are updated, new ones appended; `--dry-run` previews.
+
+Auto-imported products only have a name and price, so add `highlights`, `faq`, etc. by hand for better pitches.
+Run the bridge with `--debug-cart cart.jsonl` once in a real live to capture the raw shopping events: TikTok's
+`OecLiveShoppingMessageV2` may carry more product detail, and that file shows what is available.
+A seller-side route to the full cart would be the TikTok Shop Partner API (requires an approved app); not implemented.
+
 ## Configuration
 
 - `config.json -> products`: enable/disable catalog grounding, paths, the text placed before product facts in the LLM prompt.

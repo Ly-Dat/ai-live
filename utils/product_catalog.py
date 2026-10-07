@@ -41,6 +41,7 @@ class ProductCatalog:
     def __init__(self, products_path: str = "data/products.json", templates_path: str = "data/pitch_templates.json"):
         with open(products_path, "r", encoding="utf-8") as f:
             data = json.load(f)
+        self.products_path = products_path
         self.shop_name = data.get("shop_name", "")
         self.products: List[Dict] = data.get("products", [])
         self.templates: Dict = {}
@@ -48,6 +49,68 @@ class ProductCatalog:
             with open(templates_path, "r", encoding="utf-8") as f:
                 self.templates = json.load(f)
         self._index = [(p, self._keywords(p)) for p in self.products]
+
+    # ------------------------------------------------------------ live cart sync
+    def find_by_pop(self, pop: Dict) -> Optional[Dict]:
+        """Find the catalog entry for a product shown in the live room (match by TikTok product id, then by title)."""
+        pid = str(pop.get("product_id") or "")
+        title = _fold(pop.get("title") or "").strip()
+        for p in self.products:
+            if pid and pid in (str(p.get("tiktok_product_id", "")), str(p.get("id", ""))):
+                return p
+        for p in self.products:
+            names = [p.get("name", "")] + list(p.get("aliases", []))
+            if title and any(_fold(n).strip() == title for n in names if n):
+                return p
+        return None
+
+    def upsert_pop(self, pop: Dict, auto_add: bool = True):
+        """Match (or add) the product TikTok just pinned/popped up in the live room.
+
+        Returns (product, is_new). New products are marked "auto_imported": true and only carry what TikTok
+        sends (title, price, image, id) - fill in highlights/faq in products.json to make pitches richer.
+        Existing entries keep everything you wrote; only a missing price/ids are filled in.
+        """
+        product = self.find_by_pop(pop)
+        changed = False
+        if product is None:
+            if not auto_add or not (pop.get("title") or "").strip():
+                return None, False
+            product = {
+                "id": str(pop.get("product_id") or f"AUTO{len(self.products) + 1:03d}"),
+                "order": max([p.get("order", 0) for p in self.products] + [0]) + 1,
+                "name": pop["title"].strip(),
+                "aliases": [], "price": pop.get("price", ""), "original_price": "",
+                "description": "", "highlights": [], "sizes_colors": "", "how_to_use": "",
+                "shipping": "", "return_policy": "", "stock_note": "", "faq": [],
+                "auto_imported": True,
+            }
+            self.products.append(product)
+            changed = True
+            is_new = True
+        else:
+            is_new = False
+            if pop.get("price") and not product.get("price"):
+                product["price"] = pop["price"]
+                changed = True
+        if pop.get("product_id") and not product.get("tiktok_product_id"):
+            product["tiktok_product_id"] = str(pop["product_id"])
+            changed = True
+        if pop.get("image_url") and not product.get("image_url"):
+            product["image_url"] = pop["image_url"]
+            changed = True
+        if changed:
+            self._index = [(p, self._keywords(p)) for p in self.products]
+            self.save()
+        return product, is_new
+
+    def save(self) -> None:
+        """Write the catalog back to disk atomically (keeps UTF-8 and Vietnamese accents readable)."""
+        data = {"shop_name": self.shop_name, "products": self.products}
+        tmp = self.products_path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, self.products_path)
 
     # ------------------------------------------------------------ listing
     def all_products(self) -> List[Dict]:
