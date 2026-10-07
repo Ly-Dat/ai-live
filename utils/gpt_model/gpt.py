@@ -16,7 +16,12 @@ from utils.gpt_model.langchain_chatchat import Langchain_ChatChat
 from utils.gpt_model.zhipu import Zhipu
 from utils.gpt_model.bard import Bard_api
 from utils.gpt_model.tongyi import TongYi
-from utils.gpt_model.tongyixingchen import TongYiXingChen
+try:
+    from utils.gpt_model.tongyixingchen import TongYiXingChen
+except Exception as e:
+    print(f"Skip TongYiXingChen import: {e}")
+    TongYiXingChen = None
+    
 # from utils.gpt_model.my_wenxinworkshop import My_WenXinWorkShop
 from utils.gpt_model.gemini import Gemini
 from utils.gpt_model.koboldcpp import Koboldcpp
