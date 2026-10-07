@@ -168,6 +168,7 @@ def _sales_card():
             step = ui.number("At least this many new sales", value=cfg["step"], min=1, max=100).classes("w-52")
             cool = ui.number("Not more often than (seconds)", value=cfg["cooldown"], min=30, max=900).classes("w-56")
         note = ui.label("").classes("lv-chip")
+        note.bind_visibility_from(note, "text", backward=bool)
 
         def save():
             sales.save_settings({"enable": bool(on.value), "step": int(step.value or 5),

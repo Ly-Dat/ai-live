@@ -30,6 +30,7 @@ DEFAULT_SETUP = {
     "weekly_goal": 3,            # lives per week the seller wants to hit (their own target)
     "mode": "seller",            # "seller" (cart, pitches) or "creator" (just chatting, no products)
     "returning_viewers": False,  # opt-in welcome-back greetings (hashed viewer book)
+    "own_voice": "",             # name of the host's own cloned VieNeu voice ("" = use the persona voice)
 }
 
 
@@ -75,6 +76,10 @@ def apply_setup(config_path: str, products_path: str, personas_path: str, answer
     changes.append(f"room_display_id = {cfg['room_display_id']}")
     persona_changes = personas.apply_to_config(cfg, personas.load(personas_path), answers.get("persona_id", "friendly_girl"))
     changes += persona_changes
+    if answers.get("own_voice"):
+        cfg.setdefault("vieneu", {})["voice"] = answers["own_voice"]
+        cfg["audio_synthesis_type"] = "vieneu"
+        changes.append(f"own voice {answers['own_voice']} (vieneu)")
     creator = answers.get("mode") == "creator"
     if isinstance(cfg.get("products"), dict):
         cfg["products"]["enable"] = not creator

@@ -90,3 +90,49 @@ def is_up(api_url: str = DEFAULT_URL, timeout: float = 2) -> bool:
             return r.status == 200
     except (urllib.error.URLError, OSError, ValueError):
         return False
+
+
+import re
+import uuid
+
+_VOICE_NAME = re.compile(r"[A-Za-z0-9 ._-]{1,64}")
+
+
+def valid_voice_name(name: str) -> bool:
+    return bool(_VOICE_NAME.fullmatch(name or ""))
+
+
+def enroll_voice(name: str, audio_path: str, api_url: str = DEFAULT_URL, api_key: str = "",
+                 denoise: bool = True, timeout: float = 120):
+    """Register a cloned voice with the VieNeu server (POST /v1/voices, multipart). Returns (ok, message)."""
+    if not valid_voice_name(name):
+        return False, "Voice name: 1-64 letters, digits, spaces, '.', '-' or '_'."
+    try:
+        with open(audio_path, "rb") as f:
+            blob = f.read()
+    except OSError as e:
+        return False, f"Cannot read the clip: {e}"
+    boundary = uuid.uuid4().hex
+    parts = []
+    for key, val in (("name", name), ("denoise", "true" if denoise else "false"), ("description", "own voice")):
+        parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"\r\n\r\n{val}\r\n'.encode("utf-8"))
+    fname = os.path.basename(audio_path).replace('"', "")
+    parts.append((f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{fname}"\r\n'
+                  f'Content-Type: application/octet-stream\r\n\r\n').encode("utf-8") + blob + b"\r\n")
+    parts.append(f"--{boundary}--\r\n".encode("utf-8"))
+    headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    req = urllib.request.Request(api_url.rstrip("/") + "/v1/voices", data=b"".join(parts), headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            r.read()
+        return True, "Voice created."
+    except urllib.error.HTTPError as e:
+        try:
+            detail = e.read().decode("utf-8", "ignore")[:200]
+        except Exception:
+            detail = ""
+        return False, f"The voice server refused the clip ({e.code}). {detail}".strip()
+    except (urllib.error.URLError, OSError):
+        return False, "The voice server is not running. Start it from Setup, then try again."

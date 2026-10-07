@@ -17,7 +17,7 @@ import urllib.request
 
 from nicegui import ui
 
-from . import personas, setup_wizard, simulator, product_catalog, tiktok_safety
+from . import my_voice, personas, setup_wizard, simulator, product_catalog, tiktok_safety
 from .webui_theme import page_title
 
 ROOT = setup_wizard.ROOT
@@ -111,6 +111,43 @@ def build_setup_tab(config):
                 except Exception as e:
                     ui.notify(f"The app is not running yet: {e}", type="warning")
             ui.button("Speak a sample line", on_click=preview).props("outline")
+
+            # ---- Sound like me (clone the host's own voice; consent first)
+            with ui.expansion("Sound like me (use your own voice)", icon="mic").classes("w-full"):
+                ui.label("Record 3 to 8 seconds of you speaking Vietnamese clearly (a .wav is best). The clip stays on this "
+                         "computer and goes only to your local VieNeu voice server. Only clone your own voice, or one you "
+                         "have permission to use.").classes("lv-sub")
+                consent = ui.checkbox(my_voice.STATEMENT)
+                voice_name = ui.input("Name for this voice", value=setup.get("own_voice") or "My voice").classes("w-64")
+                clip = {"path": ""}
+
+                def got_clip(e):
+                    fd, tmp = tempfile.mkstemp(suffix=os.path.splitext(e.name)[1] or ".wav")
+                    with os.fdopen(fd, "wb") as f:
+                        f.write(e.content.read())
+                    clip["path"] = tmp
+                    voice_note.text = f"Got {e.name}."
+                ui.upload(on_upload=got_clip, auto_upload=True, max_files=1).props("accept=.wav,.mp3,.m4a,.flac,.ogg flat bordered").classes("w-80")
+                voice_note = ui.label("").classes("lv-chip")
+                voice_note.bind_visibility_from(voice_note, "text", backward=bool)
+
+                async def make_voice():
+                    if not clip["path"]:
+                        voice_note.text = "Add a clip first."
+                        return
+                    vcfg = dict(config.get("vieneu") or {})
+                    ok, msg = await asyncio.to_thread(my_voice.enroll_own_voice, voice_name.value.strip(), clip["path"],
+                                                      bool(consent.value), vcfg)
+                    voice_note.text = msg
+                    if ok:
+                        setup["own_voice"] = voice_name.value.strip()
+                        setup_wizard.save_setup(setup)
+                        ui.notify("Voice created. Press 'Save and run dry run' on the Check step, then restart to use it.", type="positive")
+                with ui.row():
+                    btn = ui.button("Create my voice", on_click=make_voice).props("unelevated no-caps")
+                    btn.bind_enabled_from(consent, "value")
+                    ui.button("Use a built-in voice again", on_click=lambda: (setup.update(own_voice=""), setup_wizard.save_setup(setup),
+                              ui.notify("Back to the persona voice after the next save."))).props("flat no-caps")
             with ui.stepper_navigation():
                 ui.button("Next", on_click=stepper.next)
                 ui.button("Back", on_click=stepper.previous).props("flat")

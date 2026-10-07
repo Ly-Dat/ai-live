@@ -43,6 +43,19 @@ def test_apply_setup_roundtrip(tmp_path):
     assert any("room_display_id" in c for c in changes)
 
 
+def test_own_voice_is_applied_only_when_set(tmp_path):
+    cfg = tmp_path / "config.json"
+    cfg.write_text(open(os.path.join(ROOT, "config.json"), encoding="utf-8").read(), encoding="utf-8")
+    prods = tmp_path / "products.json"
+    shutil.copy(os.path.join(ROOT, "tests", "fixtures", "products.json"), prods)
+    base = {"tiktok_username": "shop", "persona_id": "calm_expert"}
+    setup_wizard.apply_setup(str(cfg), str(prods), PERSONAS, base)
+    assert json.load(open(cfg, encoding="utf-8"))["audio_synthesis_type"] != "vieneu"
+    setup_wizard.apply_setup(str(cfg), str(prods), PERSONAS, dict(base, own_voice="My voice"))
+    out = json.load(open(cfg, encoding="utf-8"))
+    assert out["vieneu"]["voice"] == "My voice" and out["audio_synthesis_type"] == "vieneu"
+
+
 def test_commands():
     s = {"tiktok_username": "@shop", "gifts": True, "joins": False, "tour_min_minutes": 3, "tour_max_minutes": 6, "tour_quiet": 2}
     assert setup_wizard.bridge_command(s, "py") == ["py", "tiktok_bridge.py", "shop", "--gifts"]
