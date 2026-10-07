@@ -113,6 +113,30 @@ body.body--dark .lv-card, body.body--dark .q-expansion-item, body.body--dark .q-
 .q-uploader__dnd{ outline-color:var(--lv-accent); }
 .q-field--standard .q-field__control:before{ border-bottom-color:var(--lv-border); }
 .q-select__dropdown-icon{ color:var(--lv-muted); }
+/* ---- UX polish ---- */
+@keyframes lvfade{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+@keyframes lvpulse{ 0%{box-shadow:0 0 0 0 rgba(239,68,68,.55)} 70%{box-shadow:0 0 0 9px rgba(239,68,68,0)} 100%{box-shadow:0 0 0 0 rgba(239,68,68,0)} }
+.q-tab-panel > *{ animation:lvfade .25s ease both; }
+.lv-pill.live{ background:rgba(239,68,68,.14); border-color:rgba(239,68,68,.45); color:#ef4444; }
+.lv-pill.live .lv-dot{ background:#ef4444; animation:lvpulse 1.6s infinite; }
+.lv-action{ transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.lv-action:hover{ transform:translateY(-3px); border-color:var(--lv-accent) !important; box-shadow:0 16px 36px rgba(139,92,246,.25); }
+.lv-search .q-field__control{ background:var(--lv-surface-2); border-radius:12px; }
+.lv-search{ margin:2px 4px 8px !important; }
+.lv-cta{ flex-shrink:0; white-space:nowrap; padding:10px 18px; font-weight:700; }
+.lv-hero .q-linear-progress__track{ background:rgba(255,255,255,.3) !important; opacity:1 !important; }
+.lv-hero .q-linear-progress__model{ background:#fff !important; }
+.lv-empty{ color:var(--lv-muted); }
+:focus-visible{ outline:2px solid var(--lv-accent); outline-offset:2px; }
+/* legacy tabs: old cards used a fixed light gradient via inline style; force them onto the theme */
+.q-card:not(.lv-hero):not(.lv-stat){ background:var(--lv-surface) !important; border:1px solid var(--lv-border); color:var(--lv-text); }
+.q-card .q-field__native,.q-card .q-field__input,.q-card .q-field__label,.q-card .q-checkbox__label,.q-card label{ color:inherit; }
+.q-table tbody td{ max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+.q-table td,.q-table th{ padding:8px 12px; }
+.q-field--float .q-field__label{ font-size:13px; }
+.q-field__label{ font-size:15px; }
+.q-field__native,.q-field__input{ font-size:15px; }
+.q-field--standard .q-field__control{ min-height:44px; }
 @media (max-width: 900px){ .q-tab-panel{ padding:16px 14px 110px !important; } .lv-title{ font-size:22px; } }
 """
 
@@ -181,7 +205,7 @@ def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark
         with ui.row().classes("items-center gt-xs").style("gap:8px"):
             pills = {
                 "app": _pill("Streamer offline"),
-                "bridge": _pill("TikTok bridge off"),
+                "bridge": _pill("Not live"),
                 "voice": _pill("Voice: edge-tts"),
             }
             ui.button(icon="light_mode", on_click=lambda: dark.toggle()).props("flat round dense").tooltip("Light / dark")
@@ -199,13 +223,33 @@ def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark
             text, on = info[0], info[1]
             lbl.text = text
             el.classes(add="on" if on else None, remove=None if on else "on")
+            if key == "bridge":
+                el.classes(add="live" if on else None, remove=None if on else "live")
     ui.timer(4.0, refresh)
 
-    drawer = ui.left_drawer(value=True, fixed=True, bordered=False).props("width=250 breakpoint=900").classes("lv-drawer")
+    drawer = ui.left_drawer(value=None, fixed=True, bordered=False).props("width=250 breakpoint=900").classes("lv-drawer")
+    groups = []  # (group label element, [(label, button)])
     with drawer:
+        search = ui.input(placeholder="Search settings...").props("dense outlined clearable").classes("lv-search w-full")
         for group, items in nav:
-            ui.label(group).classes("lv-group")
+            glabel = ui.label(group).classes("lv-group")
+            members = []
             for label, icon, tab in items:
                 b = ui.button(label, icon=icon, on_click=lambda t=tab: select(t)).props("flat no-caps align=left").classes("lv-nav")
                 buttons[tab] = b
+                members.append((label, b))
+            groups.append((glabel, members))
+
+    def apply_filter(e=None):
+        q = (search.value or "").strip().lower()
+        for glabel, members in groups:
+            shown = 0
+            for label, b in members:
+                vis = (not q) or q in label.lower()
+                b.set_visibility(vis)
+                shown += vis
+            glabel.set_visibility(shown > 0)
+    search.on("update:model-value", apply_filter)
+
+    select.by_label = {label: tab for _, items in nav for label, _, tab in items}
     return select

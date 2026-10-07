@@ -25,6 +25,11 @@ def build_dashboard_tab(config):
 
     page_title("Dashboard", "What viewers asked, what the AI answered, and what the compliance filter caught - updates every few seconds.")
     status = ui.label("").classes("lv-chip")
+    empty = ui.card().classes("lv-card w-full items-center").style("padding:36px;margin-top:12px;gap:6px")
+    with empty:
+        ui.icon("insights").style("font-size:48px;color:var(--lv-muted)")
+        ui.label("No live session yet").style("font-weight:700;font-size:18px")
+        ui.label("Go live (or run the dry run in Setup) and this page fills in on its own: questions, buying signals, hot products and blocked comments.").classes("lv-sub").style("text-align:center;max-width:520px;margin:0")
     with ui.row().classes("w-full").style("gap:14px;margin-top:10px"):
         tiles = {}
         for key, label, icon in [("comments", "Comments", "chat_bubble"), ("unique_viewers", "Viewers", "groups"),
@@ -50,8 +55,9 @@ def build_dashboard_tab(config):
     def refresh():
         path = live_analytics.latest_session_file(log_dir)
         if not path:
-            status.set_text("No session recorded yet. Start a live and this fills in automatically.")
+            status.set_visibility(False); empty.set_visibility(True)
             return
+        status.set_visibility(True); empty.set_visibility(False)
         s = live_analytics.summarize(live_analytics.load_events(path))
         nm, _ = names()
         status.set_text(f"Session file: {os.path.basename(path)} | {s['duration_min']} min")
