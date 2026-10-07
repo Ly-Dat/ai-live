@@ -52,3 +52,5 @@ revTongYi
 xingchen
 dashscope
 volcengine-python-sdk[ark]
+pygetwindow
+pyautogui
