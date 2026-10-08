@@ -19,7 +19,7 @@ from .db import SQLiteDB
 from .my_translate import My_Translate
 
 from .luoxi_project.live_comment_assistant import send_msg_to_live_comment_assistant
-from . import tiktok_safety, product_catalog, live_analytics, flash_sale, engage, coverage, lang_guard
+from . import tiktok_safety, product_catalog, live_analytics, flash_sale, engage, coverage, lang_guard, answer_cache
 
 
 """
@@ -3463,13 +3463,24 @@ class My_handle(metaclass=SingletonMeta):
                     quick_reply = catalog.buy_reply(matched_product)
                 if quick_reply:
                     logger.info(f"Quick product answer: {quick_reply}")
+            cache_key, cache_hit = None, False
+            if not quick_reply and chat_type in self.chat_type_list:
+                try:
+                    cache_key = answer_cache.make_key(data["content"], matched_product["id"] if matched_product else None,
+                                                      self._answer_version())
+                    cached = self._get_answer_cache().get(cache_key)
+                    if cached:
+                        quick_reply, cache_hit = cached, True
+                        logger.info(f"Answer cache hit: {quick_reply}")
+                except Exception as e:
+                    logger.debug(f"answer cache lookup: {e}")
             analytics = self.get_analytics()
             analytics.record("comment", user=username, text=data["content"], intent=intent,
                              product_id=matched_product["id"] if matched_product else None)
             if self.coverage_human():   # the seller is hosting: keep the question for them, say nothing
                 analytics.record("handoff", user=username, text=data["content"], intent=intent)
                 return None
-            analytics.record("answer", source="taught" if taught_reply else ("quick" if quick_reply else "llm"),
+            analytics.record("answer", source="taught" if taught_reply else ("cache" if cache_hit else ("quick" if quick_reply else "llm")),
                              product_id=matched_product["id"] if matched_product else None)
             if matched_product and intent in live_analytics.SALES_INTENTS:
                 self.spotlight_handle(matched_product)
@@ -3506,9 +3517,12 @@ class My_handle(metaclass=SingletonMeta):
                 # Whether the currently selected LLM type supports stream and it is enabledstream
                 if "stream" in self.config.get(chat_type) and self.config.get(chat_type, "stream"):
                     logger.warning("Use streaming inferenceLLM")
+                    t0 = time.time()
                     resp_content = self.llm_stream_handle_and_audio_synthesis(chat_type, data_json)
+                    analytics.record("latency", ms=int((time.time() - t0) * 1000), source="llm")
                     if not lang_guard.needs_retry(resp_content):
                         self._note_unsure(data["content"], matched_product, resp_content)
+                        self._cache_store(cache_key, resp_content, data["username"])
                         return resp_content
                     # everything the model said was dropped by the language guard -> one non-streaming retry
                     logger.warning("Streamed reply was not speakable (wrong language); retrying once")
@@ -3520,10 +3534,13 @@ class My_handle(metaclass=SingletonMeta):
                         resp_content = ""
                         logger.warning(f"Warning: {chat_type} has no return")
                 else:
+                    t0 = time.time()
                     resp_content = self.llm_handle(chat_type, data_json)
+                    analytics.record("latency", ms=int((time.time() - t0) * 1000), source="llm")
                     if resp_content is not None:
                         logger.info(f"[AIReply to {username}]:{resp_content}")
                         self._note_unsure(data["content"], matched_product, resp_content)
+                        self._cache_store(cache_key, resp_content, data["username"])
                     else:
                         resp_content = ""
                         logger.warning(f"Warning: {chat_type} has no return")
@@ -3739,6 +3756,32 @@ class My_handle(metaclass=SingletonMeta):
             return cache[1]
         except Exception:
             return False
+
+    def _answer_version(self):
+        """Changes whenever the seller edits products or the flash sale changes -> cached answers are dropped."""
+        parts = []
+        for path in (My_handle.config.get("products", "path") or "data/products.json",
+                     My_handle.config.get("products", "flash_sale_path") or "data/flash_sale.json"):
+            try:
+                parts.append(str(int(os.path.getmtime(path))))
+            except OSError:
+                parts.append("0")
+        return "-".join(parts)
+
+    def _get_answer_cache(self):
+        if getattr(My_handle, "_answer_cache", None) is None:
+            My_handle._answer_cache = answer_cache.AnswerCache()
+        return My_handle._answer_cache
+
+    def _cache_store(self, key, reply, username):
+        """Remember a good LLM answer so the same question is answered instantly next time."""
+        try:
+            from utils import teach
+            unsure = isinstance(reply, str) and teach.is_unsure(reply)
+            if key and answer_cache.cacheable(reply, username, unsure) and not lang_guard.has_cjk(reply):
+                self._get_answer_cache().put(key, reply)
+        except Exception as e:
+            logger.debug(f"answer cache store: {e}")
 
     def _note_unsure(self, question, product, reply):
         """When the AI admits it does not know, log the question so the seller can teach the answer afterwards."""

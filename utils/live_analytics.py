@@ -140,6 +140,7 @@ def summarize(events: Iterable[Dict], hot_window_sec: int = 300) -> Dict:
     )
     blocked_cat = Counter(c for e in blocked for c in (e.get("categories") or ["unknown"]))
     answer_src = Counter(e.get("source", "llm") for e in answers)
+    lat = sorted(int(e["ms"]) for e in events if e["kind"] == "latency" and isinstance(e.get("ms"), (int, float)))
     answered = len(answers)
     start = events[0]["ts"] if events else None
     return {
@@ -153,6 +154,7 @@ def summarize(events: Iterable[Dict], hot_window_sec: int = 300) -> Dict:
         "intents": dict(intents.most_common()),
         "answered": answered,
         "answer_sources": dict(answer_src),
+        "llm_median_ms": lat[len(lat) // 2] if lat else None,
         "blocked": len(blocked),
         "blocked_by_category": dict(blocked_cat.most_common()),
         "blocked_input": sum(1 for e in blocked if e.get("scope") == "input"),
@@ -176,7 +178,8 @@ def report_markdown(summary: Dict, names: Optional[Dict[str, str]] = None, shop_
         f"- Duration: **{s['duration_min']} min**",
         f"- Comments: **{s['comments']}** from **{s['unique_viewers']}** viewers; **{s['sales_comments']}** were shopping questions "
         f"(**{s['buy_intent']}** buying signals)",
-        f"- AI answers: **{s['answered']}** ({', '.join(f'{k}: {v}' for k, v in s['answer_sources'].items()) or 'none'})",
+        f"- AI answers: **{s['answered']}** ({', '.join(f'{k}: {v}' for k, v in s['answer_sources'].items()) or 'none'})"
+        + (f", typical model time {s['llm_median_ms'] / 1000:.1f}s" if s.get("llm_median_ms") else ""),
         f"- Products pitched: **{s['products_pitched']}** ({s['pitches']} pitches)",
         f"- Compliance: **{s['blocked']}** messages blocked or masked "
         f"({s['blocked_input']} viewer comments, {s['blocked_output']} AI lines caught before speaking)",
