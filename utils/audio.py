@@ -1190,6 +1190,22 @@ class Audio:
 
 
     # Synthesize audio and insert it into the to-play queue
+    def _notify_overlay(self, text, path):
+        """Tell the product_tour overlay (:8091) that this voice clip is starting NOW."""
+        def run():
+            import json as _json, urllib.request as _ur
+            try:
+                try:
+                    dur = Audio.mixer_normal.Sound(path).get_length()
+                except Exception:
+                    dur = len(text) / 13.0
+                _ur.urlopen(_ur.Request("http://127.0.0.1:8091/speak",
+                            data=_json.dumps({"content": text, "duration": dur}).encode("utf-8"),
+                            headers={"Content-Type": "application/json"}, method="POST"), timeout=1)
+            except Exception:
+                pass
+        threading.Thread(target=run, daemon=True).start()
+
     async def my_play_voice(self, message):
         """Synthesize audio and insert it into the to-play queue
 
@@ -1476,6 +1492,7 @@ class Audio:
                             try:
                                 # Play audio with pygame
                                 Audio.mixer_normal.music.load(voice_tmp_path)
+                                self._notify_overlay(data_json.get("content", ""), voice_tmp_path)
                                 Audio.mixer_normal.music.play()
                                 while Audio.mixer_normal.music.get_busy():
                                     pygame.time.Clock().tick(10)

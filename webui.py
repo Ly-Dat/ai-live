@@ -261,6 +261,7 @@ def goto_func_page():
 
     def start_programs():
         """Start all programs according to the config.
+        main.py -> product_tour.py -> (tour reaches round 0) -> tiktok_bridge.py
         """
         global config
 
@@ -269,30 +270,99 @@ def goto_func_page():
                 continue
 
             name = program["name"]
-            executable = program["executable"]  # Path to the Python interpreter
-            app_path = program["parameters"][0]  # Assume the first parameter is always the path to app.py
-            
-            # Extract the directory from the app.py path
+            executable = program["executable"]
+            app_path = program["parameters"][0]
             app_dir = os.path.dirname(app_path)
-            
-            # Build the command from the Python interpreter path and the app.py path
             cmd = [executable, app_path]
 
             logger.info(f"Running program: {name} located at: {app_dir}")
-            
-            # Start the program in the directory containing app.py
             process = subprocess.Popen(cmd, cwd=app_dir, shell=True)
             my_subprocesses[name] = process
 
-        name = "main"
-        # Adjust parameters depending on the operating system
-        if common.detect_os() in ['Linux', 'MacOS']:
-            process = subprocess.Popen(["python", f"main.py"], shell=False)
-        else:
-            process = subprocess.Popen(["python", f"main.py"], shell=True)
-        my_subprocesses[name] = process
+        base_dir = os.path.dirname(os.path.abspath(__file__))
 
-        logger.info(f"Running program: {name}")
+        # 1) main.py (AI + API :8082), but only if one is not already running
+        import socket
+        with socket.socket() as _sk:
+            _sk.settimeout(0.5)
+            _main_up = _sk.connect_ex(("127.0.0.1", int(config.get("api_port") or 8082))) == 0
+        if _main_up:
+            logger.warning("main.py is already running (API port in use): not starting a second one")
+        else:
+            if common.detect_os() in ['Linux', 'MacOS']:
+                my_subprocesses["main"] = subprocess.Popen(["python", "main.py"], shell=False)
+            else:
+                my_subprocesses["main"] = subprocess.Popen(["python", "main.py"], shell=True)
+            logger.info("Running program: main")
+
+        # 2) tour after main.py's API is up, 3) bridge after the tour reaches round 0 (product image on screen)
+        def _tour_then_bridge():
+            from utils import setup_wizard
+            try:
+                setup = setup_wizard.load_setup()
+                user = setup_wizard.clean_username(config.get("room_display_id") or setup.get("tiktok_username") or "")
+                kw = {"cwd": base_dir, "stderr": subprocess.STDOUT,
+                      "env": dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")}   # tiếng Việt trong log
+                if os.name != 'nt':
+                    kw["start_new_session"] = True
+
+                api_port = int(config.get("api_port") or 8082)
+                logger.info(f"[start] waiting for main.py API on :{api_port} ...")
+                end = time.time() + 120
+                while running_flag and time.time() < end:
+                    with socket.socket() as sk:
+                        sk.settimeout(0.5)
+                        if sk.connect_ex(("127.0.0.1", api_port)) == 0:
+                            break
+                    time.sleep(1)
+                if not running_flag:
+                    return
+
+                # tour: its stdout goes to log/tour.log so we can see when round 0 starts
+                tour = my_subprocesses.get("product_tour")
+                if tour is None or tour.poll() is not None:
+                    tour_log = os.path.join(base_dir, "log", "tour.log")
+                    os.makedirs(os.path.dirname(tour_log), exist_ok=True)
+                    offset = os.path.getsize(tour_log) if os.path.exists(tour_log) else 0
+                    my_subprocesses["product_tour"] = subprocess.Popen(
+                        [sys.executable, "-u", "product_tour.py"], stdout=open(tour_log, "a", encoding="utf-8"), **kw)
+                    logger.info("[start] product_tour.py started (overlay: http://127.0.0.1:8091/overlay), waiting for round 0 ...")
+
+                    ready = False
+                    end = time.time() + 180
+                    while running_flag and time.time() < end and my_subprocesses["product_tour"].poll() is None:
+                        try:
+                            with open(tour_log, "rb") as f:
+                                f.seek(offset)
+                                if "[tour] round 0 " in f.read().decode("utf-8", "ignore"):
+                                    ready = True
+                                    break
+                        except OSError:
+                            pass
+                        time.sleep(1)
+                    if not ready:
+                        logger.warning("[start] tour did not reach round 0 (see log/tour.log): starting the bridge anyway")
+                if not running_flag:
+                    return
+
+                # bridge
+                if not user:
+                    logger.error("[start] Live room ID (room_display_id) is empty: bridge not started")
+                    return
+                bridge = my_subprocesses.get("tiktok_bridge")
+                if bridge is None or bridge.poll() is not None:
+                    py = setup_wizard.ensure_bridge_env(base_dir)   # venv_tt, created on first run (can take minutes)
+                    if not running_flag:
+                        return
+                    bridge_log = os.path.join(base_dir, "log", "bridge.log")
+                    my_subprocesses["tiktok_bridge"] = subprocess.Popen(
+                        setup_wizard.bridge_command(dict(setup, tiktok_username=user), py),
+                        stdout=open(bridge_log, "a", encoding="utf-8"), **kw)
+                    logger.info(f"[start] TikTok bridge started for @{user}")
+            except Exception:
+                logger.error(traceback.format_exc())
+
+        threading.Thread(target=_tour_then_bridge, daemon=True).start()
 
 
     def stop_program(name):
@@ -328,9 +398,11 @@ def goto_func_page():
         for program in config.get("coordination_program"):
             if not program["enable"]:
                 continue
-            
+
             stop_program(program["name"])
 
+        stop_program("product_tour")
+        stop_program("tiktok_bridge")
         stop_program("main")
 
     def check_expiration():

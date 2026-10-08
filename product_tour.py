@@ -156,6 +156,23 @@ def show_answer(reply: str):
         META["reply_at"] = META["speech_free_at"]
 
 
+def show_speaking(reply: str, duration: float):
+    """Called by the audio player at the moment the reply's voice REALLY starts playing."""
+    now = time.time()
+    with BOX_LOCK:
+        while PENDING and now - PENDING[0][0] > PENDING_TTL:
+            PENDING.popleft()
+        if now - META["reply_at"] > PAIR_GAP:
+            if PENDING:
+                _, u, c = PENDING.popleft()
+                BOX.update(user=u, comment=c)
+            else:
+                BOX.update(user="", comment="")
+        cps = max(len(reply) / max(duration, 0.5), 1.0)   # real speed of this audio clip
+        BOX.update(reply=reply, start=now, cps=cps)
+        META["reply_at"] = now + duration
+
+
 def start_listener(port: int):
     class H(BaseHTTPRequestHandler):
         def do_POST(self):
@@ -165,8 +182,12 @@ def start_listener(port: int):
                 d = json.loads(raw.decode("utf-8")) if raw else {}
             except Exception:
                 d = {}
-            if self.path.startswith("/reply"):
-                show_answer(str(d.get("content", "")))
+            if self.path.startswith("/speak"):
+                txt = str(d.get("content", "")).strip()
+                if txt and not is_own(txt):          # skip the tour's own pitch sentences
+                    show_speaking(txt, float(d.get("duration") or len(txt) / META["cps"]))
+            elif self.path.startswith("/reply"):
+                pass                                  # predicted timing removed; /speak is the source of truth
             else:
                 if d.get("content"):
                     with BOX_LOCK:
@@ -243,8 +264,7 @@ def start_log_watcher(log_dir="log"):
                     if reply:
                         if is_own(reply):          
                             continue
-                        show_answer(reply)
-                        STATE.mark()
+                        STATE.mark()   # overlay text is now driven by /speak (real playback)
                         print(f"[tour] AI reply -> overlay: {reply[:60]}", flush=True)
             with BOX_LOCK:
                 if (BOX["reply"] or BOX["comment"]) and time.time() - META["reply_at"] > HOLD:
