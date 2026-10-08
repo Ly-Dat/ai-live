@@ -84,3 +84,29 @@ def test_video_pipeline_with_fake_tts(root):
     res = sv.build(sv.panels_from_story(m, root), out, tts=tts, title="V", part=1, hook="Hook", outro="Bye")
     assert os.path.getsize(out) > 1000 and os.path.exists(res["srt"]) and os.path.exists(res["cover"])
     assert "Hook" in open(res["srt"], encoding="utf-8").read() and res["pieces"] == 4
+
+
+def test_split_strip_cuts_at_gutters():
+    from PIL import Image, ImageDraw
+    im = Image.new("RGB", (400, 3000), (255, 255, 255))
+    d = ImageDraw.Draw(im)
+    for k, (a, b) in enumerate([(0, 900), (960, 1900), (1960, 3000)]):
+        for y in range(a, b, 28):   # busy content, gaps (8px) shorter than a gutter
+            d.rectangle((20, y, 380, y + 20), fill=(40 * (k + 1), 90, 160 - 30 * k))
+    b = io.BytesIO(); im.save(b, "PNG")
+    parts = story.split_strip(b.getvalue(), "s")
+    assert len(parts) == 3 and parts[0][0] == "s-001.png"
+    heights = [Image.open(io.BytesIO(p[1])).height for p in parts]
+    assert sum(heights) == 3000 and all(h > 800 for h in heights)
+    short = Image.new("RGB", (400, 500), (9, 9, 9)); bb = io.BytesIO(); short.save(bb, "PNG")
+    assert len(story.split_strip(bb.getvalue(), "x")) == 1
+
+
+def test_add_story_splits_strips(root):
+    from PIL import Image, ImageDraw
+    im = Image.new("RGB", (300, 2400), (255, 255, 255)); d = ImageDraw.Draw(im)
+    for y in range(0, 1100, 30): d.rectangle((10, y, 290, y + 12), fill=(10, 10, 10))
+    for y in range(1200, 2400, 30): d.rectangle((10, y, 290, y + 12), fill=(10, 10, 10))
+    b = io.BytesIO(); im.save(b, "PNG")
+    m = story.add_story("S", "", "own", "", [("strip.png", b.getvalue())], "", root, split_strips=True)
+    assert len(m["panels"]) == 2

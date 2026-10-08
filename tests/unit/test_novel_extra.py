@@ -55,3 +55,42 @@ def test_two_speakers_in_one_paragraph():
     assert [c["speaker"] for c in cs if c["role"] == "dialogue"] == ["Anna", "Mark"]
     cs = novel.chunks("— Trời mưa rồi — Lan nói.", 180, None, ["Lan"])
     assert [c["speaker"] for c in cs if c["role"] == "dialogue"] == ["Lan"]
+
+
+def test_voice_for_and_recap(book):
+    s = {"voice_narrator": "N", "voice_dialogue": "D", "characters": {"Lan": "L"}}
+    assert novel.voice_for({"role": "narrator"}, s) == "N"
+    assert novel.voice_for({"role": "dialogue", "speaker": "Lan"}, s) == "L"
+    assert novel.voice_for({"role": "dialogue", "speaker": "Zed"}, s) == "D"
+    assert novel.voice_for({"role": "dialogue"}, {"voice_narrator": "N"}) == "N"
+    m, root = book
+    assert novel.recap_text(m, 0, root) == ""
+    if len(m["chapters"]) > 1:
+        assert novel.recap_text(m, 1, root).startswith("Ở chương trước: ")
+
+
+def test_overlay_novel_style():
+    import time
+    st = {"state": "playing", "updated": time.time(), "text": "x"}
+    o = novel.overlay_novel(st, {"show_text": True, "overlay_size": "l", "overlay_theme": "sepia"}, time.time())
+    assert o["size"] == "l" and o["theme"] == "sepia"
+    o = novel.overlay_novel(st, {"show_text": True, "overlay_size": "huge", "overlay_theme": "x"}, time.time())
+    assert o["size"] == "m" and o["theme"] == "dark"
+
+
+def test_audiobook_with_fake_tts(book, tmp_path):
+    import subprocess
+    from utils import novel_audio, story_video
+    ff = story_video.ffmpeg_exe()
+    if not ff:
+        pytest.skip("no ffmpeg")
+    m, root = book
+    used = []
+    def tts(t, v, r, o):
+        used.append(v)
+        subprocess.run([ff, "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=300:duration=0.3", "-c:a", "libmp3lame", o], check=True)
+    out = str(tmp_path / "a.mp3")
+    res = novel_audio.build(m, [0], out, {"voice_narrator": "N", "voice_dialogue": "D", "characters": {"Lan": "L", "Nam": "M"}, "rate": 0},
+                            tts=tts, root=root)
+    assert os.path.getsize(out) > 500 and res["pieces"] == len(used) and res["timestamps"].startswith("0:00 ")
+    assert "L" in used and "M" in used and "N" in used

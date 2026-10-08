@@ -111,6 +111,7 @@ def build_story_tab(config):
             t_src = ui.input("Source link (optional)").classes("w-64")
         ui.label("Panels copied from a manhua / webtoon site are copyrighted. Choose \"Copyrighted\" and the app will refuse to show or "
                  "export them. Draw them, make them with a free AI image tool, or use public-domain / CC art.").classes("lv-sub")
+        cut_strips = ui.switch("Tall webtoon strip? Cut it into panels automatically", value=True)
         count = ui.label("No pictures chosen yet.").classes("lv-chip")
 
         async def on_upload(e):
@@ -133,7 +134,7 @@ def build_story_tab(config):
 
         def add():
             try:
-                m = story.add_story(t_title.value, t_author.value, t_lic.value, t_src.value, list(pending), script.value or "")
+                m = story.add_story(t_title.value, t_author.value, t_lic.value, t_src.value, list(pending), script.value or "", split_strips=cut_strips.value)
             except ValueError as ex:
                 ui.notify(str(ex), type="warning")
                 return

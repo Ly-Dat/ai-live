@@ -75,6 +75,62 @@ def zip_images(data: bytes) -> List[Tuple[str, bytes]]:
     return out
 
 
+def split_strip(data: bytes, name: str = "strip", min_h: int = 420, max_h: int = 1700, tol: int = 10, gutter: int = 16) -> List[Tuple[str, bytes]]:
+    """Cut one tall webtoon-style strip into panels at the empty bands (gutters) between them.
+    A band is a run of rows (>= `gutter` px at full size) where every pixel is almost the same colour. Pieces shorter than `min_h`
+    are merged into a neighbour; a piece taller than `max_h` with no gutter is cut at its calmest row."""
+    try:
+        from PIL import Image
+    except Exception:
+        raise ValueError("Pillow is needed to cut strips (pip install Pillow).")
+    im = Image.open(io.BytesIO(data))
+    im = im.convert("RGB")
+    W, H = im.size
+    if H < max(min_h * 2, W * 1.8):
+        return [(name + ".png", data)]
+    aw = 48
+    small = im.convert("L").resize((aw, H))
+    px = small.load()
+    rng = []
+    for y in range(H):
+        row = [px[x, y] for x in range(aw)]
+        rng.append(max(row) - min(row))
+    quiet = [r <= tol for r in rng]
+    cuts, y = [], 0
+    while y < H:
+        if quiet[y]:
+            z = y
+            while z < H and quiet[z]:
+                z += 1
+            if z - y >= gutter:
+                cuts.append((y + z) // 2)
+            y = z
+        else:
+            y += 1
+    bounds = [0] + [c for c in cuts if 0 < c < H] + [H]
+    parts = [(a, b) for a, b in zip(bounds, bounds[1:]) if b - a > 4]
+    merged: List[List[int]] = []
+    for a, b in parts:
+        if merged and (b - a < min_h or merged[-1][1] - merged[-1][0] < min_h) and (b - merged[-1][0]) <= max_h:
+            merged[-1][1] = b
+        else:
+            merged.append([a, b])
+    final: List[List[int]] = []
+    for a, b in merged:
+        while b - a > max_h:   # no gutter: cut at the calmest row near the middle of the allowed range
+            lo, hi = a + max_h // 2, a + max_h
+            c = min(range(lo, hi), key=lambda r: rng[r])
+            final.append([a, c])
+            a = c
+        final.append([a, b])
+    out = []
+    for i, (a, b) in enumerate(final):
+        buf = io.BytesIO()
+        im.crop((0, a, W, b)).save(buf, "PNG")
+        out.append((f"{name}-{i + 1:03d}.png", buf.getvalue()))
+    return out
+
+
 def parse_script(text: str, n: int) -> List[str]:
     """Narration for `n` panels. Either "Panel 3: ..." markers, or paragraphs separated by a blank line.
     Extra paragraphs are joined onto the last panel; missing ones stay empty."""
@@ -126,8 +182,16 @@ def _folder(story_id: str, root: str) -> str:
 
 
 def add_story(title: str, author: str, license_id: str, source: str, images: List[Tuple[str, bytes]], script: str = "",
-              root: str = STORIES_DIR) -> Dict:
+              root: str = STORIES_DIR, split_strips: bool = False) -> Dict:
     pics = []
+    if split_strips:
+        expanded = []
+        for name, data in images:
+            if _sniff_ext(data) and len(data) <= MAX_IMG_BYTES:
+                expanded.extend(split_strip(data, os.path.splitext(name)[0]))
+            else:
+                expanded.append((name, data))
+        images = expanded
     for name, data in images:
         if len(data) > MAX_IMG_BYTES:
             raise ValueError(f"{name}: picture is larger than 15 MB.")

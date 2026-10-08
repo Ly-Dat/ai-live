@@ -16,3 +16,6 @@ Pictures and text must be yours (drawn, written, or made by you with a free AI t
 
 ## Files
 `utils/story.py` logic, `utils/story_video.py` video builder, `story_reader.py` live reader, `utils/webui_story.py` tab, `data/stories/<id>/` library, `data/story_state.json` / `data/story_status.json` control + status.
+
+## Tall webtoon strips
+Upload one long vertical strip and leave "Cut it into panels automatically" on: the strip is cut at the empty bands between panels (tiny pieces are merged, pieces with no gap are cut at their calmest row). Check the result in step 3 and fix the narration per panel.

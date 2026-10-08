@@ -36,6 +36,8 @@ LICENSES: Dict[str, Dict] = {
 DEFAULT_SETTINGS = {
     "voice_narrator": "", "voice_dialogue": "", "rate": 0, "pause_s": 0.4, "yield_comments": True,
     "auto_next": True, "announce_chapter": True, "show_text": True, "sleep_min": 0, "safety": True,
+    "recap": False,           # before the first chapter of a session, read the last lines of the previous chapter
+    "overlay_size": "m", "overlay_theme": "dark",   # on-screen text: s/m/l, dark/light/sepia
     "characters": {},   # name -> voice ("" = the dialogue voice): who says a line is found from tags like "Lan nói" / "said Mark"
 }
 DEFAULT_PRON = {"TP.HCM": "Thành phố Hồ Chí Minh", "TP. HCM": "Thành phố Hồ Chí Minh", "UBND": "Ủy ban nhân dân",
@@ -448,6 +450,30 @@ def save_progress(book_id: str, chapter: int, chunk: int, path: str = PROGRESS_P
     _atomic_write(path, p)
 
 
+def voice_for(chunk: Dict, settings: Dict) -> str:
+    """The voice id for one chunk: a tagged character's voice, else the dialogue voice, else the narrator ('' = app default)."""
+    if chunk.get("role") == "dialogue":
+        sp = chunk.get("speaker", "")
+        v = (settings.get("characters") or {}).get(sp) if sp else ""
+        return v or settings.get("voice_dialogue") or settings.get("voice_narrator") or ""
+    return settings.get("voice_narrator") or ""
+
+
+def recap_text(meta: Dict, idx: int, root: str = NOVELS_DIR, max_chars: int = 280) -> str:
+    """"Previously ..." line: the last two sentences of the previous chapter ('' for the first chapter)."""
+    if idx <= 0 or idx > len(meta["chapters"]):
+        return ""
+    body = clean_for_speech(chapter_body(meta, idx - 1, root))
+    sents = [x.strip() for x in _SENT.split(body) if len(x.strip()) > 3]
+    tail = " ".join(sents[-2:])
+    if len(tail) > max_chars:
+        tail = tail[-max_chars:].split(" ", 1)[-1]
+    if not tail:
+        return ""
+    vi = bool(re.search(r"[ăâđêôơưàáạảãèéẹẻẽìíịỉĩòóọỏõùúụủũỳýỵỷỹ]", tail.lower()))
+    return ("Ở chương trước: " if vi else "Previously: ") + tail
+
+
 def overlay_novel(status: Dict, settings: Dict, now: float, fresh_s: float = 30.0) -> Optional[Dict]:
     """What the on-screen overlay shows while a story is being read (None = nothing)."""
     if not status or not settings.get("show_text", True):
@@ -456,7 +482,9 @@ def overlay_novel(status: Dict, settings: Dict, now: float, fresh_s: float = 30.
         return None
     return {"title": status.get("title", ""), "chapter": status.get("chapter_title", ""), "prev": status.get("prev", ""),
             "text": status.get("text", ""), "next": status.get("next", ""), "credit": status.get("credit", ""),
-            "paused": status.get("state") == "paused", "role": status.get("role", "narrator")}
+            "paused": status.get("state") == "paused", "role": status.get("role", "narrator"),
+            "size": settings.get("overlay_size") if settings.get("overlay_size") in ("s", "m", "l") else "m",
+            "theme": settings.get("overlay_theme") if settings.get("overlay_theme") in ("dark", "light", "sepia") else "dark"}
 
 
 # ------------------------------------------------------------------ reading time, search, bookmarks

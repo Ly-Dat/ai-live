@@ -10,9 +10,9 @@ import sys
 import tempfile
 import time
 
-from nicegui import ui
+from nicegui import run, ui
 
-from . import novel, setup_wizard, voice_catalog
+from . import music, novel, novel_audio, setup_wizard, story_video, voice_catalog
 from .webui_theme import page_title
 
 ROOT = setup_wizard.ROOT
@@ -104,6 +104,7 @@ def build_novel_tab(config):
         t_voices = ui.tab("Voices", icon="record_voice_over")
         t_options = ui.tab("Options", icon="tune")
         t_find = ui.tab("Find & bookmarks", icon="bookmarks")
+        t_audio = ui.tab("Audiobook", icon="headphones")
         t_help = ui.tab("Help", icon="help_outline")
     with ui.tab_panels(tabs, value=t_stories).classes("w-full nv-sub"):
         # ----------------------------------------------------------------- stories
@@ -287,6 +288,24 @@ def build_novel_tab(config):
                 ui.label("On screen and safety").classes("nv-group")
                 show_text = ui.switch("Show the text on screen (overlay)", value=bool(s0["show_text"]))
                 safety = ui.switch("Skip lines the TikTok policy filter flags", value=bool(s0["safety"]))
+                recap = ui.switch("Recap: start with the last lines of the previous chapter", value=bool(s0.get("recap")))
+                with ui.row().classes("items-center").style("gap:16px;flex-wrap:wrap;margin-top:6px"):
+                    ov_size = ui.toggle({"s": "Small", "m": "Medium", "l": "Large"}, value=s0.get("overlay_size", "m"))
+                    ov_theme = ui.toggle({"dark": "Dark", "light": "Light", "sepia": "Sepia"}, value=s0.get("overlay_theme", "dark"))
+                    ui.label("On-screen text size and colour").classes("lv-sub").style("margin:0")
+                ui.label("Atmosphere").classes("nv-group")
+                ms = music.load_settings()
+                bg = ui.switch("Background music while the story is read", value=bool(ms.get("enable")))
+                ui.label("Plays the licensed tracks from Live tools (quiet, ducks when the host answers a viewer). "
+                         "Add tracks and set their licences there; CC BY credits are shown on screen.").classes("lv-sub").style("margin:-6px 0 4px 48px")
+
+                def set_bg(e):
+                    cur = music.load_settings()
+                    if e.value and not music.playable(music.tracks()):
+                        ui.notify("No playable tracks yet. Add some in Live tools -> Background music.", type="warning")
+                    cur["enable"] = bool(e.value)
+                    music.save_settings(cur)
+                bg.on_value_change(set_bg)
                 ui.label("Timer").classes("nv-group")
                 sleep_min = ui.number("Stop after (minutes, 0 = never)", value=s0["sleep_min"], min=0, max=720, format="%.0f").classes("w-56")
 
@@ -341,6 +360,76 @@ def build_novel_tab(config):
                             ui.button(icon="delete", on_click=lambda i=i: (novel.delete_bookmark(m["id"], i), bookmarks.refresh())).props("flat round dense color=negative")
                 bookmarks()
 
+        # ----------------------------------------------------------------- audiobook
+        with ui.tab_panel(t_audio):
+            aprog = {"a": 0, "b": 1, "msg": "", "busy": False, "cancel": False}
+            with _card(True):
+                ui.label("Make an audiobook (MP3)").classes("nv-h")
+                ui.label("Reads the chapters with the voices from the Voices tab (narrator, dialogue, characters) and saves one MP3, plus a chapter "
+                         "list with timestamps for the post description. Post it as an audio story on TikTok, YouTube or a podcast. "
+                         "Needs internet (edge-tts) and ffmpeg.").classes("lv-sub")
+                miss = [x for x in story_video.missing_tools() if not x.startswith("Pillow")]
+                if miss:
+                    ui.label("Missing on this computer: " + "; ".join(miss)).classes("lv-chip bad")
+                with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
+                    a_from = ui.select({}, label="From chapter").classes("w-64")
+                    a_to = ui.select({}, label="To chapter").classes("w-64")
+                    a_lang = ui.select({"vi": "Vietnamese", "en": "English"}, label="Story language", value="vi").classes("w-40")
+                    a_title = ui.switch("Say the chapter titles", value=True)
+                a_est = ui.label("").classes("lv-sub")
+                a_bar = ui.linear_progress(value=0, show_value=False).classes("w-full")
+                a_msg = ui.label("").classes("lv-sub")
+                a_result = ui.column().classes("w-full")
+
+                def chapter_ids():
+                    lo, hi = sorted((int(a_from.value or 0), int(a_to.value or 0)))
+                    return list(range(lo, hi + 1))
+
+                def upd_est(*_):
+                    m = novel.get_book(sel["book"])
+                    a_est.text = (f"About {novel.fmt_minutes(novel_audio.estimate_seconds(m, chapter_ids(), int(rate.value or 0)) / 60)} of audio."
+                                  if m and a_from.value is not None else "")
+                a_from.on_value_change(upd_est)
+                a_to.on_value_change(upd_est)
+                ui.timer(0.5, lambda: (setattr(a_bar, "value", aprog["a"] / max(1, aprog["b"])), setattr(a_msg, "text", aprog["msg"])))
+
+                async def make_audio():
+                    if aprog["busy"]:
+                        return
+                    m = novel.get_book(sel["book"])
+                    ok, why = novel.can_read_live(m)
+                    if not ok:
+                        ui.notify(why, type="warning")
+                        return
+                    if [x for x in story_video.missing_tools() if not x.startswith("Pillow")]:
+                        ui.notify("Install the missing tools first (see the red note).", type="negative")
+                        return
+                    from .webui_story import OUT_DIR, register_routes
+                    register_routes()
+                    ids = chapter_ids()
+                    os.makedirs(OUT_DIR, exist_ok=True)
+                    out = os.path.join(OUT_DIR, f'{m["id"]}-ch{ids[0] + 1}-{ids[-1] + 1}-{int(time.time()) % 100000}.mp3')
+                    aprog.update(a=0, b=1, msg="Starting...", busy=True, cancel=False)
+                    a_result.clear()
+                    try:
+                        res = await run.io_bound(novel_audio.build, m, ids, out, collect(), None, a_lang.value, a_title.value, 0.35, novel.NOVELS_DIR,
+                                                 lambda a, b, msg: aprog.update(a=a, b=b, msg=msg), lambda: aprog["cancel"])
+                    except Exception as ex:
+                        aprog.update(busy=False, msg=f"Failed: {ex}")
+                        ui.notify(f"Audiobook failed: {ex}", type="negative")
+                        return
+                    aprog.update(busy=False, msg=f'Done: {res["pieces"]} pieces, {novel.fmt_minutes(res["seconds"] / 60)}')
+                    cr = novel.credit_line(m)
+                    desc = res["timestamps"] + ("\n\nCredit: " + cr if cr else "")
+                    with a_result:
+                        ui.audio(f"/story-out/{os.path.basename(out)}").classes("w-full")
+                        ui.button("Download MP3", icon="download", on_click=lambda: ui.download(f"/story-out/{os.path.basename(out)}")).props("outline no-caps")
+                        ui.textarea("Chapter timestamps for the description", value=desc).classes("w-full").props("rows=5")
+                        ui.label("Saved in " + os.path.abspath(OUT_DIR)).classes("lv-sub")
+                with ui.row().style("gap:10px;margin-top:8px"):
+                    ui.button("Make the audiobook", icon="headphones", on_click=make_audio).props("color=primary no-caps")
+                    ui.button("Cancel", icon="close", on_click=lambda: aprog.update(cancel=True)).props("flat no-caps")
+
         # ----------------------------------------------------------------- help
         with ui.tab_panel(t_help):
             with _card(True):
@@ -356,7 +445,7 @@ def build_novel_tab(config):
     def collect():
         return {"characters": dict(chars), "voice_narrator": v_nar.value or "", "voice_dialogue": v_dia.value or "", "rate": int(rate.value or 0),
                 "pause_s": float(pause.value or 0), "yield_comments": yield_c.value, "auto_next": auto_next.value,
-                "announce_chapter": announce.value, "show_text": show_text.value, "sleep_min": int(sleep_min.value or 0),
+                "announce_chapter": announce.value, "recap": recap.value, "overlay_size": ov_size.value, "overlay_theme": ov_theme.value, "show_text": show_text.value, "sleep_min": int(sleep_min.value or 0),
                 "safety": safety.value}
 
     def send(command, **kw):
@@ -372,7 +461,7 @@ def build_novel_tab(config):
         c = novel.read_control()
         c["settings"] = collect()
         novel.write_control(c)
-    for el in (v_nar, v_dia, rate, pause, sleep_min, yield_c, auto_next, announce, show_text, safety):
+    for el in (v_nar, v_dia, rate, pause, sleep_min, yield_c, auto_next, announce, show_text, safety, recap, ov_size, ov_theme):
         el.on_value_change(apply_settings)
 
     def update_hero():
@@ -385,13 +474,17 @@ def build_novel_tab(config):
         empty.set_visibility(not opts)
         m = novel.get_book(sel["book"])
         if m:
-            chapter_sel.set_options({i: f'{i + 1}. {c["title"]}' for i, c in enumerate(m["chapters"])},
-                                    value=min(chapter_sel.value or 0, len(m["chapters"]) - 1))
+            co = {i: f'{i + 1}. {c["title"]}' for i, c in enumerate(m["chapters"])}
+            chapter_sel.set_options(co, value=min(chapter_sel.value or 0, len(m["chapters"]) - 1))
+            a_from.set_options(co, value=0)
+            a_to.set_options(co, value=min(2, len(co) - 1))
             ok, why = novel.can_read_live(m)
             chip.text = "Ready to read live" if ok else why
             chip.classes(add="good" if ok else "bad", remove="bad" if ok else "good")
         else:
             chapter_sel.set_options({}, value=None)
+            a_from.set_options({}, value=None)
+            a_to.set_options({}, value=None)
             chip.text = ""
 
     def on_book(e):

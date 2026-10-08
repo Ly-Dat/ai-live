@@ -147,6 +147,11 @@ class Reader:
         title = meta["chapters"][ci]["title"]
         chunks = self.cached(meta, ci)
         j = min(max(self.pos["chunk"], 0), max(len(chunks) - 1, 0))
+        if j == 0 and s.get("recap") and ci > 0 and not self.pos.get("recapped"):
+            self.pos["recapped"] = True
+            rc = novel.recap_text(meta, ci)
+            if rc:
+                self.say(rc, s, seq, meta, title, chunks, 0, "narrator", announce=True)
         if j == 0 and s["announce_chapter"]:
             self.say(f'{meta["title"]}. {title}.', s, seq, meta, title, chunks, 0, "narrator", announce=True)
         while j < len(chunks):
@@ -183,9 +188,7 @@ class Reader:
             self.pos["chunk"] = 0
 
     def say(self, text, s, seq, meta, title, chunks, j, role, announce=False, speaker=""):
-        voice = s["voice_dialogue"] if role == "dialogue" and s["voice_dialogue"] else s["voice_narrator"]
-        if role == "dialogue" and speaker and (s.get("characters") or {}).get(speaker):
-            voice = s["characters"][speaker]
+        voice = novel.voice_for({"role": role, "speaker": speaker}, s)
         self.status("playing", meta, title, chunks, j, role)
         if not post_reread(self.args.api, text, voice, s["rate"]):
             self.wait(2.0, seq)

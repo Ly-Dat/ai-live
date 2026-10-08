@@ -27,3 +27,9 @@ Do not run it together with the product tour (both would speak).
 - **Characters - a voice for each:** "Find characters in this story" lists names that appear next to a speech verb ("Lan nói", "said Mark") at least twice. Give each a voice (or press "Give each a different voice"). A line of dialogue is read by the character it is tagged with: `Lan nói: “...”`, `“...” Lan nói.`, `— ... — Lan nói.`. Untagged dialogue uses the dialogue voice.
 - **Search and bookmarks:** search the story text and start reading from any hit; bookmark the current place (with a note) and jump back later. Bookmarks are in `data/novel_bookmarks.json`.
 - **Time:** the story card shows about how long the whole story takes to listen; the reader shows the time left in the chapter.
+
+## Audiobook, recap, atmosphere, on-screen style
+- **Audiobook tab:** pick a chapter range and press "Make the audiobook". The chapters are read with your narrator / dialogue / character voices (free edge-tts, needs internet) and saved as one MP3 in `out/stories/`, with a chapter timestamp list to paste into the post description. Needs ffmpeg (or `pip install imageio-ffmpeg`).
+- **Recap:** with "Recap" on (Options), a session that starts at chapter 2 or later first reads the last two sentences of the previous chapter ("Ở chương trước: ..." / "Previously: ...").
+- **Background music:** a switch in Options turns on the licensed tracks from Live tools while you read.
+- **On-screen text:** small / medium / large and dark / light / sepia for the overlay card.
