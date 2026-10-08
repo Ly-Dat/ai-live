@@ -65,28 +65,47 @@ IMG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "prod
 
 OVERLAY_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>
 html,body{margin:0;height:100%;background:transparent;overflow:hidden;font-family:Segoe UI,Arial,sans-serif}
-#chat{position:absolute;top:2%;left:4%;right:4%;max-height:24%;padding:14px 18px;border-radius:16px;
-  background:rgba(0,0,0,.55);color:#fff;font-size:3.2vh;line-height:1.35;display:none;overflow:hidden}
+#chat{position:absolute;top:2%;left:6%;right:6%;padding:8px 14px;border-radius:12px;
+  background:rgba(0,0,0,.5);color:#fff;font-size:2.4vh;line-height:1.3;opacity:0;transition:opacity .45s ease;
+  pointer-events:none;overflow:hidden}
+#chat.on{opacity:1}
 #chat .u{color:#ffd166;font-weight:600}
 #chat .a{color:#7ee0ff;font-weight:600}
-#chat div+div{margin-top:8px}
+#c{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#r{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#c:empty,#r:empty{display:none}
+#c+#r{margin-top:4px}
 #imgs{position:absolute;left:0;right:0;bottom:2%;height:40%}
 #imgs img{position:absolute;inset:0;margin:auto;max-width:100%;max-height:100%;border-radius:12px;
-  opacity:0;transition:opacity .6s}
-#imgs img.on{opacity:1}
+  opacity:0;transform:scale(1);transition:opacity .9s ease,transform 7s linear;will-change:opacity,transform}
+#imgs img.on{opacity:1;transform:scale(1.04)}
 </style></head><body>
 <div id="chat"><div id="c"></div><div id="r"></div></div>
-<div id="imgs"><img id="a"></div>
+<div id="imgs"></div>
 <script>
-const SECONDS = 5;
-let key = "", list = [], i = 0;
-const el = document.getElementById("a");
+const SECONDS = 5, FADE = 900;
+let key = "", list = [], i = 0, gen = 0, cur = null, fails = 0;
+const box = document.getElementById("imgs"), chat = document.getElementById("chat");
 const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
-function show() {
-  if (!list.length) { el.classList.remove("on"); return; }
-  el.src = "/img/" + encodeURIComponent(list[i % list.length]);
-  el.classList.add("on");
+function fadeOut(img) { img.classList.remove("on"); setTimeout(() => img.remove(), FADE + 150); }
+function clearImgs() { gen++; if (cur) { fadeOut(cur); cur = null; } }
+// Preload, then cross-fade. A failed load of a NEW product's picture clears the screen: never keep the old product up.
+function show(fresh) {
+  const my = ++gen;
+  if (!list.length) { clearImgs(); return; }
+  const im = new Image();
+  im.onload = () => {
+    if (my !== gen) return;
+    const n = document.createElement("img");
+    n.src = im.src; box.appendChild(n);
+    requestAnimationFrame(() => requestAnimationFrame(() => n.classList.add("on")));
+    if (cur) fadeOut(cur);
+    cur = n;
+  };
+  im.onerror = () => { if (my === gen && fresh) clearImgs(); };
+  im.src = "/img/" + encodeURIComponent(list[i % list.length]);
 }
+const tail = (s, n) => { if (s.length <= n) return s; const t = s.slice(-n), sp = t.indexOf(" "); return "…" + (sp > 0 ? t.slice(sp + 1) : t); };
 let last = null, skew = 0;
 function render() {
   if (!last) return;
@@ -99,22 +118,27 @@ function render() {
     if (n < b.reply.length) { const sp = shown.lastIndexOf(" "); if (sp > 0) shown = shown.slice(0, sp); }
   }
   c.innerHTML = b.comment ? '<span class="u">' + esc(b.user || "Viewer") + ':</span> ' + esc(b.comment) : "";
-  r.innerHTML = shown ? '<span class="a">AI:</span> ' + esc(shown) : "";
-  document.getElementById("chat").style.display = (b.comment || shown) ? "block" : "none";
+  // keep the box short: only the latest part of a long reply stays on screen
+  r.innerHTML = shown ? '<span class="a">AI:</span> ' + esc(tail(shown, 110)) : "";
+  chat.classList.toggle("on", !!(b.comment || shown));
 }
 async function poll() {
   try {
     const d = await (await fetch("/current", {cache: "no-store"})).json();
+    fails = 0;
     const k = d.name + "|" + d.images.join(",");
-    if (k !== key) { key = k; list = d.images; i = 0; show(); }
+    if (k !== key) { key = k; list = d.images; i = 0; show(true); }
     skew = d.now - Date.now() / 1000;
     last = d;
     render();
-  } catch (e) {}
+  } catch (e) {
+    // tour stopped or restarted: do not leave the last product's picture or text frozen on screen
+    if (++fails >= 3) { key = ""; list = []; clearImgs(); last = null; chat.classList.remove("on"); }
+  }
 }
 setInterval(render, 100);
 setInterval(poll, 700);
-setInterval(() => { if (list.length) { i++; show(); } }, SECONDS * 1000);
+setInterval(() => { if (list.length > 1) { i++; show(false); } }, SECONDS * 1000);
 poll();
 </script></body></html>"""
 
@@ -343,10 +367,9 @@ def build_segments(catalog, product, cycle: int, safety):
 def present_product(args, catalog, safety, product, round_no: int) -> None:
     minutes = product.get("duration_min") or random.uniform(args.min_minutes, args.max_minutes)
     deadline = time.time() + float(minutes) * 60
-    print(f"[tour] round {round_no} -> {product['name']} ({minutes:.1f} min)", flush=True)
-    
     CURRENT.update(name=product.get("name", ""),
         images=[os.path.basename(x) for x in (product.get("images") or [])])
+    print(f"[tour] round {round_no} -> {product['name']} ({minutes:.1f} min)", flush=True)
     cycle = round_no
     pending = []                       # sentences left in the current cycle
     while time.time() < deadline:
