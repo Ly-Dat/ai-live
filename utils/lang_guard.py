@@ -27,3 +27,11 @@ def clean(text: Optional[str]) -> Optional[str]:
     if sum(ch.isalpha() for ch in out) < 2:
         return None
     return out
+
+
+RETRY_NOTE = "\n(Reply only in Vietnamese, in plain text. Do not use Chinese characters.)"
+
+
+def needs_retry(text: Optional[str]) -> bool:
+    """True when the model answered only in CJK, so nothing speakable is left after `clean`."""
+    return bool(text) and has_cjk(text) and clean(text) is None

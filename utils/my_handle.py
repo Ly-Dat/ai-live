@@ -1871,6 +1871,11 @@ class My_handle(metaclass=SingletonMeta):
                 # Filter <></> tag content, mainly for deepseek responses
                 resp_content = My_handle.common.llm_resp_content_filter_tags(resp_content, filter_state)
 
+                if lang_guard.needs_retry(resp_content) and type == "chat" and not data.get("_retried"):
+                    logger.warning("Reply had no Vietnamese/English text; asking the model once more")
+                    return self.llm_handle(chat_type, dict(data, content=data["content"] + lang_guard.RETRY_NOTE, _retried=True),
+                                           type, webui_show)
+
                 if lang_guard.has_cjk(resp_content):
                     fixed = lang_guard.clean(resp_content)
                     logger.warning(f"Language guard removed CJK text from the reply: {resp_content!r} -> {fixed!r}")
@@ -3502,8 +3507,18 @@ class My_handle(metaclass=SingletonMeta):
                 if "stream" in self.config.get(chat_type) and self.config.get(chat_type, "stream"):
                     logger.warning("Use streaming inferenceLLM")
                     resp_content = self.llm_stream_handle_and_audio_synthesis(chat_type, data_json)
-                    self._note_unsure(data["content"], matched_product, resp_content)
-                    return resp_content
+                    if not lang_guard.needs_retry(resp_content):
+                        self._note_unsure(data["content"], matched_product, resp_content)
+                        return resp_content
+                    # everything the model said was dropped by the language guard -> one non-streaming retry
+                    logger.warning("Streamed reply was not speakable (wrong language); retrying once")
+                    resp_content = self.llm_handle(chat_type, dict(data_json, content=data_json["content"] + lang_guard.RETRY_NOTE, _retried=True))
+                    if resp_content is not None:
+                        logger.info(f"[AIReply to {username}]:{resp_content}")
+                        self._note_unsure(data["content"], matched_product, resp_content)
+                    else:
+                        resp_content = ""
+                        logger.warning(f"Warning: {chat_type} has no return")
                 else:
                     resp_content = self.llm_handle(chat_type, data_json)
                     if resp_content is not None:

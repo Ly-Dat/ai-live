@@ -24,5 +24,15 @@ class LangGuard(unittest.TestCase):
         self.assertFalse(lg.has_cjk("Việt Nam"))
 
 
+
+class Retry(unittest.TestCase):
+    def test_needs_retry(self):
+        self.assertTrue(lg.needs_retry("在的呢，宝贝"))
+        self.assertFalse(lg.needs_retry("Chào bạn 你好"))
+        self.assertFalse(lg.needs_retry("Chào bạn"))
+        self.assertFalse(lg.needs_retry(""))
+        self.assertFalse(lg.needs_retry(None))
+
+
 if __name__ == "__main__":
     unittest.main()
