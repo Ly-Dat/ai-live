@@ -1691,6 +1691,17 @@ class My_handle(metaclass=SingletonMeta):
                 "content": content
             }
 
+            # Optional per-line voice / speed (the novel reader uses a second voice for dialogue)
+            if (data.get("voice") or data.get("rate")) and isinstance(message.get("data"), dict):
+                override = dict(message["data"])
+                if data.get("voice"):
+                    override["voice"] = str(data["voice"])[:80]
+                if data.get("rate") and message["tts_type"] == "edge-tts":
+                    r = str(data["rate"])
+                    if len(r) <= 6 and r[0] in "+-" and r[-1] == "%":
+                        override["rate"] = r
+                message["data"] = override
+
             # Audio insertion index (applies to audio_player_v2)
             if "insert_index" in data:
                 message["insert_index"] = data["insert_index"]

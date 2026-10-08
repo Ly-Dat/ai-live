@@ -275,3 +275,9 @@ data/bridge_status.json
 # your own music tracks and licence tags
 data/music/
 data/music_settings.json
+# stories you add to the novel reader, and its state
+data/novels/
+data/novel_state.json
+data/novel_status.json
+data/novel_progress.json
+data/novel_pronunciations.json
