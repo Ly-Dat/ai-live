@@ -21,6 +21,28 @@ ROOT = setup_wizard.ROOT
 PREVIEW_DIR = os.path.join(ROOT, "out", "preview")
 SAMPLE = voice_catalog.sample("vi")
 
+DEFAULT_VIE_VOICE = "Ngọc Huyền"
+
+EXTRA_VIE_VOICES = [
+    "Ngọc Huyền",   
+    "Ngọc Linh",    
+    "Trúc Ly",      
+    "Bích Ngọc",    
+    "Ngọc Trân",    
+    "Thục Đoan",   
+    "Mai Anh",      
+    "Phạm Tuyên", 
+    "Thanh Bình",   
+    "Thái Sơn",    
+]
+
+def _merge_voices(server_voices, *must_have):
+    "List of voices from the server + mandatory voices (no duplicates, Ngọc Huyền at the top"
+    out = list(server_voices or [])
+    for v in reversed([*EXTRA_VIE_VOICES, *must_have]):
+        if v and v not in out:
+            out.insert(0, v)
+    return out
 
 def _save_config(mutator):
     path = os.path.join(ROOT, "config.json")
@@ -91,7 +113,8 @@ def build_voice_tab(config):
             lang_sel = ui.select({"vi": "Vietnamese", "en": "English"}, label="Language", value=voice_catalog.lang_of(cur_edge)).classes("w-40")
             gender_sel = ui.select({"": "Any", "F": "Female", "M": "Male"}, label="Voice type", value="").classes("w-32")
             edge_sel = ui.select(voice_catalog.options(lang_sel.value), label="Edge voice", value=cur_edge).classes("w-96")
-            vie_sel = ui.select([vcfg.get("voice") or "Mai Anh"], label="VieNeu voice", value=vcfg.get("voice") or "Mai Anh").classes("w-64")
+            vie_default = vcfg.get("voice") or DEFAULT_VIE_VOICE
+            vie_sel = ui.select(_merge_voices([], vie_default), label="VieNeu voice", value=vie_default).classes("w-64")
         with ui.row().style("gap:10px;margin-top:6px"):
             b_edge = ui.button("Play with Edge", icon="volume_up").props("outline")
             b_vie = ui.button("Play with VieNeu", icon="graphic_eq")
@@ -155,7 +178,8 @@ def build_voice_tab(config):
             status.text = "Server online"
             status.classes(add="good", remove="bad")
             voices = await asyncio.to_thread(vieneu_tts.list_voices, url_in.value, vcfg.get("api_key", ""))
-            if voices and voices != state["voices"]:
+            voices = _merge_voices(voices, vie_sel.value)
+            if voices != state["voices"]:
                 state["voices"] = voices
                 cur = vie_sel.value if vie_sel.value in voices else voices[0]
                 vie_sel.set_options(voices, value=cur)

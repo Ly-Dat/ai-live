@@ -548,7 +548,7 @@
       "similarity": 0.5
     }
   },
-  "audio_synthesis_type": "edge-tts",
+  "audio_synthesis_type": "vieneu",
   "audio_random_speed": {
     "normal": {
       "enable": false,
@@ -647,7 +647,7 @@
   "vieneu": {
     "api_url": "http://127.0.0.1:8000",
     "model": "vieneu-v3-turbo",
-    "voice": "Mai Anh",
+    "voice": "Ngọc Huyền",
     "api_key": "",
     "sample_rate": 48000,
     "timeout": 60

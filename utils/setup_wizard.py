@@ -178,7 +178,7 @@ class ProcessManager:
             return False
         os.makedirs(os.path.join(self.root, "log"), exist_ok=True)
         logf = open(os.path.join(self.root, "log", f"{name}.log"), "a", encoding="utf-8")
-        full_env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8", **(env or {}))
+        full_env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8", **(env or {})}
         self.procs[name] = subprocess.Popen(cmd, cwd=self.root, stdout=logf, stderr=subprocess.STDOUT, env=full_env)
         return True
 
