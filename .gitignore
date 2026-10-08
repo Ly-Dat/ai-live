@@ -281,3 +281,7 @@ data/novel_state.json
 data/novel_status.json
 data/novel_progress.json
 data/novel_pronunciations.json
+data/stories/
+data/story_state.json
+data/story_status.json
+out/stories/

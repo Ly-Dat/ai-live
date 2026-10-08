@@ -199,6 +199,13 @@ def build_novel_tab(config):
             if not ok:
                 ui.notify(why, type="warning")
                 return
+            try:
+                from .webui_story import PM_STORY
+                if PM_STORY.running("story"):
+                    ui.notify("The Story studio reader is running. Stop it first, or both will talk at once.", type="warning")
+                    return
+            except Exception:
+                pass
             if _tour_running():
                 ui.notify("The product tour is running. Stop it first (Setup -> Stop), or both will talk at once.", type="warning")
                 return
