@@ -1065,6 +1065,12 @@ def goto_func_page():
             out = _ov.build(_engage.load_state(), flash, name, time.time(), safe=lambda s: not safety.check(s, "output"))
         except Exception:
             out = {"items": []}
+        try:
+            from utils import music as _music, live_analytics as _la
+            out["music"] = _music.overlay_music(_music.load_settings(), _music.tracks(),
+                                                _music.tail_events(_la.latest_session_file()), time.time())
+        except Exception:
+            out["music"] = {"enabled": False, "tracks": [], "volume": 0}
         return JSONResponse(out, headers={"Cache-Control": "no-store"})
 
 

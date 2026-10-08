@@ -272,3 +272,6 @@ data/coverage.json
 data/sales_shoutout.json
 data/voice_consent.json
 data/bridge_status.json
+# your own music tracks and licence tags
+data/music/
+data/music_settings.json

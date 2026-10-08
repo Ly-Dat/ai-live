@@ -243,4 +243,7 @@ def build_tools_tab(config):
     with ui.column().classes("w-full").style("margin-top:16px"):
         _overlay_card(config)
     with ui.column().classes("w-full").style("margin-top:16px"):
+        from .webui_music import music_card
+        music_card(config)
+    with ui.column().classes("w-full").style("margin-top:16px"):
         _fallback_card(config)

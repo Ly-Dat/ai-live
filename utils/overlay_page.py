@@ -14,7 +14,9 @@ html,body{margin:0;background:transparent;font-family:"Segoe UI",system-ui,sans-
 .bar{height:8px;background:rgba(255,255,255,.16);border-radius:6px;overflow:hidden}
 .fill{height:100%;background:linear-gradient(90deg,#8b5cf6,#ec4899);transition:width .5s}
 .big{font-size:14px;opacity:.92}.hot{color:#fbbf24;font-weight:700}
-</style></head><body><div id="wrap"></div><script>
+#np{position:fixed;right:20px;bottom:20px;max-width:300px;text-align:right;font-size:13px;opacity:.88;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+#cr{font-size:11px;opacity:.7}
+</style></head><body><div id="wrap"></div><div id="np"><div id="npt"></div><div id="cr"></div></div><audio id="bgm"></audio><script>
 var items=[],at=Date.now();
 function mmss(s){s=Math.max(0,s);return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2)}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
@@ -32,6 +34,18 @@ function render(){var w=document.getElementById("wrap");w.textContent="";var dt=
   else{head(c,"Flash sale",mmss(left));c.appendChild(el("div","t",it.product||"Flash sale"));
    var m=[];if(it.price)m.push(it.price);if(it.stock)m.push(it.stock+" left");if(m.length)c.appendChild(el("div","big hot",m.join(" - ")))}
   w.appendChild(c)})}
-function poll(){fetch("/overlay/state").then(function(r){return r.json()}).then(function(d){items=d.items||[];at=Date.now();render()}).catch(function(){})}
+function poll(){fetch("/overlay/state").then(function(r){return r.json()}).then(function(d){items=d.items||[];at=Date.now();render();setMusic(d.music)}).catch(function(){})}
+var bgm=document.getElementById("bgm"),mt=[],mi=0,mkey="",mtarget=0;
+function playCur(){var t=mt[mi%mt.length];bgm.src=t.url;
+ document.getElementById("npt").textContent="\u266A "+t.title+(t.artist?" - "+t.artist:"");document.getElementById("cr").textContent=t.credit||"";
+ var pr=bgm.play();if(pr&&pr.catch)pr.catch(function(){document.getElementById("cr").textContent="Click once to start the music"})}
+bgm.onended=function(){mi++;playCur()};
+bgm.onerror=function(){mi++;if(mt.length>1)setTimeout(playCur,500)};
+document.addEventListener("click",function(){if(mt.length&&bgm.paused)playCur()});
+function setMusic(m){if(!m||!m.enabled||!m.tracks||!m.tracks.length){bgm.pause();mkey="";mt=[];
+  document.getElementById("npt").textContent="";document.getElementById("cr").textContent="";return}
+ var key=m.tracks.map(function(t){return t.url}).join("|");mtarget=m.volume;
+ if(key!==mkey){mkey=key;mt=m.tracks;mi=0;bgm.volume=mtarget;playCur()}}
+setInterval(function(){var d=mtarget-bgm.volume;if(Math.abs(d)<0.02)bgm.volume=Math.min(1,Math.max(0,mtarget));else bgm.volume=Math.min(1,Math.max(0,bgm.volume+(d>0?0.03:-0.03)))},100);
 setInterval(poll,2000);setInterval(render,1000);poll();
 </script></body></html>"""

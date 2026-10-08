@@ -536,9 +536,9 @@
       "trigger_num_max": 2
     },
     "text": {
-      "enable": false,
+      "enable": true,
       "type": "json",
-      "file_path": "data/本地问答库.json",
+      "file_path": "data/local_qa_vi.json",
       "similarity": 0.8,
       "username_max_len": 10
     },

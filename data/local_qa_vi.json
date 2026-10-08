@@ -1,0 +1,76 @@
+[
+  {
+    "Keywords": [
+      "alo",
+      "alo alo",
+      "có ai không",
+      "có ai ở đây không",
+      "ai đó ơi"
+    ],
+    "Answer": [
+      "Có mình ở đây nè {username}, chào bạn nha!",
+      "Mình đây {username}, cả nhà cứ thoải mái hỏi nhé!"
+    ]
+  },
+  {
+    "Keywords": [
+      "chào",
+      "xin chào",
+      "hello",
+      "hi shop",
+      "chào shop"
+    ],
+    "Answer": [
+      "Chào {username}, chào mừng bạn vào phòng live nha!",
+      "Xin chào {username}, bạn xem live vui vẻ nhé!"
+    ]
+  },
+  {
+    "Keywords": [
+      "cảm ơn",
+      "cảm ơn shop",
+      "thank you",
+      "thanks"
+    ],
+    "Answer": [
+      "Không có gì đâu {username}, bạn cứ hỏi thêm nếu cần nha!",
+      "Mình cảm ơn {username} đã ghé xem live nhé!"
+    ]
+  },
+  {
+    "Keywords": [
+      "tạm biệt",
+      "bye",
+      "bye bye",
+      "mình đi nha"
+    ],
+    "Answer": [
+      "Tạm biệt {username}, hẹn gặp lại bạn nha!",
+      "Cảm ơn {username} đã xem, hẹn gặp lại!"
+    ]
+  },
+  {
+    "Keywords": [
+      "bạn là ai",
+      "ai vậy",
+      "đang nói chuyện với ai vậy",
+      "bot hả",
+      "có phải ai không"
+    ],
+    "Answer": [
+      "Mình là trợ lý AI của shop, chủ shop có thể vào hỗ trợ thêm khi cần nha.",
+      "Mình là AI host của shop, bạn cứ hỏi về sản phẩm đang giới thiệu nhé!"
+    ]
+  },
+  {
+    "Keywords": [
+      "có nghe thấy không",
+      "nghe rõ không",
+      "âm thanh",
+      "không nghe gì"
+    ],
+    "Answer": [
+      "Bạn thử tải lại live giúp mình nha, nếu vẫn không nghe được hãy báo mình biết!"
+    ]
+  }
+]
