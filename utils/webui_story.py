@@ -53,7 +53,7 @@ def _h(text, sub=None, first=False):
 
 
 def _card(first=False):
-    return ui.card().classes("lv-card w-full").style("padding:20px" + ("" if first else ";margin-top:16px"))
+    return ui.card().classes("lv-card w-full").style("padding:20px" + ("" if first else ";margin-top:30px"))
 
 
 def build_story_tab(config):
@@ -217,10 +217,10 @@ def build_story_tab(config):
             v_voice = ui.select(VOICES, label="Narrator voice", value=s0["voice"], with_input=True).classes("w-80")
             with ui.column().style("gap:0;min-width:200px"):
                 ui.label("Speed (%)").classes("lv-sub").style("margin:0")
-                rate = ui.slider(min=-40, max=60, value=s0["rate"]).props("label-always").style("margin-top:16px")
+                rate = ui.slider(min=-40, max=60, value=s0["rate"]).props("label-always").style("margin-top:30px")
             with ui.column().style("gap:0;min-width:200px"):
                 ui.label("Show each picture at least (seconds)").classes("lv-sub").style("margin:0")
-                min_s = ui.slider(min=2, max=20, step=0.5, value=s0["min_panel_s"]).props("label-always").style("margin-top:16px")
+                min_s = ui.slider(min=2, max=20, step=0.5, value=s0["min_panel_s"]).props("label-always").style("margin-top:30px")
             sleep_min = ui.number("Stop after (minutes, 0 = never)", value=s0["sleep_min"], min=0, max=720, format="%.0f").classes("w-56")
         with ui.row().style("gap:18px;flex-wrap:wrap"):
             yield_c = ui.switch("Pause for viewer comments", value=bool(s0["yield_comments"]))
@@ -319,7 +319,7 @@ def build_story_tab(config):
             part = ui.number("Part number", value=1, min=0, max=99, format="%.0f").classes("w-32")
             with ui.column().style("gap:0;min-width:200px"):
                 ui.label("Speed (%)").classes("lv-sub").style("margin:0")
-                rate2 = ui.slider(min=-30, max=40, value=0).props("label-always").style("margin-top:16px")
+                rate2 = ui.slider(min=-30, max=40, value=0).props("label-always").style("margin-top:30px")
         hook_in = ui.input("Hook (first line, makes people stay)", placeholder="Bạn có tin vào định mệnh?").classes("w-full")
         outro_in = ui.input("Ending line", value="Theo dõi để xem phần 2!").classes("w-full")
         tracks = {t["file"]: t for t in music.playable(music.tracks())}
@@ -328,7 +328,7 @@ def build_story_tab(config):
                             label="Background music (licensed tracks from Live tools)", value="").classes("w-96")
             with ui.column().style("gap:0;min-width:200px"):
                 ui.label("Music volume (%)").classes("lv-sub").style("margin:0")
-                mvol = ui.slider(min=3, max=30, value=12).props("label-always").style("margin-top:16px")
+                mvol = ui.slider(min=3, max=30, value=12).props("label-always").style("margin-top:30px")
         est = ui.label("").classes("lv-sub")
         pbar = ui.linear_progress(value=0, show_value=False).classes("w-full")
         pmsg = ui.label("").classes("lv-sub")
