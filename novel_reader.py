@@ -133,10 +133,11 @@ class Reader:
             self.play_chapter(meta, ctl)
 
     def cached(self, meta, ch):
-        key = (meta["id"], ch)
+        names = tuple(sorted(self.control()["settings"].get("characters") or {}))
+        key = (meta["id"], ch, names)
         if getattr(self, "_ck", None) != key:
             self._ck = key
-            self._chunks = novel.chunks(novel.chapter_body(meta, ch), 180, novel.load_pron())
+            self._chunks = novel.chunks(novel.chapter_body(meta, ch), 180, novel.load_pron(), list(names))
         return self._chunks
 
     def play_chapter(self, meta, ctl):
@@ -168,7 +169,7 @@ class Reader:
                 print(f"[novel] skipped one line (TikTok policy filter) in {title}", flush=True)
                 j += 1
                 continue
-            self.say(ch["text"], s, seq, meta, title, chunks, j, ch["role"])
+            self.say(ch["text"], s, seq, meta, title, chunks, j, ch["role"], speaker=ch.get("speaker", ""))
             if self.control()["seq"] != seq or self.control()["command"] != "play":
                 return
             j += 1
@@ -181,8 +182,10 @@ class Reader:
             novel.write_control(dict(self.control(), command="stop"))
             self.pos["chunk"] = 0
 
-    def say(self, text, s, seq, meta, title, chunks, j, role, announce=False):
+    def say(self, text, s, seq, meta, title, chunks, j, role, announce=False, speaker=""):
         voice = s["voice_dialogue"] if role == "dialogue" and s["voice_dialogue"] else s["voice_narrator"]
+        if role == "dialogue" and speaker and (s.get("characters") or {}).get(speaker):
+            voice = s["characters"][speaker]
         self.status("playing", meta, title, chunks, j, role)
         if not post_reread(self.args.api, text, voice, s["rate"]):
             self.wait(2.0, seq)

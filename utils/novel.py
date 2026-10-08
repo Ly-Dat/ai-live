@@ -22,6 +22,7 @@ CONTROL_PATH = os.path.join("data", "novel_state.json")      # UI -> reader
 STATUS_PATH = os.path.join("data", "novel_status.json")      # reader -> UI + overlay
 PROGRESS_PATH = os.path.join("data", "novel_progress.json")
 PRON_PATH = os.path.join("data", "novel_pronunciations.json")
+BOOKMARKS_PATH = os.path.join("data", "novel_bookmarks.json")
 
 LICENSES: Dict[str, Dict] = {
     "public-domain": {"label": "Public domain (copyright expired)", "ok": True, "credit": False},
@@ -35,6 +36,7 @@ LICENSES: Dict[str, Dict] = {
 DEFAULT_SETTINGS = {
     "voice_narrator": "", "voice_dialogue": "", "rate": 0, "pause_s": 0.4, "yield_comments": True,
     "auto_next": True, "announce_chapter": True, "show_text": True, "sleep_min": 0, "safety": True,
+    "characters": {},   # name -> voice ("" = the dialogue voice): who says a line is found from tags like "Lan nói" / "said Mark"
 }
 DEFAULT_PRON = {"TP.HCM": "Thành phố Hồ Chí Minh", "TP. HCM": "Thành phố Hồ Chí Minh", "UBND": "Ủy ban nhân dân",
                 "THPT": "trung học phổ thông", "THCS": "trung học cơ sở"}
@@ -232,24 +234,73 @@ def clean_for_speech(text: str, pron: Optional[Dict[str, str]] = None) -> str:
     return re.sub(r"\s+", " ", t).strip()
 
 
-def chunks(body: str, max_chars: int = 180, pron: Optional[Dict[str, str]] = None) -> List[Dict]:
-    """[{role, text}] ready for TTS: same-role sentences merged up to `max_chars`."""
+_SPEECH_VERBS = (r"nói|hỏi|đáp|trả lời|thì thầm|thầm thì|kêu|quát|hét|gắt|cười|thở dài|lẩm bẩm|reo|mắng|bảo|said|asked|replied|whispered|shouted|"
+                 r"cried|muttered|answered|sighed|laughed|snapped")
+_NAME = r"[A-ZÀ-Ỹ][A-Za-zÀ-ỹ']+(?:\s[A-ZÀ-Ỹ][A-Za-zÀ-ỹ']+)?"
+_BEFORE = re.compile(r"(" + _NAME + r")\s+(?:" + _SPEECH_VERBS + r")\b")
+_AFTER = re.compile(r"\b(?:" + _SPEECH_VERBS + r")\s+(" + _NAME + r")")
+_NOT_NAMES = {"Anh", "Chị", "Cô", "Ông", "Bà", "Em", "Hắn", "Nàng", "Chàng", "Họ", "Nó", "Mình", "Tôi", "Cậu", "Bạn", "He", "She", "They", "I", "It", "We",
+              "You", "The", "And", "But", "Then", "Người", "Một", "Mọi", "Ai"}
+
+
+def find_speaker(narration: str, names) -> str:
+    """The first listed character mentioned in the narration part of a paragraph ('' if none)."""
+    best, pos = "", 10 ** 9
+    for n in names or []:
+        m = re.search(r"(?<!\w)" + re.escape(n) + r"(?!\w)", narration, re.I)
+        if m and m.start() < pos:
+            best, pos = n, m.start()
+    return best
+
+
+def detect_characters(text: str, top: int = 8, min_count: int = 2) -> List[str]:
+    """Names that appear next to a speech verb ('Lan nói', 'said Mark') often enough to be characters."""
+    count: Dict[str, int] = {}
+    for rx in (_BEFORE, _AFTER):
+        for m in rx.finditer(text):
+            n = m.group(1).strip()
+            first = n.split()[0]
+            if first in _NOT_NAMES or len(n) < 2:
+                continue
+            count[n] = count.get(n, 0) + 1
+    return [n for n, c in sorted(count.items(), key=lambda kv: -kv[1]) if c >= min_count][:top]
+
+
+def piece_speaker(pieces, k: int, names) -> str:
+    """Who says dialogue piece k: the narration just before it when that ends with ':' or ',' ("Lan nói: “...”"), else the narration
+    just after it ("“...” Lan nói."), else the one before, else anyone named in the paragraph."""
+    if not names:
+        return ""
+    prev = pieces[k - 1][1] if k > 0 and pieces[k - 1][0] == "narrator" else ""
+    nxt = pieces[k + 1][1] if k + 1 < len(pieces) and pieces[k + 1][0] == "narrator" else ""
+    order = [prev, nxt, prev] if prev.rstrip().endswith((":", ",")) else [nxt, prev]
+    for text in order:
+        sp = find_speaker(text, names) if text else ""
+        if sp:
+            return sp
+    return find_speaker(" ".join(t for r, t in pieces if r == "narrator"), names)
+
+
+def chunks(body: str, max_chars: int = 180, pron: Optional[Dict[str, str]] = None, characters=None) -> List[Dict]:
+    """[{role, text, speaker}] ready for TTS: same-role (and same-speaker) sentences merged up to `max_chars`."""
     out: List[Dict] = []
     for par in re.split(r"\n\s*\n|\n", body):
-        cur_role, cur = None, ""
-        for role, piece in paragraph_pieces(par):
+        pieces = paragraph_pieces(par)
+        cur_role, cur, cur_sp = None, "", ""
+        for k, (role, piece) in enumerate(pieces):
             piece = clean_for_speech(piece, pron)
             if not any(ch.isalnum() for ch in piece):
                 continue
-            for sent in [s.strip() for s in _SENT.split(piece) if s.strip()]:
-                if cur_role == role and cur and len(cur) + 1 + len(sent) <= max_chars:
+            sp = piece_speaker(pieces, k, characters) if role == "dialogue" else ""
+            for sent in [x.strip() for x in _SENT.split(piece) if x.strip()]:
+                if cur_role == role and cur_sp == sp and cur and len(cur) + 1 + len(sent) <= max_chars:
                     cur += " " + sent
                     continue
                 if cur:
-                    out.append({"role": cur_role, "text": cur})
-                cur_role, cur = role, sent
+                    out.append({"role": cur_role, "text": cur, "speaker": cur_sp})
+                cur_role, cur, cur_sp = role, sent, sp
         if cur:
-            out.append({"role": cur_role, "text": cur})
+            out.append({"role": cur_role, "text": cur, "speaker": cur_sp})
     # very long sentences: cut at commas / spaces so no TTS call is huge
     final: List[Dict] = []
     for c in out:
@@ -257,10 +308,10 @@ def chunks(body: str, max_chars: int = 180, pron: Optional[Dict[str, str]] = Non
         while len(t) > max_chars * 1.6:
             cut = max(t.rfind(", ", 0, max_chars), t.rfind("; ", 0, max_chars), t.rfind(" ", 0, max_chars))
             cut = cut if cut > 30 else max_chars
-            final.append({"role": c["role"], "text": t[:cut + 1].strip()})
+            final.append({"role": c["role"], "text": t[:cut + 1].strip(), "speaker": c.get("speaker", "")})
             t = t[cut + 1:].strip()
         if t:
-            final.append({"role": c["role"], "text": t})
+            final.append({"role": c["role"], "text": t, "speaker": c.get("speaker", "")})
     return final
 
 
@@ -406,3 +457,54 @@ def overlay_novel(status: Dict, settings: Dict, now: float, fresh_s: float = 30.
     return {"title": status.get("title", ""), "chapter": status.get("chapter_title", ""), "prev": status.get("prev", ""),
             "text": status.get("text", ""), "next": status.get("next", ""), "credit": status.get("credit", ""),
             "paused": status.get("state") == "paused", "role": status.get("role", "narrator")}
+
+
+# ------------------------------------------------------------------ reading time, search, bookmarks
+def chapter_minutes(meta: Dict, idx: int, cps: float = 13.0, rate: int = 0) -> float:
+    ch = meta["chapters"][idx]
+    return spoken_seconds("x" * max(0, ch["end"] - ch["start"]), cps, rate) / 60.0
+
+
+def book_minutes(meta: Dict, cps: float = 13.0, rate: int = 0) -> float:
+    return sum(chapter_minutes(meta, i, cps, rate) for i in range(len(meta["chapters"])))
+
+
+def fmt_minutes(m: float) -> str:
+    m = int(round(m))
+    return f"{m // 60} h {m % 60:02d} min" if m >= 60 else f"{max(m, 1)} min"
+
+
+def search(meta: Dict, query: str, limit: int = 20, characters=None, root: str = NOVELS_DIR) -> List[Dict]:
+    """Lines of the story that contain `query`: [{chapter, chunk, text}] (so the reader can start right there)."""
+    q = (query or "").strip().lower()
+    out: List[Dict] = []
+    if len(q) < 2:
+        return out
+    text = book_text(meta["id"], root).lower()
+    for ci, ch in enumerate(meta["chapters"]):
+        if q not in text[ch["start"]:ch["end"]]:
+            continue
+        for j, c in enumerate(chunks(chapter_body(meta, ci, root), 180, load_pron(), characters)):
+            if q in c["text"].lower():
+                out.append({"chapter": ci, "chunk": j, "text": c["text"]})
+                if len(out) >= limit:
+                    return out
+    return out
+
+
+def list_bookmarks(book_id: str, path: str = BOOKMARKS_PATH) -> List[Dict]:
+    return (_read(path, {}) or {}).get(book_id, [])
+
+
+def add_bookmark(book_id: str, chapter: int, chunk: int, note: str = "", path: str = BOOKMARKS_PATH) -> None:
+    d = _read(path, {}) or {}
+    d.setdefault(book_id, []).append({"chapter": int(chapter), "chunk": int(chunk), "note": (note or "").strip()[:80], "created": int(time.time())})
+    _atomic_write(path, d)
+
+
+def delete_bookmark(book_id: str, index: int, path: str = BOOKMARKS_PATH) -> None:
+    d = _read(path, {}) or {}
+    items = d.get(book_id, [])
+    if 0 <= index < len(items):
+        items.pop(index)
+        _atomic_write(path, d)

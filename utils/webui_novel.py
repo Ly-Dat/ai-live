@@ -60,7 +60,7 @@ def build_novel_tab(config):
             def refresh_note():
                 m = novel.get_book(sel["book"])
                 ok, why = novel.can_read_live(m)
-                note.text = f'{len(m["chapters"])} chapters, {m["chars"] // 1000}k characters. ' + ("Can be read on a live." if ok else why)
+                note.text = f'{len(m["chapters"])} chapters, {m["chars"] // 1000}k characters, about {novel.fmt_minutes(novel.book_minutes(m))} to listen. ' + ("Can be read on a live." if ok else why)
                 note.classes(add="good" if ok else "bad", remove="bad" if ok else "good")
                 chapter_sel.set_options({i: f'{i + 1}. {c["title"]}' for i, c in enumerate(m["chapters"])},
                                         value=min(chapter_sel.value or 0, len(m["chapters"]) - 1))
@@ -69,6 +69,10 @@ def build_novel_tab(config):
                 sel["book"] = e.value
                 lic.value = novel.get_book(e.value)["license"]
                 refresh_note()
+                try:
+                    bookmarks.refresh()
+                except NameError:
+                    pass
 
             def on_lic(e):
                 novel.update_license(sel["book"], e.value)
@@ -167,8 +171,10 @@ def build_novel_tab(config):
             show_text = ui.switch("Show the text on screen (overlay)", value=bool(s0["show_text"]))
             safety = ui.switch("Skip lines the TikTok policy filter flags", value=bool(s0["safety"]))
 
+        chars = dict(s0.get("characters") or {})
+
         def collect():
-            return {"voice_narrator": v_nar.value or "", "voice_dialogue": v_dia.value or "", "rate": int(rate.value or 0),
+            return {"characters": dict(chars), "voice_narrator": v_nar.value or "", "voice_dialogue": v_dia.value or "", "rate": int(rate.value or 0),
                     "pause_s": float(pause.value or 0), "yield_comments": yield_c.value, "auto_next": auto_next.value,
                     "announce_chapter": announce.value, "show_text": show_text.value, "sleep_min": int(sleep_min.value or 0),
                     "safety": safety.value}
@@ -193,7 +199,7 @@ def build_novel_tab(config):
             if not PM_NOVEL.running("novel"):
                 PM_NOVEL.start("novel", [sys.executable, "novel_reader.py", "--api", f"http://127.0.0.1:{api_port}/send"])
 
-        def start(resume=False):
+        def start(resume=False, at=None):
             m = novel.get_book(sel["book"])
             ok, why = novel.can_read_live(m)
             if not ok:
@@ -214,6 +220,8 @@ def build_novel_tab(config):
                 p = novel.load_progress().get(m["id"])
                 if p:
                     ci, ck = min(p["chapter"], len(m["chapters"]) - 1), p["chunk"]
+            if at:
+                ci, ck = int(at[0]), int(at[1])
             ensure_reader()
             send("play", book=m["id"], chapter=ci, chunk=ck)
             ui.notify("Reading. Make sure the app is running (Start Run).", type="positive")
@@ -251,6 +259,10 @@ def build_novel_tab(config):
                 status.text = (f'{"Reading" if state == "playing" else "Paused"}: {st.get("title")} - {st.get("chapter_title")} '
                                f'(line {st.get("chunk", 0) + 1}/{st.get("chunks", 0)})' + (f', {st.get("skipped")} skipped by the filter' if st.get("skipped") else ""))
                 bar.value = (st.get("chunk", 0) + 1) / max(1, st.get("chunks", 1))
+                m = novel.get_book(st.get("book", ""))
+                if m and state == "playing" and st.get("chapter", 0) < len(m["chapters"]):
+                    left = novel.chapter_minutes(m, st["chapter"], rate=int(rate.value or 0)) * (1 - bar.value)
+                    status.text += f" - about {novel.fmt_minutes(left)} left in this chapter"
                 now_line.text = st.get("text", "")
             elif state == "blocked":
                 status.text = st.get("message", "Blocked")
@@ -266,6 +278,106 @@ def build_novel_tab(config):
         ui.timer(1.0, refresh)
         if sel["book"]:
             library.refresh_note() if hasattr(library, "refresh_note") else None
+
+    # ------------------------------------------------------------------ characters
+    with ui.card().classes("lv-card w-full").style("padding:20px;margin-top:16px"):
+        ui.label("Characters - a voice for each").style("font-weight:700;font-size:16px")
+        ui.label("When a line of dialogue is tagged with a character (\"Lan nói\", \"Nam đáp\", \"said Mark\") that character's voice reads it. "
+                 "Lines with no known speaker use the dialogue voice.").classes("lv-sub")
+        char_voices = {"": "Dialogue voice", **{k: v for k, v in VOICES.items() if k}}
+
+        @ui.refreshable
+        def char_rows():
+            if not chars:
+                ui.label("No characters yet. Press \"Find characters\" or add a name.").classes("lv-sub")
+            for name in list(chars):
+                with ui.row().classes("items-center").style("gap:10px"):
+                    ui.label(name).style("min-width:140px;font-weight:600")
+                    pick_v = ui.select(char_voices, value=chars[name], with_input=True).classes("w-72")
+                    pick_v.on_value_change(lambda e, n=name: (chars.__setitem__(n, e.value or ""), apply_settings()))
+                    ui.button(icon="close", on_click=lambda n=name: (chars.pop(n, None), apply_settings(), char_rows.refresh())).props("flat round dense")
+        char_rows()
+
+        def find_chars():
+            m = novel.get_book(sel["book"])
+            if not m:
+                ui.notify("Pick a story first.", type="warning")
+                return
+            found = novel.detect_characters(novel.book_text(m["id"]))
+            for n in found:
+                chars.setdefault(n, "")
+            apply_settings()
+            char_rows.refresh()
+            ui.notify(f"Found {len(found)} character(s)." if found else "No speaker tags found (like \"Lan nói\"). Add names by hand.",
+                      type="positive" if found else "info")
+
+        def spread_voices():
+            pool = list(voice_catalog.options("vi")) or [k for k in VOICES if k]
+            for i, n in enumerate(chars):
+                chars[n] = pool[i % len(pool)]
+            apply_settings()
+            char_rows.refresh()
+        with ui.row().classes("items-end").style("gap:10px;flex-wrap:wrap"):
+            new_name = ui.input("Character name").classes("w-52")
+
+            def add_char():
+                n = (new_name.value or "").strip()
+                if n:
+                    chars.setdefault(n, "")
+                    new_name.value = ""
+                    apply_settings()
+                    char_rows.refresh()
+            ui.button("Add", icon="person_add", on_click=add_char).props("outline no-caps")
+            ui.button("Find characters in this story", icon="manage_search", on_click=find_chars).props("no-caps")
+            ui.button("Give each a different voice", icon="shuffle", on_click=spread_voices).props("outline no-caps")
+
+    # ------------------------------------------------------------------ search + bookmarks
+    with ui.card().classes("lv-card w-full").style("padding:20px;margin-top:16px"):
+        ui.label("Search and bookmarks").style("font-weight:700;font-size:16px")
+        ui.label("Find a line and start reading from it, or save the place you are at.").classes("lv-sub")
+        with ui.row().classes("items-end").style("gap:10px;flex-wrap:wrap"):
+            q_in = ui.input("Search the story").classes("w-72")
+            ui.button("Search", icon="search", on_click=lambda: do_search()).props("no-caps")
+        results = ui.column().classes("w-full").style("gap:2px")
+
+        def do_search():
+            results.clear()
+            m = novel.get_book(sel["book"])
+            hits = novel.search(m, q_in.value or "", 15, list(chars)) if m else []
+            with results:
+                if not hits:
+                    ui.label("Nothing found (type at least 2 letters).").classes("lv-sub")
+                for h in hits:
+                    with ui.row().classes("items-center w-full").style("gap:8px;flex-wrap:nowrap"):
+                        ui.button(icon="play_arrow", on_click=lambda h=h: start(False, (h["chapter"], h["chunk"]))).props("flat round dense color=positive")
+                        ui.label(f'Ch. {h["chapter"] + 1}: {h["text"][:140]}').classes("lv-sub").style("margin:0")
+        ui.separator().style("margin:10px 0")
+        with ui.row().classes("items-end").style("gap:10px;flex-wrap:wrap"):
+            bm_note = ui.input("Bookmark note (optional)").classes("w-72")
+
+            def add_bm():
+                m = novel.get_book(sel["book"])
+                if not m:
+                    return
+                st = novel.read_status()
+                live = st.get("book") == m["id"] and st.get("state") in ("playing", "paused")
+                novel.add_bookmark(m["id"], st.get("chapter", 0) if live else int(chapter_sel.value or 0), st.get("chunk", 0) if live else 0, bm_note.value or "")
+                bm_note.value = ""
+                bookmarks.refresh()
+            ui.button("Bookmark where I am", icon="bookmark_add", on_click=add_bm).props("outline no-caps")
+
+        @ui.refreshable
+        def bookmarks():
+            m = novel.get_book(sel["book"])
+            items = novel.list_bookmarks(m["id"]) if m else []
+            if not items:
+                ui.label("No bookmarks for this story.").classes("lv-sub")
+            for i, b in enumerate(items):
+                with ui.row().classes("items-center w-full").style("gap:8px;flex-wrap:nowrap"):
+                    ui.button(icon="play_arrow", on_click=lambda b=b: start(False, (b["chapter"], b["chunk"]))).props("flat round dense color=positive")
+                    ui.label(f'Chapter {b["chapter"] + 1}, line {b["chunk"] + 1}' + (f' - {b["note"]}' if b["note"] else "")).classes("lv-sub").style("margin:0")
+                    ui.button(icon="delete", on_click=lambda i=i: (novel.delete_bookmark(m["id"], i), bookmarks.refresh())).props("flat round dense color=negative")
+        bookmarks()
 
     # ------------------------------------------------------------------ pronunciation
     with ui.card().classes("lv-card w-full").style("padding:20px;margin-top:16px"):

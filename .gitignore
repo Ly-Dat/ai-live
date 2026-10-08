@@ -285,3 +285,5 @@ data/stories/
 data/story_state.json
 data/story_status.json
 out/stories/
+
+data/novel_bookmarks.json

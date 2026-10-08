@@ -22,3 +22,8 @@ read on a live** (public domain, your own, CC0 / CC BY, or written permission). 
 Free sources: Project Gutenberg, Wikisource, your own writing.
 
 Do not run it together with the product tour (both would speak).
+
+## Characters, search and bookmarks
+- **Characters - a voice for each:** "Find characters in this story" lists names that appear next to a speech verb ("Lan nói", "said Mark") at least twice. Give each a voice (or press "Give each a different voice"). A line of dialogue is read by the character it is tagged with: `Lan nói: “...”`, `“...” Lan nói.`, `— ... — Lan nói.`. Untagged dialogue uses the dialogue voice.
+- **Search and bookmarks:** search the story text and start reading from any hit; bookmark the current place (with a note) and jump back later. Bookmarks are in `data/novel_bookmarks.json`.
+- **Time:** the story card shows about how long the whole story takes to listen; the reader shows the time left in the chapter.
