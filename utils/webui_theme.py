@@ -239,8 +239,6 @@ def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark
                 "bridge": _pill("Not live"),
                 "voice": _pill("Voice: edge-tts"),
             }
-            if go_live:
-                ui.button("Go live", icon="podcasts", on_click=go_live).props("unelevated color=primary")
         theme_switch(dark)
 
     def refresh():

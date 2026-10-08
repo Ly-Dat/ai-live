@@ -1,3 +1,9 @@
+import sys as _sys
+for _stream in (_sys.stdout, _sys.stderr):  # Windows consoles/pipes default to cp1252 and crash on Vietnamese text
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 """
 Product tour v2: AI streamer introduces products top -> bottom.
 

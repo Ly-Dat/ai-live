@@ -19,7 +19,7 @@ from .db import SQLiteDB
 from .my_translate import My_Translate
 
 from .luoxi_project.live_comment_assistant import send_msg_to_live_comment_assistant
-from . import tiktok_safety, product_catalog, live_analytics, flash_sale, engage, coverage
+from . import tiktok_safety, product_catalog, live_analytics, flash_sale, engage, coverage, lang_guard
 
 
 """
@@ -1590,6 +1590,14 @@ class My_handle(metaclass=SingletonMeta):
             logger.warning(f"Link:{content}")
             return None
 
+        # Never read out Chinese / Japanese / Korean (some local models drift into it)
+        if scope == "output" and lang_guard.has_cjk(content):
+            fixed = lang_guard.clean(content)
+            logger.warning(f"Language guard removed CJK text from the reply: {content!r} -> {fixed!r}")
+            if fixed is None:
+                return None
+            content = fixed
+
         # TikTok policy / Vietnamese-aware safety filter (scope: "input" = viewer text, "output" = what the AI says)
         if My_handle.config.get("filter", "tiktok_safety", "enable"):
             try:
@@ -1862,6 +1870,11 @@ class My_handle(metaclass=SingletonMeta):
                 }
                 # Filter <></> tag content, mainly for deepseek responses
                 resp_content = My_handle.common.llm_resp_content_filter_tags(resp_content, filter_state)
+
+                if lang_guard.has_cjk(resp_content):
+                    fixed = lang_guard.clean(resp_content)
+                    logger.warning(f"Language guard removed CJK text from the reply: {resp_content!r} -> {fixed!r}")
+                    resp_content = fixed
 
             # Check whether the reply template is enabled
             if My_handle.config.get("reply_template", "enable"):

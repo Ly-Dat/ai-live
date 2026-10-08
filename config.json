@@ -536,14 +536,14 @@
       "trigger_num_max": 2
     },
     "text": {
-      "enable": true,
+      "enable": false,
       "type": "json",
       "file_path": "data/本地问答库.json",
       "similarity": 0.8,
       "username_max_len": 10
     },
     "audio": {
-      "enable": true,
+      "enable": false,
       "file_path": "out/本地问答音频/",
       "similarity": 0.5
     }
