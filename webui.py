@@ -298,13 +298,11 @@ def goto_func_page():
         # 2) tour after main.py's API is up, 3) bridge after the tour reaches round 0 (product image on screen)
         def _tour_then_bridge():
             from utils import setup_wizard
+            from utils.webui_setup import PM as _PM
             try:
-                setup = setup_wizard.load_setup()
+                setup = setup_wizard.load_setup()        # min/max minutes per product etc. (Setup tab -> data/setup.json)
                 user = setup_wizard.clean_username(config.get("room_display_id") or setup.get("tiktok_username") or "")
-                kw = {"cwd": base_dir, "stderr": subprocess.STDOUT,
-                      "env": dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")}   # tiếng Việt trong log
-                if os.name != 'nt':
-                    kw["start_new_session"] = True
+                utf8 = {"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}   # Vietnamese text in the logs
 
                 api_port = int(config.get("api_port") or 8082)
                 logger.info(f"[start] waiting for main.py API on :{api_port} ...")
@@ -318,46 +316,39 @@ def goto_func_page():
                 if not running_flag:
                     return
 
-                # tour: its stdout goes to log/tour.log so we can see when round 0 starts
-                tour = my_subprocesses.get("product_tour")
-                if tour is None or tour.poll() is not None:
+                ready = True
+                if setup.get("mode") != "creator" and setup.get("auto_tour", True):
                     tour_log = os.path.join(base_dir, "log", "tour.log")
-                    os.makedirs(os.path.dirname(tour_log), exist_ok=True)
                     offset = os.path.getsize(tour_log) if os.path.exists(tour_log) else 0
-                    my_subprocesses["product_tour"] = subprocess.Popen(
-                        [sys.executable, "-u", "product_tour.py"], stdout=open(tour_log, "a", encoding="utf-8"), **kw)
-                    logger.info("[start] product_tour.py started (overlay: http://127.0.0.1:8091/overlay), waiting for round 0 ...")
-
-                    ready = False
-                    end = time.time() + 180
-                    while running_flag and time.time() < end and my_subprocesses["product_tour"].poll() is None:
-                        try:
-                            with open(tour_log, "rb") as f:
-                                f.seek(offset)
-                                if "[tour] round 0 " in f.read().decode("utf-8", "ignore"):
-                                    ready = True
-                                    break
-                        except OSError:
-                            pass
-                        time.sleep(1)
-                    if not ready:
-                        logger.warning("[start] tour did not reach round 0 (see log/tour.log): starting the bridge anyway")
+                    cmd = setup_wizard.tour_command(setup)            # includes --min-minutes / --max-minutes / --quiet
+                    cmd.insert(1, "-u")
+                    if _PM.start("tour", cmd, env=utf8):
+                        logger.info(f"[start] product_tour.py started ({' '.join(cmd[2:])}), overlay: http://127.0.0.1:8091/overlay")
+                        ready = False
+                        end = time.time() + 180
+                        while running_flag and time.time() < end and _PM.running("tour"):
+                            try:
+                                with open(tour_log, "rb") as f:
+                                    f.seek(offset)
+                                    if "[tour] round 0 " in f.read().decode("utf-8", "ignore"):
+                                        ready = True
+                                        break
+                            except OSError:
+                                pass
+                            time.sleep(1)
+                        if not ready:
+                            logger.warning("[start] tour did not reach round 0 (see log/tour.log): starting the bridge anyway")
                 if not running_flag:
                     return
 
-                # bridge
                 if not user:
                     logger.error("[start] Live room ID (room_display_id) is empty: bridge not started")
                     return
-                bridge = my_subprocesses.get("tiktok_bridge")
-                if bridge is None or bridge.poll() is not None:
+                if not _PM.running("bridge"):
                     py = setup_wizard.ensure_bridge_env(base_dir)   # venv_tt, created on first run (can take minutes)
                     if not running_flag:
                         return
-                    bridge_log = os.path.join(base_dir, "log", "bridge.log")
-                    my_subprocesses["tiktok_bridge"] = subprocess.Popen(
-                        setup_wizard.bridge_command(dict(setup, tiktok_username=user), py),
-                        stdout=open(bridge_log, "a", encoding="utf-8"), **kw)
+                    _PM.start("bridge", setup_wizard.bridge_command(dict(setup, tiktok_username=user), py), env=utf8)
                     logger.info(f"[start] TikTok bridge started for @{user}")
             except Exception:
                 logger.error(traceback.format_exc())
@@ -401,8 +392,8 @@ def goto_func_page():
 
             stop_program(program["name"])
 
-        stop_program("product_tour")
-        stop_program("tiktok_bridge")
+        from utils.webui_setup import PM as _PM
+        _PM.stop_all()                 # product_tour + tiktok_bridge
         stop_program("main")
 
     def check_expiration():
@@ -526,6 +517,11 @@ def goto_func_page():
 
                 return {"code": -1, "msg": f"Restart failed!{e}"}
 
+
+    # let the Setup tab's Start / Stop buttons run exactly the same code as 'Start Run' / 'Stop Run'
+    from utils import webui_setup as _ws
+    _ws.RUN_HOOKS.update(start=lambda: run_external_program(), stop=lambda: stop_external_program(),
+                         running=lambda: bool(running_flag))
 
     # Toggle light
     def change_light_status(type="webui"):

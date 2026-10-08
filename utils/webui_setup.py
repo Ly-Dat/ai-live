@@ -22,6 +22,7 @@ from .webui_theme import page_title
 
 ROOT = setup_wizard.ROOT
 PM = setup_wizard.ProcessManager()  # module level: survives page reloads inside the web UI process
+RUN_HOOKS = {}  # webui.py registers start / stop / running so this tab and the bottom bar share one code path
 
 
 def build_setup_tab(config):
@@ -200,14 +201,33 @@ def build_setup_tab(config):
             ui.label("The host presents each product for a random time in that range, repeating its script until time is up. "
                      "Viewer comments always go first; after the answer, it resumes where it stopped once chat is quiet.").classes("lv-sub")
 
+            def save_tour_settings():
+                a = setup_wizard.load_setup()
+                a.update(tour_min_minutes=tour_min.value or 5, tour_max_minutes=tour_max.value or 10,
+                         tour_quiet=tour_quiet.value or 2, auto_tour=bool(auto_tour.value))
+                setup_wizard.save_setup(a)
+            for _w in (tour_min, tour_max, tour_quiet, auto_tour):      # saved at once, so the bottom 'Start Run' uses them too
+                _w.on_value_change(lambda e: save_tour_settings())
+
             def refresh():
-                status.text = f"Bridge: {'RUNNING' if PM.running('bridge') else 'stopped'}   |   Tour: {'RUNNING' if PM.running('tour') else 'stopped'}"
+                app = ("RUNNING" if RUN_HOOKS["running"]() else "stopped") if "running" in RUN_HOOKS else "n/a"
+                status.text = (f"App: {app}   |   Bridge: {'RUNNING' if PM.running('bridge') else 'stopped'}"
+                               f"   |   Tour: {'RUNNING' if PM.running('tour') else 'stopped'}")
                 logbox.clear()
                 for line in setup_wizard.tail(os.path.join(ROOT, "log", "bridge.log"), 8).splitlines():
                     logbox.push(line)
 
             async def start():
+                save_tour_settings()
                 answers = setup_wizard.load_setup()
+                if "start" in RUN_HOOKS:          # same as the bottom 'Start Run' button
+                    who = setup_wizard.clean_username(config.get("room_display_id") or answers.get("tiktok_username") or "")
+                    if not who:
+                        ui.notify("Fill in the Live room ID (or your TikTok username in step 1) first.", type="warning")
+                        return
+                    RUN_HOOKS["start"]()
+                    refresh()
+                    return
                 if setup_wizard.validate(answers):
                     ui.notify("Finish step 1 and save in step 4 first.", type="warning")
                     return
@@ -217,15 +237,14 @@ def build_setup_tab(config):
                     ui.notify(f"Could not prepare the TikTok bridge environment: {e}", type="negative")
                     return
                 PM.start("bridge", setup_wizard.bridge_command(answers, py))
-                answers.update({"tour_min_minutes": tour_min.value or 5, "tour_max_minutes": tour_max.value or 10,
-                                "tour_quiet": tour_quiet.value or 2})
-                setup_wizard.save_setup(answers)
                 if auto_tour.value and answers.get("mode") != "creator":
                     PM.start("tour", setup_wizard.tour_command(answers))
                 ui.notify("Started. Watch the log below.", type="positive")
                 refresh()
 
             def stop():
+                if "stop" in RUN_HOOKS:           # same as the bottom 'Stop Run' button
+                    RUN_HOOKS["stop"]()
                 PM.stop_all()
                 ui.notify("Stopped.", type="info")
                 refresh()
