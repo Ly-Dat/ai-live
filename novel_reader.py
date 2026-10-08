@@ -19,9 +19,10 @@ for _stream in (sys.stdout, sys.stderr):  # Windows consoles default to cp1252 a
     except Exception:
         pass
 
-from utils import novel, tiktok_safety  # noqa: E402
+from utils import novel, reader_cmds, tiktok_safety  # noqa: E402
 
 LAST_COMMENT = {"t": 0.0}
+CMD_PATH = reader_cmds.DEFAULT_PATH
 
 
 def watch_comments(log_dir="log"):
@@ -67,6 +68,8 @@ class Reader:
         self.started = time.time()
         self.skipped = 0
         self.pos = {"book": "", "chapter": 0, "chunk": 0, "seq": -1}
+        self.nchap = 1
+        self.vote_hint = ""
 
     # -- helpers
     def control(self):
@@ -79,9 +82,46 @@ class Reader:
               "text": chunks[j]["text"] if 0 <= j < len(chunks) else "",
               "prev": chunks[j - 1]["text"] if 0 < j <= len(chunks) else "",
               "next": chunks[j + 1]["text"] if 0 <= j + 1 < len(chunks) else "",
-              "credit": novel.credit_line(meta) if meta else "", "skipped": self.skipped}
+              "credit": novel.credit_line(meta) if meta else "", "skipped": self.skipped, "hint": self.hint_text()}
         st.update(extra)
         novel.write_status(st)
+
+    def hint_text(self):
+        if self.vote_hint:
+            return self.vote_hint
+        s = self.control()["settings"]
+        return reader_cmds.hint(int(s.get("cmd_votes") or 3)) if s.get("viewer_commands") else ""
+
+    def beat_loop(self):
+        """Tells the live app that viewer commands / votes are on (comments are only swallowed while this beats)."""
+        while True:
+            try:
+                c = self.control()
+                s = c["settings"]
+                on = c["command"] in ("play", "pause") and bool(c["book"]) and (s.get("viewer_commands") or s.get("chapter_vote"))
+                reader_cmds.heartbeat(CMD_PATH, bool(on), int(s.get("cmd_votes") or 3))
+            except Exception as e:
+                print(f"[novel] heartbeat: {e}", flush=True)
+            time.sleep(3)
+
+    def poll_cmd(self, c):
+        """Apply a viewer command (next / back / again). True = the position changed, stop waiting."""
+        if not c["settings"].get("viewer_commands"):
+            return False
+        cmd = reader_cmds.pop_pending(CMD_PATH)
+        if not cmd:
+            return False
+        ci, j = self.pos["chapter"], self.pos["chunk"]
+        if cmd == "next":
+            ci, j = min(ci + 1, self.nchap - 1), 0
+        elif cmd == "prev":
+            ci, j = max(ci - 1, 0), 0
+        else:
+            j = max(0, j - 3)
+        novel.write_control(dict(c, chapter=ci, chunk=j, seq=c["seq"] + 1, command="play"))
+        print(f"[novel] viewers asked: {cmd}", flush=True)
+        post_reread(self.args.api, reader_cmds.ACK_VI[cmd], c["settings"].get("voice_narrator", ""), c["settings"].get("rate", 0))
+        return True
 
     def wait_for_comments(self, s):
         if not s["yield_comments"]:
@@ -103,12 +143,15 @@ class Reader:
             c = self.control()
             if c["command"] != "play" or c["seq"] != seq:
                 return False
+            if self.poll_cmd(c):
+                return False
             time.sleep(0.2)
         return True
 
     # -- main loop
     def run(self):
         watch_comments()
+        threading.Thread(target=self.beat_loop, daemon=True).start()
         print("[novel] reader ready", flush=True)
         while True:
             ctl = self.control()
@@ -143,6 +186,7 @@ class Reader:
     def play_chapter(self, meta, ctl):
         s = ctl["settings"]
         seq = ctl["seq"]
+        self.nchap = len(meta["chapters"])
         ci = min(max(self.pos["chapter"], 0), len(meta["chapters"]) - 1)
         title = meta["chapters"][ci]["title"]
         chunks = self.cached(meta, ci)
@@ -179,6 +223,15 @@ class Reader:
                 return
             j += 1
         # chapter finished
+        if s.get("chapter_vote") and ci + 1 < len(meta["chapters"]):
+            res = self.run_vote(meta, ci, s, seq, title, chunks)
+            if res == "interrupted":
+                return
+            if res == "repeat":
+                c = self.control()
+                novel.write_control(dict(c, chapter=ci, chunk=0, seq=c["seq"] + 1, command="play"))
+                return
+            s = dict(s, auto_next=True)
         if s["auto_next"] and ci + 1 < len(meta["chapters"]):
             self.pos.update(chapter=ci + 1, chunk=0)
             novel.save_progress(meta["id"], ci + 1, 0)
@@ -186,6 +239,29 @@ class Reader:
             self.status("done", meta, title, chunks, len(chunks) - 1)
             novel.write_control(dict(self.control(), command="stop"))
             self.pos["chunk"] = 0
+
+    def run_vote(self, meta, ci, s, seq, title, chunks):
+        """End-of-chapter vote: 1 = next chapter, 2 = read it again. Returns 'next', 'repeat' or 'interrupted'."""
+        secs = max(8, int(s.get("vote_s") or 20))
+        ask = (f"Hết chương rồi cả nhà ơi! Comment 1 để nghe chương tiếp theo, comment 2 để nghe lại chương này. "
+               f"Mình chờ {secs} giây nha.")
+        self.vote_hint = "Bình chọn: comment 1 = nghe tiếp · 2 = nghe lại"
+        try:
+            reader_cmds.begin_vote(CMD_PATH, secs + novel.spoken_seconds(ask, self.args.cps, s["rate"]))
+            self.say(ask, s, seq, meta, title, chunks, len(chunks) - 1, "narrator", announce=True)
+            if not self.wait(secs, seq):
+                return "interrupted"
+            r = reader_cmds.end_vote(CMD_PATH)
+            if r["winner"] == "repeat":
+                msg = f'Kết quả: {r["repeat"]} bạn muốn nghe lại, {r["next"]} bạn muốn nghe tiếp. Mình đọc lại chương này nha.'
+            elif r["next"] + r["repeat"]:
+                msg = f'Kết quả: {r["next"]} bạn muốn nghe tiếp, {r["repeat"]} bạn muốn nghe lại. Mình đọc tiếp nha.'
+            else:
+                msg = "Chưa có bạn nào bình chọn, mình đọc tiếp nha."
+            self.say(msg, s, seq, meta, title, chunks, len(chunks) - 1, "narrator", announce=True)
+            return r["winner"]
+        finally:
+            self.vote_hint = ""
 
     def say(self, text, s, seq, meta, title, chunks, j, role, announce=False, speaker=""):
         voice = novel.voice_for({"role": role, "speaker": speaker}, s)

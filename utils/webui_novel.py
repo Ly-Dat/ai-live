@@ -288,6 +288,14 @@ def build_novel_tab(config):
                 ui.label("On screen and safety").classes("nv-group")
                 show_text = ui.switch("Show the text on screen (overlay)", value=bool(s0["show_text"]))
                 safety = ui.switch("Skip lines the TikTok policy filter flags", value=bool(s0["safety"]))
+                ui.label("Viewers steer the story").classes("nv-group")
+                v_cmds = ui.switch("Viewers can steer with comments: !tiep (next), !lai (read again), !truoc (back)", value=bool(s0.get("viewer_commands")))
+                with ui.row().classes("items-center").style("gap:12px;margin:-4px 0 4px 48px;flex-wrap:wrap"):
+                    v_need = ui.number("Different viewers needed", value=s0.get("cmd_votes", 3), min=1, max=50, format="%.0f").classes("w-52")
+                    ui.label("So one troll cannot skip your story. The commands are shown on screen.").classes("lv-sub").style("margin:0")
+                v_vote = ui.switch("End-of-chapter vote: comment 1 = next chapter, 2 = read it again", value=bool(s0.get("chapter_vote")))
+                with ui.row().classes("items-center").style("gap:12px;margin:-4px 0 4px 48px"):
+                    v_secs = ui.number("Vote time (seconds)", value=s0.get("vote_s", 20), min=8, max=120, format="%.0f").classes("w-52")
                 recap = ui.switch("Recap: start with the last lines of the previous chapter", value=bool(s0.get("recap")))
                 with ui.row().classes("items-center").style("gap:16px;flex-wrap:wrap;margin-top:6px"):
                     ov_size = ui.toggle({"s": "Small", "m": "Medium", "l": "Large"}, value=s0.get("overlay_size", "m"))
@@ -445,7 +453,8 @@ def build_novel_tab(config):
     def collect():
         return {"characters": dict(chars), "voice_narrator": v_nar.value or "", "voice_dialogue": v_dia.value or "", "rate": int(rate.value or 0),
                 "pause_s": float(pause.value or 0), "yield_comments": yield_c.value, "auto_next": auto_next.value,
-                "announce_chapter": announce.value, "recap": recap.value, "overlay_size": ov_size.value, "overlay_theme": ov_theme.value, "show_text": show_text.value, "sleep_min": int(sleep_min.value or 0),
+                "announce_chapter": announce.value, "recap": recap.value, "viewer_commands": v_cmds.value, "cmd_votes": int(v_need.value or 3), "chapter_vote": v_vote.value,
+                "vote_s": int(v_secs.value or 20), "overlay_size": ov_size.value, "overlay_theme": ov_theme.value, "show_text": show_text.value, "sleep_min": int(sleep_min.value or 0),
                 "safety": safety.value}
 
     def send(command, **kw):
@@ -461,7 +470,7 @@ def build_novel_tab(config):
         c = novel.read_control()
         c["settings"] = collect()
         novel.write_control(c)
-    for el in (v_nar, v_dia, rate, pause, sleep_min, yield_c, auto_next, announce, show_text, safety, recap, ov_size, ov_theme):
+    for el in (v_nar, v_dia, rate, pause, sleep_min, yield_c, auto_next, announce, show_text, safety, recap, ov_size, ov_theme, v_cmds, v_need, v_vote, v_secs):
         el.on_value_change(apply_settings)
 
     def update_hero():

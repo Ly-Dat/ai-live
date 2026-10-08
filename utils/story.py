@@ -35,7 +35,8 @@ LICENSE_LABELS = {
     "unknown": "Not sure - not used live",
 }
 DEFAULT_SETTINGS = {"voice": "", "rate": 0, "min_panel_s": 4.0, "pause_s": 0.5, "yield_comments": True, "loop": False,
-                    "show_text": True, "sleep_min": 0, "safety": True}
+                    "show_text": True, "sleep_min": 0, "safety": True,
+                    "viewer_commands": False, "cmd_votes": 3}
 
 HASHTAGS = {
     "vi": ["#truyen", "#kechuyen", "#doctruyen", "#truyenngan", "#fyp", "#xuhuong", "#tiktokvietnam"],
@@ -386,4 +387,4 @@ def overlay_story(status: Dict, settings: Dict, now: float, fresh_s: float = 30.
     sid, i = status.get("story", ""), int(status.get("panel", 0))
     return {"title": status.get("title", ""), "image": f"/story-img/{sid}/{i}", "text": status.get("text", ""),
             "index": i + 1, "total": int(status.get("panels", 0)), "credit": status.get("credit", ""),
-            "paused": status.get("state") == "paused"}
+            "paused": status.get("state") == "paused", "hint": status.get("hint", "")}

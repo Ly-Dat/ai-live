@@ -64,14 +64,14 @@ function setNovel(n){var b=document.getElementById("nv");
  document.getElementById("nvp").textContent=n.prev||"";
  var c=document.getElementById("nvc");c.textContent=n.text||"";c.className="ncur"+(n.role==="dialogue"?" d":"");
  document.getElementById("nvn").textContent=n.next||"";
- document.getElementById("nvr").textContent=n.credit||""}
+ document.getElementById("nvr").textContent=[n.hint,n.credit].filter(Boolean).join("  |  ")}
 var spKey="";
 function setStory(n){var b=document.getElementById("sp");
  if(!n){b.style.display="none";spKey="";return}
  b.style.display="block";var im=document.getElementById("spi");
  if(n.image!==spKey){spKey=n.image;im.style.opacity=0;im.onload=function(){im.style.opacity=1};im.src=n.image+"?t="+Date.now()}
  var c=document.getElementById("spc");c.textContent=n.text||"";c.style.display=n.text?"block":"none";
- document.getElementById("spt").textContent=(n.title||"")+" - "+n.index+"/"+n.total+(n.paused?" (paused)":"")+(n.credit?"  |  "+n.credit:"")}
+ document.getElementById("spt").textContent=(n.title||"")+" - "+n.index+"/"+n.total+(n.paused?" (paused)":"")+(n.credit?"  |  "+n.credit:"")+(n.hint?"  |  "+n.hint:"")}
 function setMusic(m){if(!m||!m.enabled||!m.tracks||!m.tracks.length){bgm.pause();mkey="";mt=[];
   document.getElementById("npt").textContent="";document.getElementById("cr").textContent="";return}
  var key=m.tracks.map(function(t){return t.url}).join("|");mtarget=m.volume;

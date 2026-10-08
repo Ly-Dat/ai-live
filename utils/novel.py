@@ -36,6 +36,8 @@ LICENSES: Dict[str, Dict] = {
 DEFAULT_SETTINGS = {
     "voice_narrator": "", "voice_dialogue": "", "rate": 0, "pause_s": 0.4, "yield_comments": True,
     "auto_next": True, "announce_chapter": True, "show_text": True, "sleep_min": 0, "safety": True,
+    "viewer_commands": False, "cmd_votes": 3,   # viewers steer with !tiep / !lai / !truoc (needs cmd_votes different viewers)
+    "chapter_vote": False, "vote_s": 20,        # at the end of a chapter: 1 = next, 2 = read again
     "recap": False,           # before the first chapter of a session, read the last lines of the previous chapter
     "overlay_size": "m", "overlay_theme": "dark",   # on-screen text: s/m/l, dark/light/sepia
     "characters": {},   # name -> voice ("" = the dialogue voice): who says a line is found from tags like "Lan nói" / "said Mark"
@@ -482,7 +484,7 @@ def overlay_novel(status: Dict, settings: Dict, now: float, fresh_s: float = 30.
         return None
     return {"title": status.get("title", ""), "chapter": status.get("chapter_title", ""), "prev": status.get("prev", ""),
             "text": status.get("text", ""), "next": status.get("next", ""), "credit": status.get("credit", ""),
-            "paused": status.get("state") == "paused", "role": status.get("role", "narrator"),
+            "paused": status.get("state") == "paused", "role": status.get("role", "narrator"), "hint": status.get("hint", ""),
             "size": settings.get("overlay_size") if settings.get("overlay_size") in ("s", "m", "l") else "m",
             "theme": settings.get("overlay_theme") if settings.get("overlay_theme") in ("dark", "light", "sepia") else "dark"}
 

@@ -33,3 +33,9 @@ Do not run it together with the product tour (both would speak).
 - **Recap:** with "Recap" on (Options), a session that starts at chapter 2 or later first reads the last two sentences of the previous chapter ("Ở chương trước: ..." / "Previously: ...").
 - **Background music:** a switch in Options turns on the licensed tracks from Live tools while you read.
 - **On-screen text:** small / medium / large and dark / light / sepia for the overlay card.
+
+## Viewers steer the story (opt-in)
+Options -> "Viewers steer the story".
+- **Commands:** when "Different viewers needed" (default 3) different viewers comment the same command within 30 seconds, the reader obeys: `!tiep` next chapter (next panel in the Story studio), `!lai` read the last lines again, `!truoc` go back. One troll cannot skip the story. The commands are shown on the overlay and the host says one short line when it obeys.
+- **End-of-chapter vote:** the host asks "comment 1 for the next chapter, 2 to hear it again", waits the vote time, says the result and acts on it. One vote per viewer; a tie or no votes means next chapter.
+- Command and vote comments are counted silently (no AI reply to them), and only while a reader is running with this switched on. Files: `utils/reader_cmds.py`, `data/reader_cmds.json`.

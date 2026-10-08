@@ -228,11 +228,15 @@ def build_story_tab(config):
             loop = ui.switch("Start again at the end", value=bool(s0["loop"]))
             show = ui.switch("Show the picture on screen (overlay)", value=bool(s0["show_text"]))
             safety = ui.switch("Skip lines the TikTok policy filter flags", value=bool(s0["safety"]))
+        with ui.row().classes("items-center").style("gap:18px;flex-wrap:wrap"):
+            v_cmds = ui.switch("Viewers steer with comments: !tiep (next panel), !lai (again), !truoc (back)", value=bool(s0.get("viewer_commands")))
+            v_need = ui.number("Different viewers needed", value=s0.get("cmd_votes", 3), min=1, max=50, format="%.0f").classes("w-52")
 
         def collect():
             return {"voice": v_voice.value or "", "rate": int(rate.value or 0), "min_panel_s": float(min_s.value or 4),
                     "pause_s": s0["pause_s"], "yield_comments": yield_c.value, "loop": loop.value, "show_text": show.value,
-                    "sleep_min": int(sleep_min.value or 0), "safety": safety.value}
+                    "sleep_min": int(sleep_min.value or 0), "safety": safety.value,
+                    "viewer_commands": v_cmds.value, "cmd_votes": int(v_need.value or 3)}
 
         def send(command, **kw):
             c = story.read_control()
@@ -247,7 +251,7 @@ def build_story_tab(config):
             c = story.read_control()
             c["settings"] = collect()
             story.write_control(c)
-        for el in (v_voice, rate, min_s, sleep_min, yield_c, loop, show, safety):
+        for el in (v_voice, rate, min_s, sleep_min, yield_c, loop, show, safety, v_cmds, v_need):
             el.on_value_change(apply_settings)
 
         def start():

@@ -1495,6 +1495,15 @@ class My_handle(metaclass=SingletonMeta):
             logger.error(traceback.format_exc())
             return False
 
+    def reader_cmd_consume(self, username, content):
+        """True when the comment was a reader command or vote (only while a reader runs with viewer commands switched on)."""
+        try:
+            from utils import setup_wizard, reader_cmds
+            return reader_cmds.consume(os.path.join(setup_wizard.ROOT, reader_cmds.DEFAULT_PATH), username, content)
+        except Exception:
+            logger.error(traceback.format_exc())
+            return False
+
     def engage_tick(self):
         """Every few seconds: speak the next giveaway / poll announcement when it is due."""
         try:
@@ -3291,6 +3300,10 @@ class My_handle(metaclass=SingletonMeta):
 
             # Giveaway entries and poll votes are counted silently (no AI reply to a bare "1")
             if self.engage_consume(username, content):
+                return None
+
+            # Viewer commands / chapter votes for the Novel and Story readers ("!tiep", "1" / "2"): counted silently, no AI reply
+            if self.reader_cmd_consume(username, content):
                 return None
             
             # After basic initial filtering, danmaku data can be forwarded through the Luoxi live danmaku assistant.

@@ -14,8 +14,9 @@ for _stream in (sys.stdout, sys.stderr):  # Windows consoles default to cp1252 a
     except Exception:
         pass
 
-from novel_reader import LAST_COMMENT, post_reread, watch_comments  # noqa: E402
-from utils import novel, story, tiktok_safety  # noqa: E402
+from novel_reader import CMD_PATH, LAST_COMMENT, post_reread, watch_comments  # noqa: E402
+from utils import novel, reader_cmds, story, tiktok_safety  # noqa: E402
+import threading  # noqa: E402
 
 
 class StoryReader:
@@ -25,6 +26,7 @@ class StoryReader:
         self.started = time.time()
         self.skipped = 0
         self.pos = {"story": "", "panel": 0, "seq": -1}
+        self.npanels = 1
 
     def control(self):
         return story.read_control()
@@ -32,7 +34,8 @@ class StoryReader:
     def status(self, state, meta=None, panel=0, text="", **extra):
         st = {"state": state, "story": meta["id"] if meta else "", "title": meta["title"] if meta else "", "panel": panel,
               "panels": len(meta["panels"]) if meta else 0, "text": text, "credit": story.credit_line(meta) if meta else "",
-              "skipped": self.skipped}
+              "skipped": self.skipped,
+              "hint": reader_cmds.hint(int(self.control()["settings"].get("cmd_votes") or 3)) if self.control()["settings"].get("viewer_commands") else ""}
         st.update(extra)
         story.write_status(st)
 
@@ -40,10 +43,36 @@ class StoryReader:
         c = self.control()
         return c["command"] == "play" and c["seq"] == seq
 
+    def beat_loop(self):
+        while True:
+            try:
+                c = self.control()
+                on = c["command"] in ("play", "pause") and bool(c["story"]) and c["settings"].get("viewer_commands")
+                reader_cmds.heartbeat(CMD_PATH, bool(on), int(c["settings"].get("cmd_votes") or 3))
+            except Exception as e:
+                print(f"[story] heartbeat: {e}", flush=True)
+            time.sleep(3)
+
+    def poll_cmd(self, c):
+        if not c["settings"].get("viewer_commands"):
+            return False
+        cmd = reader_cmds.pop_pending(CMD_PATH)
+        if not cmd:
+            return False
+        i = self.pos["panel"]
+        i = min(i + 1, self.npanels - 1) if cmd == "next" else max(i - 1, 0) if cmd == "prev" else i
+        story.write_control(dict(c, panel=i, seq=c["seq"] + 1, command="play"))
+        print(f"[story] viewers asked: {cmd}", flush=True)
+        post_reread(self.args.api, reader_cmds.ACK_VI[cmd], c["settings"].get("voice", ""), c["settings"].get("rate", 0))
+        return True
+
     def wait(self, seconds, seq):
         end = time.time() + seconds
         while time.time() < end:
-            if not self.alive(seq):
+            c = self.control()
+            if c["command"] != "play" or c["seq"] != seq:
+                return False
+            if self.poll_cmd(c):
                 return False
             time.sleep(0.2)
         return True
@@ -57,6 +86,7 @@ class StoryReader:
 
     def run(self):
         watch_comments()
+        threading.Thread(target=self.beat_loop, daemon=True).start()
         print("[story] reader ready", flush=True)
         while True:
             ctl = self.control()
@@ -74,6 +104,8 @@ class StoryReader:
                 time.sleep(1)
                 continue
             i = min(max(self.pos["panel"], 0), len(meta["panels"]) - 1)
+            self.npanels = len(meta["panels"])
+            self.pos["panel"] = i
             if ctl["command"] == "pause":
                 self.status("paused", meta, i, meta["panels"][i]["text"])
                 time.sleep(0.5)
