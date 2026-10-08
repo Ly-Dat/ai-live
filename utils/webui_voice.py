@@ -55,7 +55,9 @@ def _save_config(mutator):
         f.write(text.replace("\n", "\r\n") if crlf else text)
 
 
-def build_voice_tab(config):
+def build_voice_tab(config, on_engine_saved=None):
+    """on_engine_saved(engine): optional callback, called after 'Save voice settings' so webui.py can sync the
+    'Speech synthesis' select in Common config (otherwise the global Save Config would write the old engine back)."""
     os.makedirs(PREVIEW_DIR, exist_ok=True)
     app.add_static_files("/lv_preview", PREVIEW_DIR)
     vcfg = dict(config.get("vieneu") or {})
@@ -218,6 +220,11 @@ def build_voice_tab(config):
             v["voice"] = vie_sel.value
             v["api_url"] = url_in.value
         _save_config(mut)
+        if on_engine_saved:
+            try:
+                on_engine_saved(engine["value"])  # keep Common config in sync with this choice
+            except Exception:
+                pass
         ui.notify("Saved. Restart the app so it uses the new voice.", type="positive")
 
     with ui.row().style("margin-top:16px;gap:10px"):

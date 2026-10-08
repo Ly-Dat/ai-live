@@ -6163,7 +6163,8 @@ def goto_func_page():
 
         with ui.tab_panel(voice_page).style(tab_panel_css):
             from utils.webui_voice import build_voice_tab
-            build_voice_tab(config)
+            # keep the 'Speech synthesis' select in Common config in sync with the Voice tab's saved engine
+            build_voice_tab(config, on_engine_saved=lambda v: setattr(select_audio_synthesis_type, 'value', v))
 
         with ui.tab_panel(setup_page).style(tab_panel_css):
             from utils.webui_setup import build_setup_tab
