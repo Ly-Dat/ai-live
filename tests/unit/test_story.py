@@ -257,3 +257,28 @@ def test_ocr_clean_and_missing_engine_message():
     if not st.ocr_engine():
         with pytest.raises(RuntimeError):
             st.ocr_image(png())
+
+
+def test_ask_llm_talks_to_the_app_endpoint():
+    import json, threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    from utils import story_tools as st
+    seen = {}
+
+    class H(BaseHTTPRequestHandler):
+        def do_POST(self):
+            seen["body"] = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            out = {"code": 200, "message": "Success", "data": {"content": "Panel 1: Xin chào"}} if "ok" in seen["body"]["content"] else {"code": -1, "message": "boom"}
+            b = json.dumps(out).encode()
+            self.send_response(200); self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b)
+        def log_message(self, *a): pass
+    srv = HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    url = f"http://127.0.0.1:{srv.server_port}/llm"
+    assert st.ask_llm(url, "chatgpt", "ok please") == "Panel 1: Xin chào"
+    assert seen["body"]["type"] == "chatgpt" and seen["body"]["content"] == "ok please"
+    with pytest.raises(RuntimeError, match="boom"):
+        st.ask_llm(url, "chatgpt", "bad")
+    srv.shutdown()
+    with pytest.raises(RuntimeError, match="Could not reach"):
+        st.ask_llm("http://127.0.0.1:1/llm", "chatgpt", "x", timeout=2)

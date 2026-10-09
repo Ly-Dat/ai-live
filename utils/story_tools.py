@@ -212,6 +212,23 @@ def recap_prompt(texts: List[str], title: str = "", lang: str = "vi", style: str
 
 
 # ------------------------------------------------------------------ the AI's answer
+def ask_llm(url: str, chat_type: str, prompt: str, timeout: float = 240.0) -> str:
+    """Ask the app's own AI (main.py POST /llm -> the model chosen in Settings) and return its reply text."""
+    import json
+    import urllib.request
+    body = json.dumps({"type": chat_type, "username": "story", "content": prompt}).encode("utf-8")
+    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            resp = json.loads(r.read().decode("utf-8"))
+    except OSError as e:
+        raise RuntimeError(f"Could not reach the app's AI ({e}). Press Start Run on the Home page and pick an AI in Settings.") from e
+    text = ((resp.get("data") or {}).get("content") or "") if isinstance(resp, dict) else ""
+    if resp.get("code") != 200 or not str(text).strip():
+        raise RuntimeError(resp.get("message") or "The AI returned nothing. Check the AI in Settings (key / local model running?).")
+    return str(text)
+
+
 PROMPT_MARKERS = ("--- PANEL TEXT ---", "Answer with exactly this format")
 _EMPTY = {"-", "--", "\u2014", "\u2013", "...", "\u2026", "n/a", "(none)"}
 

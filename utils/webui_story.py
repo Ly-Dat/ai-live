@@ -61,6 +61,11 @@ def build_story_tab(config):
     page_title("Story studio", "Write a story, put pictures to it, and let the AI host tell it - live or as a video you post to get "
                                "followers. Only your own pictures and text, public domain, CC, or with permission.")
     api_port = config.get("api_port") or 8082
+    llm_url = f"http://127.0.0.1:{api_port}/llm"
+
+    def ask_llm(prompt: str) -> str:
+        """The app's own AI (the one chosen in Settings, local or online) writes the answer: no copy-paste to another site."""
+        return story_tools.ask_llm(llm_url, config.get("chat_type"), prompt)
     ref = {}
     sel = {"story": ""}
     ctl0 = story.read_control()
@@ -98,6 +103,17 @@ def build_story_tab(config):
             ui.notify(f"{len(plot)} panels ready. Make or find one picture per panel (step 2).", type="positive")
         ui.button("Turn it into panels", icon="view_agenda", on_click=use_answer).props("no-caps")
 
+        async def ai_plot():
+            make_prompt()
+            ui.notify("Asking the app's AI ... this can take a minute.", type="info")
+            try:
+                answer.value = await run.io_bound(ask_llm, prompt_box.value)
+            except Exception as ex:
+                ui.notify(str(ex), type="negative")
+                return
+            use_answer()
+        ui.button("Write it with the app's AI (no copy-paste)", icon="smart_toy", on_click=ai_plot).props("color=primary no-caps")
+
         ui.separator().style("margin:18px 0 10px")
         ui.label("Recap / review video (\"review truyen\")").classes("lv-sub").style("font-weight:600;margin:0")
         ui.label("You read or watched something and want to retell it with your own opinion? Write a few notes or a summary in your own words; "
@@ -125,6 +141,20 @@ def build_story_tab(config):
             ui.button("Make the recap prompt", icon="auto_fix_high", on_click=make_recap_prompt).props("no-caps")
             ui.button("Copy", icon="content_copy", on_click=lambda: _copy(recap_box.value or "")).props("flat no-caps")
             ui.button("Turn it into scenes", icon="view_agenda", on_click=use_recap).props("no-caps")
+
+            async def ai_recap():
+                if not (recap_src.value or "").strip():
+                    ui.notify("Write a few notes first.", type="warning")
+                    return
+                make_recap_prompt()
+                ui.notify("Asking the app's AI ... this can take a minute.", type="info")
+                try:
+                    recap_ans.value = await run.io_bound(ask_llm, recap_box.value)
+                except Exception as ex:
+                    ui.notify(str(ex), type="negative")
+                    return
+                use_recap()
+            ui.button("Write it with the app's AI", icon="smart_toy", on_click=ai_recap).props("color=primary no-caps")
 
     # ------------------------------------------------------------------ 2. add pictures
     pending = []
@@ -315,6 +345,21 @@ def build_story_tab(config):
             ui.button("Read the text", icon="document_scanner", on_click=read_text).props("color=primary no-caps")
             ui.button("Copy prompt", icon="content_copy", on_click=lambda: _copy(o_prompt.value or "")).props("flat no-caps")
             ui.button("Use the AI's answer", icon="edit_note", on_click=apply_answer).props("outline no-caps")
+
+            async def ai_write():
+                if not (o_text.value or "").strip():
+                    await read_text()
+                    if not (o_text.value or "").strip():
+                        return
+                refresh_prompt()
+                ui.notify("Asking the app's AI ... this can take a minute.", type="info")
+                try:
+                    o_answer.value = await run.io_bound(ask_llm, o_prompt.value)
+                except Exception as ex:
+                    ui.notify(str(ex), type="negative")
+                    return
+                apply_answer()
+            ui.button("Read + write it with the app's AI", icon="smart_toy", on_click=ai_write).props("color=primary no-caps")
 
     # ------------------------------------------------------------------ 4. live
     with _card():
