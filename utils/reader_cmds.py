@@ -27,6 +27,10 @@ ACK_VI = {
     "repeat": "Mình đọc lại đoạn này nha.",
 }
 VOTE_OPTIONS = ("next", "repeat")
+ASK_WORDS = ("hoi", "ask", "q")   # "!hoi who is Lan?"  /  "!ask who is Lan?"
+ASK_MIN, ASK_MAX = 4, 140         # question length in characters
+ASK_QUEUE = 3                     # questions waiting for an answer
+ASK_COOLDOWN = 45.0               # seconds before the same viewer may ask again
 
 
 def _fold(text: str) -> str:
@@ -45,6 +49,18 @@ def parse(text: str) -> Optional[str]:
         if word in names:
             return cmd
     return None
+
+
+def parse_ask(text: str) -> Optional[str]:
+    """'!hỏi Lan là ai?' -> 'Lan là ai?'. None when it is not a question command; '' when the question is too short/long."""
+    raw = unicodedata.normalize("NFKC", text or "").strip()
+    if not raw.startswith("!"):
+        return None
+    head, _, rest = raw[1:].partition(" ")
+    if _fold(head) not in ASK_WORDS:
+        return None
+    rest = " ".join(rest.split())
+    return rest if ASK_MIN <= len(rest) <= ASK_MAX else ""
 
 
 def hint(threshold: int) -> str:
@@ -72,10 +88,10 @@ def _alive(st: Dict, now: float) -> bool:
 
 
 # ------------------------------------------------------------------ reader side
-def heartbeat(path: str, enabled: bool, threshold: int = 3, window: float = 30.0, now: Optional[float] = None) -> None:
+def heartbeat(path: str, enabled: bool, threshold: int = 3, window: float = 30.0, now: Optional[float] = None, ask: bool = False) -> None:
     """Called every few seconds by the reader: its settings and "I am alive". Separate file, so it never races with the vote counting."""
     now = time.time() if now is None else now
-    _write(path + ".beat", {"enabled": bool(enabled), "threshold": max(1, int(threshold)), "window": float(window), "beat": now})
+    _write(path + ".beat", {"enabled": bool(enabled), "threshold": max(1, int(threshold)), "window": float(window), "beat": now, "ask": bool(ask)})
 
 
 def pop_pending(path: str) -> Optional[str]:
@@ -87,6 +103,17 @@ def pop_pending(path: str) -> Optional[str]:
     st["pending"] = []
     _write(path, st)
     return pend[0]
+
+
+def pop_ask(path: str) -> Optional[Dict]:
+    """The oldest waiting viewer question {'user', 'q'}, or None."""
+    st = _read(path)
+    q: List[Dict] = st.get("asks") or []
+    if not q:
+        return None
+    first, st["asks"] = q[0], q[1:]
+    _write(path, st)
+    return first
 
 
 def begin_vote(path: str, seconds: float, now: Optional[float] = None) -> None:
@@ -121,6 +148,18 @@ def consume(path: str, username: str, text: str, now: Optional[float] = None) ->
         v["ballots"][who] = VOTE_OPTIONS[int(t) - 1]
         _write(path, st)
         return True
+    if cfg.get("ask"):
+        q = parse_ask(text)
+        if q is not None:
+            if not q:
+                return True            # a malformed question command is swallowed too (no random AI reply to "!hoi")
+            last = st.setdefault("ask_seen", {})
+            queue = st.setdefault("asks", [])
+            if now - float(last.get(who) or 0) >= ASK_COOLDOWN and len(queue) < ASK_QUEUE:
+                last[who] = now
+                queue.append({"user": username.strip()[:30] or "ban", "q": q})
+            _write(path, st)
+            return True
     cmd = parse(text)
     if not cmd:
         return False

@@ -19,7 +19,7 @@ for _stream in (sys.stdout, sys.stderr):  # Windows consoles default to cp1252 a
     except Exception:
         pass
 
-from utils import novel, reader_cmds, tiktok_safety  # noqa: E402
+from utils import novel, novel_companion, reader_cmds, story_llm, tiktok_safety  # noqa: E402
 
 LAST_COMMENT = {"t": 0.0}
 CMD_PATH = reader_cmds.DEFAULT_PATH
@@ -61,6 +61,14 @@ def post_reread(api_url, text, voice="", rate=0):
         return False
 
 
+def load_config(path="config.json"):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
 class Reader:
     def __init__(self, args):
         self.args = args
@@ -70,6 +78,48 @@ class Reader:
         self.pos = {"book": "", "chapter": 0, "chunk": 0, "seq": -1}
         self.nchap = 1
         self.vote_hint = ""
+        self.config = load_config()
+        self.recap_cache = {}
+
+    # -- AI companion
+    def llm(self, temperature=0.3):
+        """Direct call to the OpenAI-compatible server from config.json (no Start Run needed); other providers: no AI here."""
+        if str(self.config.get("chat_type", "chatgpt")) != "chatgpt":
+            raise RuntimeError("companion AI needs the OpenAI-compatible setting")
+        model = self.control()["settings"].get("ai_model") or ""
+        return story_llm.make_llm(self.config, model, "", temperature)
+
+    def ask_loop(self):
+        """Answers viewers' !hoi questions from the text read so far (never from later chapters)."""
+        while True:
+            time.sleep(1.5)
+            try:
+                c = self.control()
+                s = c["settings"]
+                if not (s.get("ask_viewers") and c["command"] in ("play", "pause") and c["book"]):
+                    continue
+                q = reader_cmds.pop_ask(CMD_PATH)
+                if not q:
+                    continue
+                meta = novel.get_book(c["book"])
+                text = novel_companion.viewer_answer(meta, q["user"], q["q"], self.pos["chapter"], self.pos["chunk"], self.llm(0.3),
+                                                     self.safety.check if s.get("safety") else None)
+                print(f"[novel] viewer question from {q['user']}: {'answered' if text else 'skipped'}", flush=True)
+                if text:
+                    post_reread(self.args.api, text, s.get("voice_narrator", ""), s.get("rate", 0))
+            except Exception as e:
+                print(f"[novel] viewer question failed: {e}", flush=True)
+
+    def ai_recap(self, meta, ci):
+        """AI 'previously on ...' for chapter ci (cached per chapter); falls back to the plain recap if the AI is unreachable."""
+        key = (meta["id"], ci)
+        if key not in self.recap_cache:
+            try:
+                self.recap_cache[key] = novel_companion.previously_on(meta, ci, self.llm(0.5))
+            except Exception as e:
+                print(f"[novel] AI recap failed ({e}); using the plain recap", flush=True)
+                self.recap_cache[key] = ""
+        return self.recap_cache[key] or novel.recap_text(meta, ci)
 
     # -- helpers
     def control(self):
@@ -98,8 +148,8 @@ class Reader:
             try:
                 c = self.control()
                 s = c["settings"]
-                on = c["command"] in ("play", "pause") and bool(c["book"]) and (s.get("viewer_commands") or s.get("chapter_vote"))
-                reader_cmds.heartbeat(CMD_PATH, bool(on), int(s.get("cmd_votes") or 3))
+                on = c["command"] in ("play", "pause") and bool(c["book"]) and (s.get("viewer_commands") or s.get("chapter_vote") or s.get("ask_viewers"))
+                reader_cmds.heartbeat(CMD_PATH, bool(on), int(s.get("cmd_votes") or 3), ask=bool(s.get("ask_viewers")))
             except Exception as e:
                 print(f"[novel] heartbeat: {e}", flush=True)
             time.sleep(3)
@@ -152,6 +202,7 @@ class Reader:
     def run(self):
         watch_comments()
         threading.Thread(target=self.beat_loop, daemon=True).start()
+        threading.Thread(target=self.ask_loop, daemon=True).start()
         print("[novel] reader ready", flush=True)
         while True:
             ctl = self.control()
@@ -193,7 +244,7 @@ class Reader:
         j = min(max(self.pos["chunk"], 0), max(len(chunks) - 1, 0))
         if j == 0 and s.get("recap") and ci > 0 and not self.pos.get("recapped"):
             self.pos["recapped"] = True
-            rc = novel.recap_text(meta, ci)
+            rc = self.ai_recap(meta, ci) if s.get("ai_recap") else novel.recap_text(meta, ci)
             if rc:
                 self.say(rc, s, seq, meta, title, chunks, 0, "narrator", announce=True)
         if j == 0 and s["announce_chapter"]:
@@ -223,6 +274,7 @@ class Reader:
                 return
             j += 1
         # chapter finished
+        self.stat(0, 1)
         if s.get("chapter_vote") and ci + 1 < len(meta["chapters"]):
             res = self.run_vote(meta, ci, s, seq, title, chunks)
             if res == "interrupted":
@@ -263,6 +315,12 @@ class Reader:
         finally:
             self.vote_hint = ""
 
+    def stat(self, seconds, chapters):
+        try:
+            novel_companion.record_stats(seconds, chapters)
+        except Exception:
+            pass
+
     def say(self, text, s, seq, meta, title, chunks, j, role, announce=False, speaker=""):
         voice = novel.voice_for({"role": role, "speaker": speaker}, s)
         self.status("playing", meta, title, chunks, j, role)
@@ -270,6 +328,8 @@ class Reader:
             self.wait(2.0, seq)
             return
         dur = novel.spoken_seconds(text, self.args.cps, s["rate"]) + float(s["pause_s"])
+        if not announce:
+            self.stat(dur, 0)
         # the next line is sent just before this one ends, so there is no dead air between sentences
         self.wait(max(0.2, dur - self.args.lookahead), seq)
 

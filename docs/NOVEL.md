@@ -39,3 +39,14 @@ Options -> "Viewers steer the story".
 - **Commands:** when "Different viewers needed" (default 3) different viewers comment the same command within 30 seconds, the reader obeys: `!tiep` next chapter (next panel in the Story studio), `!lai` read the last lines again, `!truoc` go back. One troll cannot skip the story. The commands are shown on the overlay and the host says one short line when it obeys.
 - **End-of-chapter vote:** the host asks "comment 1 for the next chapter, 2 to hear it again", waits the vote time, says the result and acts on it. One vote per viewer; a tie or no votes means next chapter.
 - Command and vote comments are counted silently (no AI reply to them), and only while a reader is running with this switched on. Files: `utils/reader_cmds.py`, `data/reader_cmds.json`.
+
+## AI reading companion (Companion tab)
+
+Features borrowed from the popular web-novel sites and AI reading apps, all built only from the chapters read so far (no spoilers):
+
+- **Ask the story**: type a question in the Companion tab, or let viewers comment `!hoi <question>` / `!ask <question>` while the reader runs (Options -> "Viewers can ask"). The host answers aloud from the text up to the current line. One question per viewer every 45 s, at most 3 waiting, 4-140 characters; questions and answers go through the TikTok filter.
+- **Previously on ...**: an AI recap of the last 3 chapters (Options -> "AI recap"; falls back to the plain recap if the AI is down). Chapter summaries are cached in `data/novel_summaries.json`.
+- **Character cards**: role, traits and relations of the recurring characters, from the text read so far.
+- **Reading stats**: listening minutes today / this week / total, chapters finished, day streak (`data/novel_stats.json`).
+
+The AI is the OpenAI-compatible one from Settings (Ollama, LM Studio, OpenAI): no Start Run needed for the AI itself, but viewer questions need the app running (Start Run) because the answer is spoken through it. A 7B+ model is recommended.

@@ -38,6 +38,9 @@ DEFAULT_SETTINGS = {
     "auto_next": True, "announce_chapter": True, "show_text": True, "sleep_min": 0, "safety": True,
     "viewer_commands": False, "cmd_votes": 3,   # viewers steer with !tiep / !lai / !truoc (needs cmd_votes different viewers)
     "chapter_vote": False, "vote_s": 20,        # at the end of a chapter: 1 = next, 2 = read again
+    "ask_viewers": False,     # viewers ask "!hoi <question>"; the host answers from the chapters read so far (needs an AI, see Companion tab)
+    "ai_recap": False,        # the "recap" before a chapter is an AI "previously on ..." instead of the last lines of the previous chapter
+    "ai_model": "",           # model for the companion ("" = the one in Settings)
     "recap": False,           # before the first chapter of a session, read the last lines of the previous chapter
     "overlay_size": "m", "overlay_theme": "dark",   # on-screen text: s/m/l, dark/light/sepia
     "characters": {},   # name -> voice ("" = the dialogue voice): who says a line is found from tags like "Lan nói" / "said Mark"

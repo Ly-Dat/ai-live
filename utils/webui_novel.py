@@ -12,7 +12,7 @@ import time
 
 from nicegui import run, ui
 
-from . import music, novel, novel_audio, setup_wizard, story_video, voice_catalog
+from . import music, novel, novel_audio, novel_companion, setup_wizard, story_llm, story_video, voice_catalog
 from .webui_theme import page_title
 
 ROOT = setup_wizard.ROOT
@@ -104,6 +104,7 @@ def build_novel_tab(config):
         t_voices = ui.tab("Voices", icon="record_voice_over")
         t_options = ui.tab("Options", icon="tune")
         t_find = ui.tab("Find & bookmarks", icon="bookmarks")
+        t_comp = ui.tab("Companion", icon="auto_awesome")
         t_audio = ui.tab("Audiobook", icon="headphones")
         t_help = ui.tab("Help", icon="help_outline")
     with ui.tab_panels(tabs, value=t_stories).classes("w-full nv-sub"):
@@ -297,6 +298,10 @@ def build_novel_tab(config):
                 with ui.row().classes("items-center").style("gap:12px;margin:-4px 0 4px 48px"):
                     v_secs = ui.number("Vote time (seconds)", value=s0.get("vote_s", 20), min=8, max=120, format="%.0f").classes("w-52")
                 recap = ui.switch("Recap: start with the last lines of the previous chapter", value=bool(s0.get("recap")))
+                ai_recap = ui.switch("Make the recap an AI \"previously on ...\" (needs the AI, see the Companion tab)", value=bool(s0.get("ai_recap")))
+                ask_v = ui.switch("Viewers can ask the story host: !hoi <question> (spoiler-safe, answered from what is read so far)", value=bool(s0.get("ask_viewers")))
+                ui.label("Needs the AI from Settings (a local model works, no Start Run for the AI). One question per viewer every 45 s, "
+                         "answers go through the TikTok filter.").classes("lv-sub").style("margin:-6px 0 4px 48px")
                 with ui.row().classes("items-center").style("gap:16px;flex-wrap:wrap;margin-top:6px"):
                     ov_size = ui.toggle({"s": "Small", "m": "Medium", "l": "Large"}, value=s0.get("overlay_size", "m"))
                     ov_theme = ui.toggle({"dark": "Dark", "light": "Light", "sepia": "Sepia"}, value=s0.get("overlay_theme", "dark"))
@@ -438,6 +443,160 @@ def build_novel_tab(config):
                     ui.button("Make the audiobook", icon="headphones", on_click=make_audio).props("color=primary no-caps")
                     ui.button("Cancel", icon="close", on_click=lambda: aprog.update(cancel=True)).props("flat no-caps")
 
+        # ----------------------------------------------------------------- companion
+        with ui.tab_panel(t_comp):
+            with _card(True):
+                ui.label("AI reading companion").classes("nv-h")
+                ui.label("Ask about the story without spoilers, get a recap, see who is who. Everything is built only from the chapters you have "
+                         "read so far. Uses the AI from Settings (local models work).").classes("lv-sub")
+                with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
+                    c_model = ui.select([], label="AI model", with_input=True, new_value_mode="add-unique", value=s0.get("ai_model") or None).classes("w-96")
+                    c_check = ui.button("Check the AI", icon="wifi_tethering").props("outline no-caps")
+                    c_lang = ui.select({"vi": "Vietnamese", "en": "English"}, label="Answer language", value="vi").classes("w-44")
+                c_chip = ui.label("Not checked yet.").classes("lv-chip")
+                c_pos = ui.label("").classes("lv-sub")
+
+            def here():
+                """(chapter, chunk) the companion may know up to: the live position, else the saved one, else the chosen start chapter."""
+                m = novel.get_book(sel["book"])
+                if not m:
+                    return 0, None
+                st = novel.read_status()
+                if st.get("book") == m["id"] and time.time() - float(st.get("updated") or 0) < 30 and st.get("state") in ("playing", "paused"):
+                    return int(st.get("chapter", 0)), int(st.get("chunk", 0))
+                p = novel.load_progress().get(m["id"])
+                if p:
+                    return min(int(p["chapter"]), len(m["chapters"]) - 1), int(p["chunk"])
+                return int(chapter_sel.value or 0), None
+
+            def llm(temp=0.3):
+                if str(config.get("chat_type")) != "chatgpt":
+                    raise RuntimeError(f'Provider "{config.get("chat_type")}" is not supported here: set Settings -> chat type to the OpenAI-compatible one (works with Ollama / LM Studio).')
+                return story_llm.make_llm(config, c_model.value or "", "", temp)
+
+            async def check_ai():
+                if str(config.get("chat_type")) != "chatgpt":
+                    c_chip.text = f'Provider "{config.get("chat_type")}" cannot be used here. Use the OpenAI-compatible setting (Ollama / LM Studio / OpenAI).'
+                    c_chip.classes(replace="lv-chip bad")
+                    return
+                try:
+                    names = await run.io_bound(story_llm.list_models, config)
+                except Exception as ex:
+                    c_chip.text = str(ex)
+                    c_chip.classes(replace="lv-chip bad")
+                    return
+                cur = story_llm.endpoint(config)["model"]
+                c_model.set_options(names, value=(c_model.value if c_model.value in names else story_llm.best_model(names, cur) or None))
+                c_chip.text = f"Connected: {len(names)} model(s). Using {c_model.value or 'the model from Settings'}."
+                c_chip.classes(replace="lv-chip good")
+            c_check.on_click(check_ai)
+            ui.timer(1.0, check_ai, once=True)
+
+            def show_pos():
+                m = novel.get_book(sel["book"])
+                if not m:
+                    c_pos.text = "Add a story first."
+                    return
+                ch, ck = here()
+                c_pos.text = f'The companion knows the story up to chapter {ch + 1} of {len(m["chapters"])}' + (f", line {ck + 1}." if ck is not None else " (end of that chapter's start).")
+            ui.timer(2.0, show_pos)
+
+            with _card():
+                ui.label("Ask the story (spoiler-safe)").classes("nv-h")
+                ui.label("It answers only from what is read so far. If the story has not said it yet, it tells you so.").classes("lv-sub")
+                q_in = ui.input("Your question", placeholder="Who is Lan? Why did he leave the village?").classes("w-full")
+                q_out = ui.label("").classes("nv-now").style("font-size:18px;margin-top:10px")
+                q_btn = ui.button("Ask", icon="help_outline").props("color=primary no-caps unelevated")
+
+                async def do_ask():
+                    m = novel.get_book(sel["book"])
+                    if not m or not (q_in.value or "").strip():
+                        ui.notify("Pick a story and type a question.", type="warning")
+                        return
+                    ch, ck = here()
+                    q_btn.props("loading")
+                    try:
+                        q_out.text = await run.io_bound(novel_companion.ask, m, q_in.value, ch, ck, llm(0.3), c_lang.value)
+                    except Exception as ex:
+                        q_out.text = f"Could not answer: {ex}"
+                    finally:
+                        q_btn.props(remove="loading")
+                q_btn.on_click(do_ask)
+                q_in.on("keydown.enter", do_ask)
+
+            with _card():
+                ui.label("Previously on ...").classes("nv-h")
+                ui.label("Short recap of the last chapters you read (chapter summaries are saved, so it gets faster).").classes("lv-sub")
+                rc_out = ui.label("").classes("nv-now").style("font-size:18px;margin-top:6px")
+                rc_msg = ui.label("").classes("lv-sub")
+                rc_bar = ui.linear_progress(value=0, show_value=False).classes("w-full")
+                rc_bar.set_visibility(False)
+
+                async def do_recap(all_chapters=False):
+                    m = novel.get_book(sel["book"])
+                    if not m:
+                        return
+                    ch, ck = here()
+                    fn = llm(0.4)
+                    rc_bar.set_visibility(True)
+
+                    def prog(n, total, msg):
+                        rc_msg.text = f"{msg} ({n}/{total})"
+                        rc_bar.value = n / max(1, total)
+                    try:
+                        if all_chapters:
+                            upto = ch if ck is not None and ck > 0 else ch - 1
+                            await run.io_bound(novel_companion.summarize_chapters, m, max(upto, 0), fn, c_lang.value, progress=prog)
+                            rc_out.text = f"Summaries saved for chapters 1-{max(upto, 0) + 1}."
+                        else:
+                            rc_out.text = await run.io_bound(novel_companion.previously_on, m, ch, fn, c_lang.value) or "Nothing to recap yet: you are at chapter 1."
+                    except Exception as ex:
+                        rc_out.text = f"Could not do it: {ex}"
+                    rc_bar.set_visibility(False)
+                    rc_msg.text = ""
+                with ui.row().style("gap:10px;margin-top:8px"):
+                    ui.button("Recap the last chapters", icon="history", on_click=lambda: do_recap(False)).props("outline no-caps")
+                    ui.button("Summarise every chapter so far", icon="summarize", on_click=lambda: do_recap(True)).props("outline no-caps")
+
+            with _card():
+                ui.label("Characters so far").classes("nv-h")
+                ui.label("Cards built only from the text read so far; they grow as you read.").classes("lv-sub")
+                cards_box = ui.column().classes("w-full").style("gap:6px;margin-top:6px")
+                cards_msg = ui.label("").classes("lv-sub")
+
+                async def do_cards():
+                    m = novel.get_book(sel["book"])
+                    if not m:
+                        return
+                    ch, ck = here()
+                    cards_msg.text = "Writing the cards ..."
+                    try:
+                        cards = await run.io_bound(novel_companion.character_cards, m, ch, ck, llm(0.3), c_lang.value)
+                    except Exception as ex:
+                        cards_msg.text = f"Could not do it: {ex}"
+                        return
+                    cards_box.clear()
+                    cards_msg.text = "" if cards else "No recurring character names found yet."
+                    with cards_box:
+                        for c in cards:
+                            with ui.card().classes("lv-card w-full").style("padding:10px 14px"):
+                                ui.label(c["name"]).classes("nv-h")
+                                ui.label(f'{c["role"]} - {c["traits"]}').classes("lv-sub").style("margin:0")
+                                if c["relations"] and c["relations"] != "?":
+                                    ui.label(c["relations"]).classes("lv-sub").style("margin:0")
+                ui.button("Make the character cards", icon="groups", on_click=do_cards).props("outline no-caps")
+
+            with _card():
+                ui.label("Reading stats").classes("nv-h")
+                stats_l = ui.label("").classes("lv-sub")
+
+                def show_stats():
+                    st = novel_companion.stats_summary()
+                    stats_l.text = (f'Today {st["today_min"]} min - this week {st["week_min"]} min - total {st["total_min"]} min - '
+                                    f'{st["chapters"]} chapters finished - streak {st["streak"]} day(s) (best {st["best_streak"]}).')
+                show_stats()
+                ui.timer(15.0, show_stats)
+
         # ----------------------------------------------------------------- help
         with ui.tab_panel(t_help):
             with _card(True):
@@ -453,7 +612,7 @@ def build_novel_tab(config):
     def collect():
         return {"characters": dict(chars), "voice_narrator": v_nar.value or "", "voice_dialogue": v_dia.value or "", "rate": int(rate.value or 0),
                 "pause_s": float(pause.value or 0), "yield_comments": yield_c.value, "auto_next": auto_next.value,
-                "announce_chapter": announce.value, "recap": recap.value, "viewer_commands": v_cmds.value, "cmd_votes": int(v_need.value or 3), "chapter_vote": v_vote.value,
+                "announce_chapter": announce.value, "recap": recap.value, "ai_recap": ai_recap.value, "ask_viewers": ask_v.value, "ai_model": c_model.value or "", "viewer_commands": v_cmds.value, "cmd_votes": int(v_need.value or 3), "chapter_vote": v_vote.value,
                 "vote_s": int(v_secs.value or 20), "overlay_size": ov_size.value, "overlay_theme": ov_theme.value, "show_text": show_text.value, "sleep_min": int(sleep_min.value or 0),
                 "safety": safety.value}
 
@@ -470,7 +629,7 @@ def build_novel_tab(config):
         c = novel.read_control()
         c["settings"] = collect()
         novel.write_control(c)
-    for el in (v_nar, v_dia, rate, pause, sleep_min, yield_c, auto_next, announce, show_text, safety, recap, ov_size, ov_theme, v_cmds, v_need, v_vote, v_secs):
+    for el in (v_nar, v_dia, rate, pause, sleep_min, yield_c, auto_next, announce, show_text, safety, recap, ai_recap, ask_v, c_model, ov_size, ov_theme, v_cmds, v_need, v_vote, v_secs):
         el.on_value_change(apply_settings)
 
     def update_hero():
