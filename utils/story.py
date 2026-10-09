@@ -357,6 +357,124 @@ def post_kit(meta: Dict, lang: str = "vi", part: int = 1, hook: str = "", genre:
     return "\n".join(lines)
 
 
+# ------------------------------------------------------------------ recap videos ("review truyen") and YouTube
+RECAP_STYLES = {
+    "recap": "a fast, gripping recap: tell what happens in the order it happens, short punchy sentences",
+    "review": "a review: tell the story, then say what you personally liked, what surprised you and what you would change",
+    "mystery": "a suspense retelling: hold back the answer, ask questions, reveal slowly",
+}
+
+
+def recap_prompt(source: str, minutes: float = 3.0, lang: str = "vi", style: str = "recap", panels: int = 0) -> str:
+    """A prompt to paste into any free chat AI that turns a summary / the notes you wrote into a narration script for a
+    recap ("review truyen") video: hook -> story beats -> your own take -> cliffhanger. Your own words are what keep it original."""
+    language = "Vietnamese" if lang == "vi" else "English"
+    words = int(max(0.5, minutes) * 60 * (2.6 if lang == "vi" else 2.5))
+    beats = f" Split it into exactly {panels} numbered scenes, one per picture." if panels else ""
+    return (
+        f"Write the narration script of a {minutes:g}-minute YouTube / TikTok recap video, about {words} words, in {language}. "
+        f"Style: {RECAP_STYLES.get(style, RECAP_STYLES['recap'])}.\n"
+        "Structure: (1) HOOK - the first 1-2 sentences are the most shocking or curious moment, never 'hello everyone'; "
+        "(2) the story in clear beats, each beat 1-3 short spoken sentences; (3) YOUR TAKE - 2-3 sentences of opinion or "
+        "analysis, so the video adds something new; (4) a cliffhanger or question that makes people follow for the next part.\n"
+        "Rules: spoken language, no stage directions, no emojis, no sentence over 25 words, say names the same way every time, "
+        "do not copy sentences from the source - retell it in your own words.\n"
+        f"{beats}\n"
+        "Use this exact format and nothing else:\nSCENE 1\nNARRATION: ...\n\nSCENE 2\nNARRATION: ...\n\n"
+        f"MATERIAL:\n{source.strip() or '(paste your summary or notes here)'}")
+
+
+def parse_recap(text: str) -> List[str]:
+    """Narration per scene from an AI answer in the SCENE / NARRATION format; falls back to paragraphs of plain text."""
+    text = (text or "").replace("\r\n", "\n").strip()
+    found = re.findall(r"(?is)narration\s*\**\s*:\s*\**\s*(.+?)(?=\n\s*\**\s*scene\s*#?\d+|\Z)", text)
+    if found:
+        return [re.sub(r"\s+", " ", x).strip() for x in found if x.strip()]
+    return [re.sub(r"\s+", " ", x).strip() for x in re.split(r"\n\s*\n", text) if x.strip()]
+
+
+def script_stats(text: str, lang: str = "vi", rate: int = 0) -> Dict:
+    """How long will this narration be, and where will viewers get bored? {words, seconds, long_sentences: [..], warnings: [..]}"""
+    text = (text or "").strip()
+    words = len(re.findall(r"\w+", text, flags=re.UNICODE))
+    seconds = novel.spoken_seconds(text, 13.0, rate) if text else 0.0
+    sentences = [x.strip() for x in re.split(r"(?<=[.!?…])\s+|\n+", text) if x.strip()]
+    long_s = [x for x in sentences if len(re.findall(r"\w+", x, flags=re.UNICODE)) > 25]
+    warn = []
+    if text and not re.search(r"[?!]", sentences[0] if sentences else "") and len(sentences[0].split()) > 18:
+        warn.append("The first sentence is long - open with a short, shocking line (the hook).")
+    if long_s:
+        warn.append(f"{len(long_s)} sentence(s) are over 25 words - split them, they are hard to follow when spoken.")
+    if text and seconds > 12 * 60:
+        warn.append("Over 12 minutes: split it into parts and end each on a cliffhanger.")
+    if text and not re.search(r"(?i)theo d[oõ]i|follow|ph[aầ]n \d|part \d|c[oò]n ti[eế]p|to be continued", text):
+        warn.append("No 'follow / next part' line at the end.")
+    return {"words": words, "seconds": round(seconds, 1), "long_sentences": long_s[:5], "warnings": warn}
+
+
+def chapters_text(marks: List[Dict], min_gap: float = 10.0) -> str:
+    """YouTube chapters ("0:00 Intro"): the list must start at 0:00, have 3+ entries and every chapter >= 10 s."""
+    out: List[Dict] = []
+    for m in marks:
+        if not out:
+            out.append({"t": 0.0, "label": m["label"]})
+        elif m["t"] - out[-1]["t"] >= min_gap:
+            out.append(m)
+    if len(out) < 3:
+        return ""
+
+    def stamp(t):
+        t = int(t)
+        return f"{t // 3600}:{t // 60 % 60:02d}:{t % 60:02d}" if t >= 3600 else f"{t // 60}:{t % 60:02d}"
+    return "\n".join(f"{stamp(m['t'])} {m['label']}" for m in out)
+
+
+def youtube_kit(meta: Dict, lang: str = "vi", part: int = 1, hook: str = "", genre: str = "", marks: Optional[List[Dict]] = None,
+                extra_credits: str = "", seconds: float = 0.0) -> str:
+    """Title ideas, description (with chapters and credit), tags and a pinned comment for a YouTube upload."""
+    title = meta.get("title", "")
+    tail = f" - Phần {part}" if lang == "vi" and part else f" - Part {part}" if part else ""
+    if lang == "vi":
+        titles = [f"{title}{tail}", f"{(hook.strip() or title)[:60]}{tail}", f"Tóm tắt truyện: {title}{tail}"]
+        desc_head = f"{hook.strip() or title}\nTóm tắt và bình luận lại truyện \"{title}\" bằng lời kể của mình."
+        follow = "Đăng ký kênh và bật chuông để xem phần tiếp theo!"
+        pinned = "Các bạn đoán xem chuyện gì xảy ra tiếp theo? Comment nhé!"
+    else:
+        titles = [f"{title}{tail}", f"{(hook.strip() or title)[:60]}{tail}", f"{title} explained{tail}"]
+        desc_head = f"{hook.strip() or title}\nA retelling and commentary of \"{title}\" in my own words."
+        follow = "Subscribe and turn on notifications for the next part!"
+        pinned = "What do you think happens next? Tell me below!"
+    tags = [t.lstrip("#") for t in (list(GENRE_TAGS.get(genre, [])) + HASHTAGS.get(lang, HASHTAGS["en"]))]
+    seen, uniq = set(), []
+    for t in tags:
+        if t and t not in seen:
+            seen.add(t)
+            uniq.append(t)
+    chapters = chapters_text(marks or [])
+    lines = ["TITLE IDEAS (pick one, under 70 characters):"] + [f"- {t[:70]}" for t in titles] + ["", "DESCRIPTION:", desc_head, follow]
+    if chapters:
+        lines += ["", chapters]
+    cr = novel.credit_line(meta) if meta.get("license") else ""
+    if cr:
+        lines += ["", "Credit: " + cr]
+    if extra_credits:
+        lines.append("Music: " + extra_credits)
+    lines += ["", "#" + " #".join(uniq[:3]), "", "TAGS: " + ", ".join(uniq[:12]), "", "PINNED COMMENT: " + pinned]
+    return "\n".join(lines)
+
+
+UPLOAD_CHECKLIST = (
+    "Your own words: a script written or rewritten by you (step 1) - YouTube demotes channels that only repost other people's content.",
+    "Licence: the story and the pictures are yours, public-domain, CC (credit in the description) or you have permission.",
+    "Music: only a licensed track (credit in the description when it asks for it).",
+    "Hook in the first 3 seconds, one picture change every few seconds, captions on.",
+    "Thumbnail: big words (3-5), a clear picture, a different look from your last video.",
+    "Title under 70 characters with the story name; chapters in the description (0:00 first, 3+ chapters).",
+    "Series: part numbers in the title and a playlist, end each part on a cliffhanger.",
+    "YouTube asks if the video uses altered / synthetic voice or visuals - answer honestly (AI voice and AI pictures count).",
+)
+
+
 # ------------------------------------------------------------------ control / status / overlay
 def read_control(path: str = CONTROL_PATH) -> Dict:
     c = _read(path, {}) or {}

@@ -110,3 +110,94 @@ def test_add_story_splits_strips(root):
     b = io.BytesIO(); im.save(b, "PNG")
     m = story.add_story("S", "", "own", "", [("strip.png", b.getvalue())], "", root, split_strips=True)
     assert len(m["panels"]) == 2
+
+
+# ---------------------------------------------------------------- recap video features
+def _tts(ff):
+    def tts(t, v, r, o):
+        subprocess.run([ff, "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=300:duration=0.8", "-q:a", "5", o], check=True)
+    return tts
+
+
+def _video_size(ff, path):
+    import re
+    r = subprocess.run([ff, "-i", path], capture_output=True, text=True)
+    m = re.search(r"Video:.*?(\d{3,4})x(\d{3,4})", r.stderr)
+    return int(m.group(1)), int(m.group(2))
+
+
+def test_plan_groups_pieces_by_panel():
+    segs = sv.plan([{"image": "a.png", "text": "Một. Hai."}, {"image": "b.png", "text": "Ba."}], "Hook", "Bye")
+    assert [s["panel"] for s in segs] == [0, 0, 0, 1, 1][:len(segs)] or segs[0]["panel"] == 0 and segs[-1]["panel"] == 1
+
+
+def test_motion_modes_and_zoompan():
+    assert sv.motion_for("off", 3) == "" and sv.motion_for("zoom", 0) == "zoom_in" and sv.motion_for("zoom", 1) == "zoom_out"
+    assert [sv.motion_for("auto", i) for i in range(5)] == ["zoom_in", "pan_right", "zoom_out", "pan_left", "zoom_in"]
+    f = sv.zoompan_filter("pan_left", 0.25, 0.5, 50, (1080, 1920), 25)
+    assert "d=50" in f and "s=1080x1920" in f and "0.2500" in f
+    with pytest.raises(ValueError):
+        sv.zoompan_filter("spin", 0, 1, 10, (10, 10), 25)
+
+
+def test_split_panels_never_cuts_inside_a_panel():
+    panels = [{"image": None, "text": "Câu này khá dài để nói. " * 4} for _ in range(6)]
+    one = sv.estimate_seconds(panels[:1])
+    parts = sv.split_panels(panels, one * 2.5)
+    assert sum(len(p) for p in parts) == 6 and len(parts) == 3 and all(len(p) == 2 for p in parts)
+    assert sv.split_panels(panels, 0) == [panels]
+    assert len(sv.split_panels(panels, 0.1)) == 6
+
+
+@pytest.mark.skipif(not (sv.ffmpeg_exe() and sv.find_font()), reason="needs ffmpeg and a font")
+@pytest.mark.parametrize("fmt,motion", [("vertical", "auto"), ("wide", "zoom"), ("vertical", "off")])
+def test_video_with_motion_formats_and_marks(root, fmt, motion):
+    pytest.importorskip("PIL")
+    ff = sv.ffmpeg_exe()
+    m = story.add_story("M", "", "own", "", [("1.png", png((200, 50, 50))), ("2.png", png((50, 50, 200))), ("3.png", png((50, 200, 50)))],
+                        "Một câu. Hai câu.\n\nBa câu.\n\nBốn câu.", root)
+    out = os.path.join(root, "o", "m.mp4")
+    res = sv.build(sv.panels_from_story(m, root), out, tts=_tts(ff), title="M", part=2, hook="Hook", outro="Bye", size=sv.FORMATS[fmt],
+                   fps=10, motion=motion, fade=True)
+    assert _video_size(ff, out) == sv.FORMATS[fmt]
+    assert len(res["marks"]) == 3 and res["marks"][0]["t"] == 0
+    assert sv.audio_seconds(ff, out) > res["seconds"] - 1
+
+
+@pytest.mark.skipif(not (sv.ffmpeg_exe() and sv.find_font()), reason="needs ffmpeg and a font")
+def test_build_parts_end_on_cliffhanger(root):
+    ff = sv.ffmpeg_exe()
+    m = story.add_story("P", "", "own", "", [(f"{i}.png", png((40 * i, 50, 90))) for i in range(1, 5)], "a a a.\n\nb b b.\n\nc c c.\n\nd d d.", root)
+    panels = sv.panels_from_story(m, root)
+    one = sv.estimate_seconds(panels[:1])
+    res = sv.build_parts(panels, os.path.join(root, "o", "p"), one * 2.2, 1, "Hook", "Final", "vi", tts=_tts(ff), title="P", fps=10)
+    assert [r["part"] for r in res] == [1, 2] and all(os.path.exists(r["video"]) for r in res)
+    srt1 = open(res[0]["srt"], encoding="utf-8").read()
+    srt2 = open(res[1]["srt"], encoding="utf-8").read()
+    assert "Hook" in srt1 and "phần 2" in srt1 and "Hook" not in srt2 and "Final" in srt2
+
+
+def test_thumbnail(root):
+    pytest.importorskip("PIL")
+    from PIL import Image
+    img = os.path.join(root, "a.png"); open(img, "wb").write(png())
+    out = sv.make_thumbnail(img, "cô gái và cánh cửa lúc nửa đêm", os.path.join(root, "t", "x.jpg"), badge="Part 1")
+    assert Image.open(out).size == (1280, 720)
+    out2 = sv.make_thumbnail(None, "", os.path.join(root, "t", "y.jpg"))
+    assert os.path.exists(out2)
+
+
+def test_recap_prompt_stats_chapters_and_kit():
+    p = story.recap_prompt("Cô gái mở cửa.", 2, "vi", "review", 5)
+    assert "about 312 words" in p and "exactly 5 numbered scenes" in p and "Cô gái mở cửa." in p and "YOUR TAKE" in p
+    assert story.parse_recap("SCENE 1\nNARRATION: A.\nSCENE 2\nNARRATION: B.") == ["A.", "B."]
+    assert story.parse_recap("one\n\ntwo") == ["one", "two"]
+    st = story.script_stats("Câu " * 40 + "đây.")
+    assert st["words"] == 41 and any("25 words" in w for w in st["warnings"]) and any("follow" in w.lower() for w in st["warnings"])
+    assert story.script_stats("Bạn tin không? Theo dõi nhé.")["warnings"] == []
+    marks = [{"t": 0, "label": "Hook"}, {"t": 4, "label": "too close"}, {"t": 15, "label": "B"}, {"t": 3700, "label": "C"}]
+    assert story.chapters_text(marks).splitlines() == ["0:00 Hook", "0:15 B", "1:01:40 C"]
+    assert story.chapters_text(marks[:2]) == ""
+    kit = story.youtube_kit({"title": "T", "author": "A", "license": "cc-by", "source": ""}, "vi", 2, "Hook?", "fantasy", marks, "Song")
+    assert "TITLE IDEAS" in kit and "Phần 2" in kit and "0:15 B" in kit and "Credit:" in kit and "PINNED COMMENT" in kit
+    assert all(len(l) <= 72 for l in kit.splitlines() if l.startswith("- "))

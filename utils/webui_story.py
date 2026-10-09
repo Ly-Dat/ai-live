@@ -98,6 +98,34 @@ def build_story_tab(config):
             ui.notify(f"{len(plot)} panels ready. Make or find one picture per panel (step 2).", type="positive")
         ui.button("Turn it into panels", icon="view_agenda", on_click=use_answer).props("no-caps")
 
+        ui.separator().style("margin:18px 0 10px")
+        ui.label("Recap / review video (\"review truyen\")").classes("lv-sub").style("font-weight:600;margin:0")
+        ui.label("You read or watched something and want to retell it with your own opinion? Write a few notes or a summary in your own words; "
+                 "the prompt asks a free chat AI for a hook, the story beats, your take and a cliffhanger. Channels get demonetised for "
+                 "re-uploading other people's work, so the retelling and the opinion must be yours.").classes("lv-sub")
+        recap_src = ui.textarea("Your summary / notes (what happens, what you think)").classes("w-full").props("rows=4")
+        with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
+            recap_min = ui.number("Minutes", value=3, min=0.5, max=15, step=0.5, format="%.1f").classes("w-28")
+            recap_style = ui.select({"recap": "Fast recap", "review": "Review with my opinion", "mystery": "Suspense"}, label="Style", value="recap").classes("w-56")
+        recap_box = ui.textarea("Prompt to copy").classes("w-full").props("rows=4 readonly")
+        recap_ans = ui.textarea("Paste the AI's answer here").classes("w-full").props("rows=4")
+
+        def make_recap_prompt():
+            recap_box.value = story.recap_prompt(recap_src.value or "", float(recap_min.value or 3), lang.value, recap_style.value)
+
+        def use_recap():
+            scenes = story.parse_recap(recap_ans.value or "")
+            if not scenes:
+                ui.notify("Paste the AI's answer first.", type="warning")
+                return
+            ref["script"].value = "\n\n".join(f"Panel {i + 1}: {x}" for i, x in enumerate(scenes))
+            ref["check"]()
+            ui.notify(f"{len(scenes)} scenes ready. Add one picture per scene (step 2).", type="positive")
+        with ui.row().style("gap:10px"):
+            ui.button("Make the recap prompt", icon="auto_fix_high", on_click=make_recap_prompt).props("no-caps")
+            ui.button("Copy", icon="content_copy", on_click=lambda: _copy(recap_box.value or "")).props("flat no-caps")
+            ui.button("Turn it into scenes", icon="view_agenda", on_click=use_recap).props("no-caps")
+
     # ------------------------------------------------------------------ 2. add pictures
     pending = []
     with _card():
@@ -131,6 +159,16 @@ def build_story_tab(config):
                        auto_upload=True).props("accept=.png,.jpg,.jpeg,.webp,.zip flat dense").classes("w-full")
         script = ui.textarea("Narration (one paragraph per panel)").classes("w-full").props("rows=6")
         ref["script"] = script
+        check_lbl = ui.label("").classes("lv-sub").style("white-space:pre-line")
+
+        def check_script(*_):
+            st = story.script_stats(script.value or "", lang.value)
+            if not st["words"]:
+                check_lbl.text = ""
+                return
+            check_lbl.text = f'{st["words"]} words, about {int(st["seconds"])} s spoken.' + "".join("\n- " + w for w in st["warnings"])
+        script.on_value_change(check_script)
+        ref["check"] = check_script
 
         def add():
             try:
@@ -297,8 +335,9 @@ def build_story_tab(config):
     prog = {"a": 0, "b": 1, "msg": "", "busy": False, "cancel": False}
     with _card():
         _h("5. Make a video to post",
-           "A vertical 9:16 video: the picture, the AI voice and captions burned in, a hook at the start and \"follow for part 2\" at the end. "
-           "You also get the .srt subtitles, a cover picture and a caption with hashtags. Upload it to TikTok / Reels / Shorts yourself.")
+           "Vertical 9:16 (TikTok / Shorts) or wide 16:9 (YouTube): the picture slowly zooming or panning, the AI voice and captions burned in, "
+           "a hook at the start and \"follow for part 2\" at the end. A long story can be cut into parts automatically. You also get the .srt "
+           "subtitles, a cover, a caption with hashtags, YouTube title / description with chapters, and a thumbnail maker. You upload it yourself.")
         miss = story_video.missing_tools()
         if miss:
             ui.label("Missing on this computer: " + "; ".join(miss)).classes("lv-chip bad")
@@ -334,11 +373,22 @@ def build_story_tab(config):
             with ui.column().style("gap:0;min-width:200px"):
                 ui.label("Music volume (%)").classes("lv-sub").style("margin:0")
                 mvol = ui.slider(min=3, max=30, value=12).props("label-always").style("margin-top:30px")
+        with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
+            fmt = ui.select({"vertical": "Vertical 9:16 (TikTok / Shorts / Reels)", "wide": "Wide 16:9 (YouTube)"}, label="Shape",
+                            value="vertical").classes("w-72")
+            motion = ui.select({"off": "Still pictures", "zoom": "Slow zoom in / out", "auto": "Zoom + pan (most lively)"},
+                               label="Picture movement", value="auto").classes("w-60")
+            fade = ui.switch("Fade between pictures", value=True)
+            split_min = ui.number("Cut into parts of (minutes, 0 = one video)", value=0, min=0, max=30, step=0.5, format="%.1f").classes("w-72")
         est = ui.label("").classes("lv-sub")
         pbar = ui.linear_progress(value=0, show_value=False).classes("w-full")
         pmsg = ui.label("").classes("lv-sub")
         result = ui.column().classes("w-full")
         kit_box = ui.textarea("Caption + hashtags for the post").classes("w-full").props("rows=5")
+        yt_box = ui.textarea("YouTube: title ideas, description with chapters, tags").classes("w-full").props("rows=10")
+        with ui.expansion("Before you upload to YouTube (monetisation checklist)", icon="fact_check").classes("w-full"):
+            for line in story.UPLOAD_CHECKLIST:
+                ui.label("- " + line).classes("lv-sub").style("margin:2px 0")
 
         def panels_now():
             if src.value == "novel":
@@ -380,8 +430,7 @@ def build_story_tab(config):
                 ui.notify("Install the missing tools first (see the red note).", type="negative")
                 return
             os.makedirs(OUT_DIR, exist_ok=True)
-            base = f'{m["id"]}-p{int(part.value or 0)}-{int(time.time()) % 100000}'
-            out_path = os.path.join(OUT_DIR, base + ".mp4")
+            base = os.path.join(OUT_DIR, f'{m["id"]}-{int(time.time()) % 100000}')
             mt = tracks.get(mus.value) if mus.value else None
             prog.update(a=0, b=1, msg="Starting...", busy=True, cancel=False)
             result.clear()
@@ -389,32 +438,64 @@ def build_story_tab(config):
             def progress(a, b, msg):
                 prog.update(a=a, b=b, msg=msg)
             try:
-                res = await run.io_bound(
-                    story_video.build, panels, out_path, None, v_voice2.value or "", int(rate2.value or 0), v_lang.value, m["title"],
-                    int(part.value or 0), hook_in.value or "", outro_in.value or "",
-                    os.path.join(music.MUSIC_DIR, mt["file"]) if mt else None, (mvol.value or 12) / 100.0, (1080, 1920), 25, 0.25, 2.5,
-                    progress, lambda: prog["cancel"])
+                results = await run.io_bound(lambda: story_video.build_parts(
+                    panels, base, float(split_min.value or 0) * 60, int(part.value or 1), hook_in.value or "", outro_in.value or "",
+                    v_lang.value, progress, voice=v_voice2.value or "", rate=int(rate2.value or 0), title=m["title"],
+                    music=os.path.join(music.MUSIC_DIR, mt["file"]) if mt else None, music_volume=(mvol.value or 12) / 100.0,
+                    size=story_video.FORMATS.get(fmt.value, (1080, 1920)), cancel=lambda: prog["cancel"], motion=motion.value,
+                    fade=bool(fade.value)))
             except Exception as ex:
                 prog["busy"] = False
                 prog["msg"] = f"Failed: {ex}"
                 ui.notify(f"Video failed: {ex}", type="negative")
                 return
-            prog.update(busy=False, msg=f'Done: {res["pieces"]} pieces, {res["seconds"]} s')
-            kit_box.value = story.post_kit(m, v_lang.value, int(part.value or 0), hook_in.value or "", "",
-                                           mt["credit"] if mt and mt.get("credit") else "")
+            prog.update(busy=False, msg=f'Done: {len(results)} video(s), {sum(r["seconds"] for r in results):.0f} s')
+            credit = mt["credit"] if mt and mt.get("credit") else ""
+            kits, yts = [], []
+            for r in results:
+                kits.append(story.post_kit(m, v_lang.value, r["part"], hook_in.value or "", "", credit))
+                yts.append(story.youtube_kit(m, v_lang.value, r["part"], hook_in.value or "", "", r["marks"], credit, r["seconds"]))
+            kit_box.value = "\n\n-----\n\n".join(kits)
+            yt_box.value = "\n\n=====\n\n".join(yts)
             with result:
-                ui.video(f"/story-out/{os.path.basename(res['video'])}").style("max-width:280px;border-radius:12px")
-                with ui.row().style("gap:8px"):
-                    for key, label, icon in (("video", "Video (.mp4)", "movie"), ("srt", "Subtitles (.srt)", "subtitles"),
-                                             ("cover", "Cover (.png)", "image")):
-                        ui.button(label, icon=icon, on_click=lambda p=res[key]: ui.download(f"/story-out/{os.path.basename(p)}")).props(
-                            "outline no-caps")
+                for r in results:
+                    with ui.column().style("gap:6px;margin-top:10px"):
+                        ui.video(f"/story-out/{os.path.basename(r['video'])}").style(
+                            "max-width:" + ("280px" if fmt.value == "vertical" else "520px") + ";border-radius:12px")
+                        with ui.row().style("gap:8px"):
+                            for key, label, icon in (("video", f'Video part {r["part"]} (.mp4)' if len(results) > 1 else "Video (.mp4)", "movie"),
+                                                     ("srt", "Subtitles (.srt)", "subtitles"), ("cover", "Cover (.png)", "image")):
+                                ui.button(label, icon=icon, on_click=lambda p=r[key]: ui.download(f"/story-out/{os.path.basename(p)}")).props(
+                                    "outline no-caps")
                 ui.label("Saved in " + os.path.abspath(OUT_DIR)).classes("lv-sub")
+
+        thumb_in = ui.input("Thumbnail words (3-5 big words)", placeholder="CÔ GÁI VÀ CÁNH CỬA LÚC NỬA ĐÊM").classes("w-full")
+        thumb_res = ui.column().classes("w-full")
+
+        async def make_thumb():
+            m, panels = panels_now()
+            img = next((p["image"] for p in panels if p.get("image")), None)
+            if not m:
+                ui.notify("Pick a story first.", type="warning")
+                return
+            name = f'{m["id"]}-thumb-{int(time.time()) % 100000}.jpg'
+            try:
+                await run.io_bound(story_video.make_thumbnail, img, thumb_in.value or m["title"], os.path.join(OUT_DIR, name),
+                                   (1280, 720), f"Part {int(part.value)}" if part.value else "", sum(map(ord, m["title"])))
+            except Exception as ex:
+                ui.notify(f"Thumbnail failed: {ex}", type="negative")
+                return
+            thumb_res.clear()
+            with thumb_res:
+                ui.image(f"/story-out/{name}").style("max-width:420px;border-radius:10px")
+                ui.button("Download thumbnail", icon="download", on_click=lambda: ui.download(f"/story-out/{name}")).props("outline no-caps")
 
         with ui.row().style("gap:10px;margin-top:8px"):
             ui.button("Make the video", icon="movie_creation", on_click=make).props("color=primary no-caps")
             ui.button("Cancel", icon="close", on_click=lambda: prog.update(cancel=True)).props("flat no-caps")
             ui.button("Copy caption", icon="content_copy", on_click=lambda: _copy(kit_box.value or "")).props("flat no-caps")
+            ui.button("Copy YouTube text", icon="content_copy", on_click=lambda: _copy(yt_box.value or "")).props("flat no-caps")
+            ui.button("Make a YouTube thumbnail", icon="image", on_click=make_thumb).props("outline no-caps")
 
     with _card():
         _h("The loop that gets followers")

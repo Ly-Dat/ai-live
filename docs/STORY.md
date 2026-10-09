@@ -19,3 +19,14 @@ Pictures and text must be yours (drawn, written, or made by you with a free AI t
 
 ## Tall webtoon strips
 Upload one long vertical strip and leave "Cut it into panels automatically" on: the strip is cut at the empty bands between panels (tiny pieces are merged, pieces with no gap are cut at their calmest row). Check the result in step 3 and fix the narration per panel.
+
+## Recap / review videos ("review truyện") and YouTube
+
+Story studio now covers the whole recap-channel workflow, free and offline except the voice (edge-tts):
+
+1. **Script** - step 1 has a *Recap / review video* helper: write your own notes, get a prompt for any free chat AI (hook, story beats, *your take*, cliffhanger), paste the answer back and it becomes one scene per panel. Step 2 shows a live check: words, spoken length, long sentences, missing "follow" line.
+2. **Pictures** - as before (your own, public domain, CC, permission). The licence gate still refuses copyrighted panels.
+3. **Video** - step 5: *Shape* vertical 9:16 or wide 16:9, *Picture movement* (still / slow zoom / zoom + pan), fade between pictures, and *cut into parts of N minutes* (parts end on "to be continued - part N+1", the last one uses your ending line).
+4. **Upload kit** - TikTok caption + hashtags, YouTube title ideas, description with **chapters** (0:00 first, 3+ chapters, 10 s+ each), tags and a pinned comment, plus a checklist (original commentary, licence, licensed music, honest AI disclosure). *Make a YouTube thumbnail* gives a 1280x720 jpg.
+
+Zoom / pan moves only the picture; the captions stay still. A 3-minute movement video renders in a few minutes on a normal PC (ffmpeg, veryfast preset); choose *Still pictures* for the fastest export.
