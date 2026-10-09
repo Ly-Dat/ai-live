@@ -9,6 +9,10 @@ A tab for stories told with pictures, the way manhua / webtoon channels do it: p
 4. **Read it on my live** - `story_reader.py` shows one panel at a time on the overlay (`/overlay`, add it as a browser source) and the AI host narrates it through the same `/send` "reread" path as the Novel reader. Viewer comments always go first. Pause / stop / loop / sleep timer, TikTok policy filter on every line.
 5. **Make a video** - 9:16, 1080x1920: picture + AI voice (edge-tts, free) + burned-in captions, hook at the start, "follow for part N+1" at the end, optional licensed background music from the Live tools music list. Also writes `.srt`, a cover picture and a caption with hashtags (and the credit lines). Works from a picture story or from a chapter of a Novel-reader story (text on a gradient). Output: `out/stories/`.
 
+### Tools for picture stories (`utils/story_tools.py`)
+- **Auto-crop** (step 2 switch): a long vertical strip is cut at the empty gaps between panels; strips with no gap are cut by height only.
+- **Read the text + AI recap** (step 3b): OCR of every panel (`pip install rapidocr-onnxruntime`, or Tesseract), a ready prompt for any free chat AI, and the answer is put into the narration boxes for you to edit in step 3.
+
 Needs `ffmpeg` (or `pip install imageio-ffmpeg`), Pillow and edge-tts; the tab says what is missing.
 
 ## Licence rule (important)
