@@ -287,3 +287,4 @@ data/story_status.json
 out/stories/
 
 data/novel_bookmarks.json
+data/*.tmp

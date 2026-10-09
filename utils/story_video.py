@@ -56,17 +56,22 @@ def find_font() -> Optional[str]:
 
 
 def edge_tts_file(text: str, voice: str, rate: int, out: str, lang: str = "vi") -> None:
+    import time
     import edge_tts
     v = voice or DEFAULT_VOICE.get(lang, DEFAULT_VOICE["en"])
     last = None
-    for _ in range(3):
+    for attempt in range(4):
         try:
             asyncio.run(edge_tts.Communicate(text, v, rate=f"{int(rate):+d}%").save(out))
             if os.path.getsize(out) > 200:
                 return
-        except Exception as e:  # network hiccup: try again
+            last = RuntimeError("empty audio")
+        except Exception as e:  # network hiccup / service busy: wait a little, then try again
             last = e
-    raise RuntimeError(f"Text-to-speech failed ({type(last).__name__ if last else 'empty audio'}). Check the internet connection.")
+        time.sleep(1.5 * (attempt + 1))
+    name = type(last).__name__ if last else "empty audio"
+    raise RuntimeError(f"Text-to-speech failed ({name}: {str(last)[:160]}). Voice: {v}. Text: {text[:60]!r}. "
+                       "Check the internet / VPN, update edge-tts (pip install -U edge-tts), or pick another voice.")
 
 
 # ------------------------------------------------------------------ frames
@@ -206,7 +211,8 @@ def plan(panels: List[Dict], hook: str = "", outro: str = "", max_chars: int = 7
         if not pieces:
             segs.append({"image": p.get("image"), "caption": "", "speak": "", "top": "", "panel": k})
         for c in pieces:
-            segs.append({"image": p.get("image"), "caption": c, "speak": novel.clean_for_speech(c, pron), "top": "", "panel": k})
+            sp = novel.clean_for_speech(c, pron)
+            segs.append({"image": p.get("image"), "caption": c, "speak": sp if re.search(r"\w", sp or "") else "", "top": "", "panel": k})
     if outro.strip():
         segs.append({"image": last, "caption": outro.strip(), "speak": novel.clean_for_speech(outro, pron), "top": "",
                      "panel": n - 1 if n and panels[-1].get("image") == last else n, "outro": True})
@@ -295,7 +301,10 @@ def build(panels: List[Dict], out_path: str, tts: Optional[Callable] = None, voi
                 progress(i, total, f"Voice {i + 1}/{n}")
             if sg["speak"]:
                 aud = os.path.join(work, f"a{i:04d}.mp3")
-                tts(sg["speak"], voice, rate, aud)
+                try:
+                    tts(sg["speak"], voice, rate, aud)
+                except Exception as ex:
+                    raise RuntimeError(f"Piece {i + 1}/{len(segs)}: {ex}") from ex
                 auds.append(aud)
                 durs.append(audio_seconds(ff, aud) + gap)
             else:

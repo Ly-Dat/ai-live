@@ -11,7 +11,7 @@ import time
 
 from nicegui import app, run, ui
 
-from . import music, novel, setup_wizard, story, story_video, voice_catalog
+from . import music, novel, setup_wizard, story, story_tools, story_video, voice_catalog
 from .webui_novel import VOICES, _tour_running
 from .webui_theme import page_title
 
@@ -173,7 +173,7 @@ def build_story_tab(config):
         def add():
             try:
                 m = story.add_story(t_title.value, t_author.value, t_lic.value, t_src.value, list(pending), script.value or "", split_strips=cut_strips.value)
-            except ValueError as ex:
+            except Exception as ex:
                 ui.notify(str(ex), type="warning")
                 return
             pending.clear()
@@ -246,6 +246,64 @@ def build_story_tab(config):
                 ui.button("Save narration", icon="save", on_click=save).props("color=primary no-caps")
                 ui.button("Delete this story", icon="delete", on_click=delete).props("flat no-caps color=negative")
         library()
+
+    # ------------------------------------------------------------------ 3b. read text + AI recap
+    ocr_prog = {"a": 0, "b": 1, "busy": False}
+    with _card():
+        _h("3b. Read the text, let an AI write the recap",
+           "Reads the text in every panel (OCR), builds a prompt for any free chat AI, and puts the AI's answer into the narration "
+           "boxes above so you can edit it in step 3. Works on the story picked in step 3 (licence gate applies).")
+        hint = story_tools.ocr_missing_hint()
+        if hint:
+            ui.label(hint).classes("lv-chip bad")
+        with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
+            o_lang = ui.select({"vi": "Narration in Vietnamese", "en": "Narration in English"}, value="vi").classes("w-56")
+            o_ocr = ui.select({"vie+eng": "Text in pictures: Vietnamese + English", "eng": "English", "chi_sim+eng": "Chinese + English"},
+                              value="vie+eng", label="OCR language (Tesseract only)").classes("w-72")
+            o_style = ui.select(["dramatic", "funny", "sweet", "scary", "mysterious"], value="dramatic", label="Style").classes("w-40")
+        o_text = ui.textarea("Text found in the panels (editable)").classes("w-full").props("rows=6")
+        o_prompt = ui.textarea("Prompt to copy").classes("w-full").props("rows=5 readonly")
+        o_answer = ui.textarea("Paste the AI's answer here").classes("w-full").props("rows=5")
+        o_bar = ui.linear_progress(value=0, show_value=False).classes("w-full")
+        ui.timer(0.5, lambda: setattr(o_bar, "value", ocr_prog["a"] / max(1, ocr_prog["b"])))
+
+        async def read_text():
+            meta = story.get_story(sel["story"])
+            ok, why = story.can_use(meta)
+            if not ok:
+                ui.notify(why, type="warning")
+                return
+            if ocr_prog["busy"]:
+                return
+            ocr_prog.update(busy=True, a=0)
+            try:
+                texts = await run.io_bound(story_tools.ocr_story, meta, o_ocr.value,
+                                           lambda a, b: ocr_prog.update(a=a, b=b))
+            except Exception as ex:
+                ocr_prog["busy"] = False
+                ui.notify(str(ex), type="negative")
+                return
+            ocr_prog["busy"] = False
+            o_text.value = "\n\n".join(f"Panel {i + 1}: {t}" for i, t in enumerate(texts))
+            o_prompt.value = story_tools.recap_prompt(texts, meta["title"], o_lang.value, o_style.value)
+            ui.notify(f"Read {len(texts)} panels. Copy the prompt into a chat AI.", type="positive")
+
+        def apply_answer():
+            meta = story.get_story(sel["story"])
+            if not meta or not (o_answer.value or "").strip():
+                ui.notify("Pick a story and paste the AI's answer first.", type="warning")
+                return
+            texts, err = story_tools.parse_answer(o_answer.value, len(meta["panels"]))
+            if err:
+                ui.notify(err, type="warning")
+                return
+            story.set_texts(meta["id"], texts)
+            library.refresh()
+            ui.notify("Narration filled. Check and edit it in step 3, then Save.", type="positive")
+        with ui.row().style("gap:10px"):
+            ui.button("Read the text", icon="document_scanner", on_click=read_text).props("color=primary no-caps")
+            ui.button("Copy prompt", icon="content_copy", on_click=lambda: _copy(o_prompt.value or "")).props("flat no-caps")
+            ui.button("Use the AI's answer", icon="edit_note", on_click=apply_answer).props("outline no-caps")
 
     # ------------------------------------------------------------------ 4. live
     with _card():

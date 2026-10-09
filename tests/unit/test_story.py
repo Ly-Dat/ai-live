@@ -201,3 +201,54 @@ def test_recap_prompt_stats_chapters_and_kit():
     kit = story.youtube_kit({"title": "T", "author": "A", "license": "cc-by", "source": ""}, "vi", 2, "Hook?", "fantasy", marks, "Song")
     assert "TITLE IDEAS" in kit and "Phần 2" in kit and "0:15 B" in kit and "Credit:" in kit and "PINNED COMMENT" in kit
     assert all(len(l) <= 72 for l in kit.splitlines() if l.startswith("- "))
+
+
+# ---- story_tools
+def _strip(heights=(300, 300, 300), gap=40):
+    from PIL import Image, ImageDraw
+    w = 200
+    H = sum(heights) + gap * (len(heights) + 1)
+    im = Image.new("RGB", (w, H), "white")
+    d = ImageDraw.Draw(im)
+    y = gap
+    for k, h in enumerate(heights):
+        for r in range(0, h, 6):  # noisy content so rows are not flat
+            d.line([(0, y + r), (w, y + r)], fill=(30 + (r * 7 + k * 50) % 200, 80, 120 + r % 100), width=3)
+        y += h + gap
+    b = io.BytesIO(); im.save(b, "PNG"); return b.getvalue()
+
+def test_split_strip_cuts_at_gutters():
+    from utils import story_tools as st
+    from PIL import Image
+    parts = st.split_strip(_strip())
+    assert len(parts) == 3
+    assert all(abs(Image.open(io.BytesIO(p)).size[1] - 300) <= 12 for p in parts)
+
+def test_split_strip_no_gutter_only_cut_by_height():
+    from utils import story_tools as st
+    from PIL import Image
+    from PIL import ImageDraw
+    im = Image.new("RGB", (100, 1000), "white"); d = ImageDraw.Draw(im)
+    for r in range(0, 1000, 4):
+        d.line([(0, r), (100, r)], fill=(r % 255, 10, 200), width=2)
+    b = io.BytesIO(); im.save(b, "PNG")
+    parts = st.split_strip(b.getvalue())
+    assert len(parts) >= 5 and sum(Image.open(io.BytesIO(p)).size[1] for p in parts) == 1000
+
+def test_split_many_names_keep_order():
+    from utils import story_tools as st
+    out = st.split_many([("10.png", _strip((300, 300))), ("2.png", _strip((300,)))])
+    assert [n for n, _ in out] == ["001-001.png", "002-001.png", "002-002.png"]
+
+def test_recap_prompt_and_roundtrip():
+    from utils import story_tools as st
+    p = st.recap_prompt(["Hello", ""], "My story", "en")
+    assert "Panel 1: Hello" in p and "Panel 2: (no text" in p and "cliffhanger" in p
+    assert story.parse_script("Panel 1: a\nPanel 2: b", 2) == ["a", "b"]
+
+def test_ocr_clean_and_missing_engine_message():
+    from utils import story_tools as st
+    assert st.clean_ocr("a   b\n\n\nc ") == "a b\nc"
+    if not st.ocr_engine():
+        with pytest.raises(RuntimeError):
+            st.ocr_image(png())
