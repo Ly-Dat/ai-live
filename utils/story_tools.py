@@ -165,19 +165,24 @@ def _source_language(texts: List[str]) -> str:
 
 
 def recap_prompt(texts: List[str], title: str = "", lang: str = "vi", style: str = "dramatic",
-                 max_chars: int = 220, mode: str = "faithful") -> str:
+                 max_chars: int = 220, mode: str = "faithful", start: int = 1, context: str = "", glossary: str = "") -> str:
     """A prompt to paste into any chat AI: it gets the text found in each panel and writes one narration per panel.
     mode "faithful" (default): translate / read the panel's own lines, in order, adding nothing - what a viewer expects when
     the video should tell what the pictures say. mode "recap": retell it in your own words (shorter, more storyteller).
     The answer goes back through story.parse_script ('Panel N: ...'), then you edit it in step 3."""
     language = "Vietnamese" if lang == "vi" else "English"
-    body = "\n".join(f"Panel {i + 1}: {t.strip() or '(no text)'}" for i, t in enumerate(texts))
+    body = "\n".join(f"Panel {start + i}: {t.strip() or '(no text)'}" for i, t in enumerate(texts))
     name = f' "{title}"' if title else ""
     src = _source_language(texts)
     src_line = f"The text is in {src}: translate it into {language}. " if src else ""
-    fmt = ("Answer with exactly this format and nothing else:\nPanel 1: ...\nPanel 2: ...\n"
+    fmt = (f"Answer with exactly this format and nothing else:\nPanel {start}: ...\nPanel {start + 1}: ...\n"
            "(one line per panel, same numbers as below)\n\n")
-    tail = f"--- PANEL TEXT ---\n{body}"
+    extra = ""
+    if glossary.strip():
+        extra += "Names and terms - always write them exactly like this, in every panel:\n" + glossary.strip() + "\n\n"
+    if context.strip():
+        extra += "Story so far (already narrated - continue from it, never repeat it):\n" + context.strip() + "\n\n"
+    tail = extra + f"--- PANEL TEXT ---\n{body}"
     if mode == "recap":
         return (
             f"You are a narrator for short story-recap videos{name}.\n"
@@ -212,6 +217,109 @@ def recap_prompt(texts: List[str], title: str = "", lang: str = "vi", style: str
 
 
 # ------------------------------------------------------------------ the AI's answer
+def parse_numbered(text: str) -> dict:
+    """{panel number: narration} from a reply with 'Panel N: ...' lines (tolerates markdown, bullets, 'Panel N -', multi-line)."""
+    t = re.sub(r"[*_`#]+", "", (text or "").replace("\r\n", "\n"))
+    parts = re.split(r"(?im)^\s*(?:[-\u2022]\s*)?panel\s*#?\s*(\d+)\s*[:.\-\u2013\u2014)]\s*", t)
+    out = {}
+    for k in range(1, len(parts) - 1, 2):
+        body = re.sub(r"\s+", " ", parts[k + 1]).strip()
+        out[int(parts[k])] = "" if body.lower() in _EMPTY else body
+    return out
+
+
+def write_narration(texts: List[str], llm_fn: Callable[[str], str], title: str = "", lang: str = "vi", style: str = "dramatic",
+                    mode: str = "faithful", glossary: str = "", batch: int = 8, max_chars: int = 220,
+                    progress: Optional[Callable[[int, int, str], None]] = None,
+                    cancel: Optional[Callable[[], bool]] = None) -> Tuple[List[str], List[int]]:
+    """The AI writes the narration for every panel. Works with small local models too: panels go in batches of `batch`,
+    each batch sees the last narrated lines (so the story and the names stay consistent), a batch whose answer misses
+    panels is asked once more for just those. Returns (narrations, missing_panel_numbers)."""
+    n = len(texts)
+    out: List[str] = [""] * n
+    missing: List[int] = []
+    batches = [list(range(i, min(n, i + batch))) for i in range(0, n, batch)]
+    for bi, idx in enumerate(batches):
+        if cancel and cancel():
+            raise RuntimeError("Cancelled.")
+        if progress:
+            progress(bi, len(batches), f"AI is writing panels {idx[0] + 1}-{idx[-1] + 1} of {n}")
+        ctx = "\n".join(f"Panel {j + 1}: {out[j]}" for j in range(max(0, idx[0] - 3), idx[0]) if out[j])
+        want = list(idx)
+        got: dict = {}
+        for attempt in range(2):
+            contiguous = want == list(range(want[0], want[-1] + 1))
+            first = want[0] + 1 if contiguous else 1   # a retry of scattered panels is numbered 1..k, mapped back below
+            prompt = recap_prompt([texts[j] for j in want], title, lang, style, max_chars, mode, start=first, context=ctx,
+                                  glossary=glossary)
+            reply = parse_numbered(llm_fn(prompt))
+            for k, j in enumerate(want):
+                key = first + k
+                if reply.get(key):
+                    got[j] = reply[key]
+                elif key in reply and mode == "faithful":
+                    got[j] = ""        # the AI said `-`: credits / no text -> silent panel, not a failure
+            want = [j for j in idx if j not in got]
+            if not want:
+                break
+        for j in idx:
+            if j in got:
+                out[j] = got[j]
+            else:
+                missing.append(j + 1)
+    if progress:
+        progress(len(batches), len(batches), "Done")
+    return out, missing
+
+
+POLISH = {
+    "shorter": "Make each narration shorter and punchier, but keep every important fact.",
+    "dramatic": "Make the narration more dramatic and gripping for a storyteller voice, without adding events.",
+    "funny": "Make the narration funnier and more playful, without changing what happens.",
+    "simple": "Use simpler, everyday spoken words, short sentences. Fix grammar and awkward phrasing.",
+    "natural": "Make it sound like a natural native speaker talking, not a translation. Keep the meaning exactly.",
+}
+
+
+def polish_prompt(narrations: List[str], instruction: str, lang: str = "vi", start: int = 1, glossary: str = "") -> str:
+    language = "Vietnamese" if lang == "vi" else "English"
+    body = "\n".join(f"Panel {start + i}: {t.strip() or '-'}" for i, t in enumerate(narrations))
+    names = ("Names and terms - keep them exactly:\n" + glossary.strip() + "\n\n") if glossary.strip() else ""
+    return (f"Below is the narration of a picture story, one line per panel, in {language}. Rewrite every line. {instruction}\n"
+            "Rules: keep the same number of lines and the same panel numbers; never merge or drop a panel; a panel that is `-` stays `-`; "
+            "do not add events, names or explanations; it will be read aloud.\n"
+            f"Answer with exactly this format and nothing else:\nPanel {start}: ...\n\n{names}{body}")
+
+
+def polish_narration(narrations: List[str], llm_fn: Callable[[str], str], instruction: str, lang: str = "vi", glossary: str = "",
+                     batch: int = 10, progress: Optional[Callable[[int, int, str], None]] = None,
+                     cancel: Optional[Callable[[], bool]] = None) -> Tuple[List[str], List[int]]:
+    """Rewrite existing narration with the AI (shorter / funnier / more natural ...). A panel the AI did not answer keeps
+    its old text. Returns (new_texts, panels_left_unchanged)."""
+    n = len(narrations)
+    out = list(narrations)
+    kept: List[int] = []
+    batches = [list(range(i, min(n, i + batch))) for i in range(0, n, batch)]
+    for bi, idx in enumerate(batches):
+        if cancel and cancel():
+            raise RuntimeError("Cancelled.")
+        if progress:
+            progress(bi, len(batches), f"AI is polishing panels {idx[0] + 1}-{idx[-1] + 1} of {n}")
+        todo = [j for j in idx if narrations[j].strip()]
+        if not todo:
+            continue
+        reply = parse_numbered(llm_fn(polish_prompt([narrations[j] for j in todo], instruction, lang, 1, glossary)))
+        for k, j in enumerate(todo):
+            new = reply.get(k + 1)
+            if new:
+                out[j] = new
+            else:
+                kept.append(j + 1)
+    if progress:
+        progress(len(batches), len(batches), "Done")
+    return out, kept
+
+
 def ask_llm(url: str, chat_type: str, prompt: str, timeout: float = 240.0) -> str:
     """Ask the app's own AI (main.py POST /llm -> the model chosen in Settings) and return its reply text."""
     import json

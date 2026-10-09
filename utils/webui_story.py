@@ -272,6 +272,29 @@ def build_story_tab(config):
                 story.delete_story(meta["id"])
                 sel["story"] = ""
                 library.refresh()
+            polish_sel = ui.select({"natural": "Sound natural (fix translation feel)", "shorter": "Shorter and punchier", "dramatic": "More dramatic",
+                                    "funny": "Funnier", "simple": "Simpler words"}, value="natural", label="Improve all narration with the AI").classes("w-80")
+
+            async def polish():
+                cur = [b.value or "" for b in boxes]
+                if not any(x.strip() for x in cur):
+                    ui.notify("Nothing to improve yet.", type="warning")
+                    return
+                ui.notify("The app's AI is rewriting ... you can undo with Reload.", type="info")
+                names = ref["names"].value if ref.get("names") else ""
+                try:
+                    new, kept = await run.io_bound(story_tools.polish_narration, cur, ask_llm, story_tools.POLISH[polish_sel.value],
+                                                   "vi" if (ref.get("lang_sel") is None) else ref["lang_sel"].value, names or "")
+                except Exception as ex:
+                    ui.notify(str(ex), type="negative")
+                    return
+                for b, t in zip(boxes, new):
+                    b.value = t
+                ui.notify("Done - read it, then press Save narration." + (f" Unchanged panels: {', '.join(map(str, kept))}." if kept else ""),
+                          type="warning" if kept else "positive")
+            with ui.row().classes("items-end").style("gap:10px;margin-top:10px"):
+                ui.button("Improve with the AI", icon="auto_fix_high", on_click=polish).props("outline no-caps")
+                ui.button("Reload", icon="undo", on_click=lambda: library.refresh()).props("flat no-caps")
             with ui.row().style("gap:10px;margin-top:10px"):
                 ui.button("Save narration", icon="save", on_click=save).props("color=primary no-caps")
                 ui.button("Delete this story", icon="delete", on_click=delete).props("flat no-caps color=negative")
@@ -288,24 +311,29 @@ def build_story_tab(config):
             ui.label(hint).classes("lv-chip bad")
         with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
             o_lang = ui.select({"vi": "Narration in Vietnamese", "en": "Narration in English"}, value="vi").classes("w-56")
+            ref["lang_sel"] = o_lang
             o_ocr = ui.select({"vie+eng": "Text in pictures: Vietnamese + English", "eng": "English", "chi_sim+eng": "Chinese + English"},
                               value="vie+eng", label="OCR language (Tesseract only)").classes("w-72")
             o_mode = ui.select({"faithful": "Read what the panels say (translate, nothing added)", "recap": "Recap in my own words (shorter)"},
                                value="faithful", label="Narration").classes("w-80")
             o_style = ui.select(["dramatic", "funny", "sweet", "scary", "mysterious"], value="dramatic", label="Style (recap only)").classes("w-48")
+        o_names = ui.textarea("Names to keep (optional, one per line: original = what to write, e.g. 林风 = Lâm Phong)").classes("w-full").props("rows=2")
+        ref["names"] = o_names
         o_text = ui.textarea("Text found in the panels (editable)").classes("w-full").props("rows=6")
         o_prompt = ui.textarea("Prompt to copy").classes("w-full").props("rows=5 readonly")
         o_answer = ui.textarea("Paste the AI's answer here").classes("w-full").props("rows=5")
         o_bar = ui.linear_progress(value=0, show_value=False).classes("w-full")
-        ui.timer(0.5, lambda: setattr(o_bar, "value", ocr_prog["a"] / max(1, ocr_prog["b"])))
+        o_msg = ui.label("").classes("lv-sub")
+        ui.timer(0.5, lambda: (setattr(o_bar, "value", ocr_prog["a"] / max(1, ocr_prog["b"])), setattr(o_msg, "text", ocr_prog.get("msg", ""))))
 
         def refresh_prompt(*_):
             meta = story.get_story(sel["story"])
             if not meta or not (o_text.value or "").strip():
                 return
             texts = story.parse_script(o_text.value, len(meta["panels"]))
-            o_prompt.value = story_tools.recap_prompt(texts, meta["title"], o_lang.value, o_style.value, mode=o_mode.value)
-        for el in (o_lang, o_mode, o_style):
+            o_prompt.value = story_tools.recap_prompt(texts, meta["title"], o_lang.value, o_style.value, mode=o_mode.value,
+                                                      glossary=o_names.value or "")
+        for el in (o_lang, o_mode, o_style, o_names):
             el.on_value_change(refresh_prompt)
 
         async def read_text():
@@ -347,18 +375,32 @@ def build_story_tab(config):
             ui.button("Use the AI's answer", icon="edit_note", on_click=apply_answer).props("outline no-caps")
 
             async def ai_write():
+                if ocr_prog["busy"]:
+                    return
                 if not (o_text.value or "").strip():
                     await read_text()
                     if not (o_text.value or "").strip():
                         return
-                refresh_prompt()
-                ui.notify("Asking the app's AI ... this can take a minute.", type="info")
+                meta = story.get_story(sel["story"])
+                texts = story.parse_script(o_text.value, len(meta["panels"]))
+                ocr_prog.update(busy=True, a=0, b=1, msg="Asking the app's AI ...")
                 try:
-                    o_answer.value = await run.io_bound(ask_llm, o_prompt.value)
+                    outs, missing = await run.io_bound(
+                        story_tools.write_narration, texts, ask_llm, meta["title"], o_lang.value, o_style.value, o_mode.value,
+                        o_names.value or "", 8, 220, lambda a, b, m: ocr_prog.update(a=a, b=b, msg=m))
                 except Exception as ex:
+                    ocr_prog.update(busy=False, msg="")
                     ui.notify(str(ex), type="negative")
                     return
-                apply_answer()
+                ocr_prog.update(busy=False, msg="")
+                if not any(outs):
+                    ui.notify("The AI gave no usable lines. Try again, or use a stronger model in Settings.", type="warning")
+                    return
+                story.set_texts(meta["id"], outs)
+                library.refresh()
+                ui.notify("Narration written for %d panels. Check and edit it in step 3, then Save." % (len(outs) - len(missing))
+                          + (f" Panels the AI skipped: {', '.join(map(str, missing))}." if missing else ""),
+                          type="warning" if missing else "positive")
             ui.button("Read + write it with the app's AI", icon="smart_toy", on_click=ai_write).props("color=primary no-caps")
 
     # ------------------------------------------------------------------ 4. live

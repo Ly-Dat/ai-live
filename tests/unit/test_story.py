@@ -282,3 +282,30 @@ def test_ask_llm_talks_to_the_app_endpoint():
     srv.shutdown()
     with pytest.raises(RuntimeError, match="Could not reach"):
         st.ask_llm("http://127.0.0.1:1/llm", "chatgpt", "x", timeout=2)
+
+
+def test_write_narration_batches_context_retry_and_dash():
+    import re
+    from utils import story_tools as st
+    calls = []
+
+    def fake(prompt):
+        calls.append(prompt)
+        nums = [int(x) for x in re.findall(r"(?m)^Panel (\d+): ", prompt.split("--- PANEL TEXT ---")[1])]
+        if len(calls) == 2:
+            nums = nums[:-1]                      # the AI forgets the last panel of batch 2
+        return "\n".join(f"**Panel {n}:** nói {n}" if n != 4 else f"- Panel {n} - -" for n in nums)
+    out, miss = st.write_narration([f"t{i}" for i in range(10)], fake, "T", "vi", "dramatic", "faithful", "A = B", batch=4)
+    assert out == ["nói 1", "nói 2", "nói 3", "", "nói 5", "nói 6", "nói 7", "nói 8", "nói 9", "nói 10"] and miss == []
+    assert len(calls) == 4 and "A = B" in calls[0] and "Story so far" not in calls[0]
+    assert "Panel 3: nói 3" in calls[1] and "Panel 5: t4" in calls[1].split("--- PANEL TEXT ---")[1]
+    out2, miss2 = st.write_narration(["a", "b"], lambda p: "nothing useful", batch=8)
+    assert out2 == ["", ""] and miss2 == [1, 2]
+
+
+def test_polish_keeps_old_text_when_ai_skips_a_panel():
+    from utils import story_tools as st
+    out, kept = st.polish_narration(["một", "", "ba"], lambda p: "Panel 1: MỘT", st.POLISH["shorter"])
+    assert out == ["MỘT", "", "ba"] and kept == [3]
+    assert "Panel 1: một" in st.polish_prompt(["một"], "x") and "Panel 7: -" in st.polish_prompt(["-"], "x", start=7)
+    assert st.parse_numbered("Panel 1: a\nb\n\nPanel 2. c\n- panel 3 - -") == {1: "a b", 2: "c", 3: ""}
