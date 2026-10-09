@@ -243,7 +243,12 @@ def test_split_many_names_keep_order():
 def test_recap_prompt_and_roundtrip():
     from utils import story_tools as st
     p = st.recap_prompt(["Hello", ""], "My story", "en")
-    assert "Panel 1: Hello" in p and "Panel 2: (no text" in p and "cliffhanger" in p
+    assert "Panel 1: Hello" in p and "Panel 2: (no text" in p and "Be faithful" in p and "cliffhanger" not in p
+    r = st.recap_prompt(["Hello", ""], "My story", "en", mode="recap")
+    assert "cliffhanger" in r and "Be faithful" not in r
+    zh = st.recap_prompt(["你看这样", "好的"], "", "vi")
+    assert "The text is in Chinese: translate it into Vietnamese" in zh and "Do NOT summarise" in zh
+    assert "in Chinese" not in st.recap_prompt(["xin chào"], "", "vi")
     assert story.parse_script("Panel 1: a\nPanel 2: b", 2) == ["a", "b"]
 
 def test_ocr_clean_and_missing_engine_message():

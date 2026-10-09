@@ -260,12 +260,23 @@ def build_story_tab(config):
             o_lang = ui.select({"vi": "Narration in Vietnamese", "en": "Narration in English"}, value="vi").classes("w-56")
             o_ocr = ui.select({"vie+eng": "Text in pictures: Vietnamese + English", "eng": "English", "chi_sim+eng": "Chinese + English"},
                               value="vie+eng", label="OCR language (Tesseract only)").classes("w-72")
-            o_style = ui.select(["dramatic", "funny", "sweet", "scary", "mysterious"], value="dramatic", label="Style").classes("w-40")
+            o_mode = ui.select({"faithful": "Read what the panels say (translate, nothing added)", "recap": "Recap in my own words (shorter)"},
+                               value="faithful", label="Narration").classes("w-80")
+            o_style = ui.select(["dramatic", "funny", "sweet", "scary", "mysterious"], value="dramatic", label="Style (recap only)").classes("w-48")
         o_text = ui.textarea("Text found in the panels (editable)").classes("w-full").props("rows=6")
         o_prompt = ui.textarea("Prompt to copy").classes("w-full").props("rows=5 readonly")
         o_answer = ui.textarea("Paste the AI's answer here").classes("w-full").props("rows=5")
         o_bar = ui.linear_progress(value=0, show_value=False).classes("w-full")
         ui.timer(0.5, lambda: setattr(o_bar, "value", ocr_prog["a"] / max(1, ocr_prog["b"])))
+
+        def refresh_prompt(*_):
+            meta = story.get_story(sel["story"])
+            if not meta or not (o_text.value or "").strip():
+                return
+            texts = story.parse_script(o_text.value, len(meta["panels"]))
+            o_prompt.value = story_tools.recap_prompt(texts, meta["title"], o_lang.value, o_style.value, mode=o_mode.value)
+        for el in (o_lang, o_mode, o_style):
+            el.on_value_change(refresh_prompt)
 
         async def read_text():
             meta = story.get_story(sel["story"])
@@ -285,7 +296,7 @@ def build_story_tab(config):
                 return
             ocr_prog["busy"] = False
             o_text.value = "\n\n".join(f"Panel {i + 1}: {t}" for i, t in enumerate(texts))
-            o_prompt.value = story_tools.recap_prompt(texts, meta["title"], o_lang.value, o_style.value)
+            refresh_prompt()
             ui.notify(f"Read {len(texts)} panels. Copy the prompt into a chat AI.", type="positive")
 
         def apply_answer():
