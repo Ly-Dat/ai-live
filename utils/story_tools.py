@@ -218,14 +218,33 @@ def recap_prompt(texts: List[str], title: str = "", lang: str = "vi", style: str
 
 # ------------------------------------------------------------------ the AI's answer
 def parse_numbered(text: str) -> dict:
-    """{panel number: narration} from a reply with 'Panel N: ...' lines (tolerates markdown, bullets, 'Panel N -', multi-line)."""
+    """{panel number: narration} from a reply with 'Panel N: ...' markers. Tolerates markdown, bullets, 'Panel N -', multi-line
+    answers and small models that put several panels on ONE line."""
     t = re.sub(r"[*_`#]+", "", (text or "").replace("\r\n", "\n"))
-    parts = re.split(r"(?im)^\s*(?:[-\u2022]\s*)?panel\s*#?\s*(\d+)\s*[:.\-\u2013\u2014)]\s*", t)
+    marks = list(re.finditer(r"(?im)(?:^|(?<=[\s.!?\"\u201d]))(?:[-\u2022]\s*)?panel\s*#?\s*(\d+)\s*[:.\-\u2013\u2014)]\s*", t))
     out = {}
-    for k in range(1, len(parts) - 1, 2):
-        body = re.sub(r"\s+", " ", parts[k + 1]).strip()
-        out[int(parts[k])] = "" if body.lower() in _EMPTY else body
+    for k, m in enumerate(marks):
+        end = marks[k + 1].start() if k + 1 < len(marks) else len(t)
+        body = re.sub(r"\s+", " ", t[m.end():end]).strip()
+        out.setdefault(int(m.group(1)), "" if body.lower() in _EMPTY else body)
     return out
+
+
+CREDIT_RE = re.compile(
+    r"(?i)(ch\u1ee7 b\u00fat|bi\u00ean k\u1ecbch|bi\u00ean t\u1eadp|h\u1ecda s\u0129|t\u00e1c gi\u1ea3|nh\u00f3m d\u1ecbch|d\u1ecbch gi\u1ea3|th\u1ef1c hi\u1ec7n|"
+    r"assistant|staff|translator|translation|editor|scanlat|cleaner|typesetter|proofread|raw provider|writer\s*:|artist\s*:|"
+    r"\u51fa\u54c1|\u7f16\u5267|\u4e3b\u7b14|\u5236\u4f5c|\u52a9\u624b|\u539f\u8457|\u76d1\u5236|\u7f16\u8f91|\u8363\u8a89\u51fa\u54c1|\u6f2b\u753b\u5bb6|"
+    r"copyright|all rights reserved|follow us|join (our )?discord|read (more )?at|www\.|\.com\b|https?://)")
+
+
+def looks_like_credits(text: str) -> bool:
+    """True for a title card / staff page: at least 2 credit markers (or 1 on a very short text), so story panels are never dropped
+    by one stray word like 'writer'."""
+    t = (text or "").strip()
+    if not t:
+        return False
+    hits = len(CREDIT_RE.findall(t))
+    return hits >= 2 or (hits == 1 and len(t) < 60)
 
 
 def write_narration(texts: List[str], llm_fn: Callable[[str], str], title: str = "", lang: str = "vi", style: str = "dramatic",
@@ -238,7 +257,9 @@ def write_narration(texts: List[str], llm_fn: Callable[[str], str], title: str =
     n = len(texts)
     out: List[str] = [""] * n
     missing: List[int] = []
-    batches = [list(range(i, min(n, i + batch))) for i in range(0, n, batch)]
+    credits = {i for i, t in enumerate(texts) if looks_like_credits(t)}      # title cards / staff pages stay silent, no AI call
+    batches = [[j for j in range(i, min(n, i + batch)) if j not in credits] for i in range(0, n, batch)]
+    batches = [b for b in batches if b]
     for bi, idx in enumerate(batches):
         if cancel and cancel():
             raise RuntimeError("Cancelled.")

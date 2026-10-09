@@ -11,7 +11,7 @@ import time
 
 from nicegui import app, run, ui
 
-from . import music, novel, setup_wizard, story, story_tools, story_video, voice_catalog
+from . import music, novel, setup_wizard, story, story_llm, story_tools, story_video, story_writer, voice_catalog
 from .webui_novel import VOICES, _tour_running
 from .webui_theme import page_title
 
@@ -62,17 +62,57 @@ def build_story_tab(config):
                                "followers. Only your own pictures and text, public domain, CC, or with permission.")
     api_port = config.get("api_port") or 8082
     llm_url = f"http://127.0.0.1:{api_port}/llm"
+    ai = {"model": ""}
+
+    def _app_llm(prompt: str) -> str:
+        return story_tools.ask_llm(llm_url, config.get("chat_type"), prompt)
+
+    def make_fn(temperature: float = 0.9):
+        """The AI from Settings. OpenAI-compatible servers (OpenAI, Ollama, LM Studio ...) are called directly, no Start Run needed."""
+        return story_llm.make_llm(config, ai["model"], "", temperature, app_llm=_app_llm)
 
     def ask_llm(prompt: str) -> str:
-        """The app's own AI (the one chosen in Settings, local or online) writes the answer: no copy-paste to another site."""
-        return story_tools.ask_llm(llm_url, config.get("chat_type"), prompt)
+        return make_fn(0.9)(prompt)
+
+    def ask_exact(prompt: str) -> str:   # translating / polishing: stay close to the text
+        return make_fn(0.3)(prompt)
     ref = {}
     sel = {"story": ""}
     ctl0 = story.read_control()
     s0 = ctl0["settings"]
 
-    # ------------------------------------------------------------------ 1. plot
+    # ------------------------------------------------------------------ AI connection
     with _card(True):
+        _h("The AI that writes for you",
+           "Uses the AI from Settings. A local model (Ollama, LM Studio) or OpenAI works right here, you do NOT need to press Start Run. "
+           "Bigger models write much better stories: a 7B+ model is the minimum for good Vietnamese.")
+        with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
+            ai_sel = ui.select([], label="AI model", with_input=True, new_value_mode="add-unique").classes("w-96")
+            ai_btn = ui.button("Check the AI", icon="wifi_tethering").props("outline no-caps")
+        ai_chip = ui.label("Not checked yet.").classes("lv-chip")
+
+        async def check_ai():
+            if str(config.get("chat_type")) != "chatgpt":
+                ai_chip.text = f"Provider \"{config.get('chat_type')}\" is used through the running app: press Start Run first."
+                ai_chip.classes(replace="lv-chip")
+                return
+            try:
+                names = await run.io_bound(story_llm.list_models, config)
+            except Exception as ex:
+                ai_chip.text = str(ex)
+                ai_chip.classes(replace="lv-chip bad")
+                return
+            cur = story_llm.endpoint(config)["model"]
+            ai_sel.set_options(names, value=(ai["model"] if ai["model"] in names else story_llm.best_model(names, cur) or None))
+            ai["model"] = ai_sel.value or ""
+            ai_chip.text = f"Connected: {len(names)} model(s). Using {ai['model'] or 'the model from Settings'}."
+            ai_chip.classes(replace="lv-chip good")
+        ai_btn.on_click(check_ai)
+        ai_sel.on_value_change(lambda e: ai.update(model=e.value or ""))
+        ui.timer(0.8, check_ai, once=True)
+
+    # ------------------------------------------------------------------ 1. plot
+    with _card():
         _h("1. Write the plot (free)",
            "Pick a genre and an idea. You get a ready prompt: paste it into any free chat AI, paste its answer back, and the panels are "
            "filled for you. Every popular story channel uses this loop: hook, 10-15 panels, a cliffhanger, \"part 2\".")
@@ -83,6 +123,51 @@ def build_story_tab(config):
             n_panels = ui.number("Panels", value=12, min=4, max=40, format="%.0f").classes("w-28")
             hook = ui.switch("Start with a hook", value=True)
         premise = ui.input("Idea (one sentence, optional)", placeholder="A shy girl finds a door in her school that opens at midnight").classes("w-full")
+        wprog = {"a": 0, "b": 1, "msg": "", "busy": False, "cancel": False}
+        last = {}
+        wbar = ui.linear_progress(value=0, show_value=False).classes("w-full")
+        wmsg = ui.label("").classes("lv-sub")
+        ui.timer(0.5, lambda: (setattr(wbar, "value", wprog["a"] / max(1, wprog["b"])), setattr(wmsg, "text", wprog["msg"])))
+        bible_box = ui.textarea("Story bible (names, looks, secret) - paste the looks into your image AI so every picture matches").classes("w-full").props("rows=6")
+        hook_sel = ui.select([], label="Other hook lines - pick one to replace the opening").classes("w-full")
+
+        async def write_whole():
+            if wprog["busy"]:
+                return
+            wprog.update(busy=True, a=0, b=1, msg="Starting ...", cancel=False)
+            try:
+                res = await run.io_bound(story_writer.write_story, premise.value or "", make_fn(0.9), genre.value, tone.value, lang.value,
+                                         int(n_panels.value or 12), True, True,
+                                         lambda a, b, m: wprog.update(a=a, b=b, msg=m), lambda: wprog["cancel"])
+            except Exception as ex:
+                wprog.update(busy=False, msg="")
+                ui.notify(str(ex), type="negative")
+                return
+            wprog.update(busy=False, msg="Done.")
+            last["res"] = res
+            ref["script"].value = story.plot_to_script(res["plot"])
+            pics_box.value = story.plot_to_picture_list(res["plot"])
+            bible_box.value = story_writer.bible_text(res["bible"])
+            if res["title"] and not (ref["title"].value or "").strip():
+                ref["title"].value = res["title"]
+            hook_sel.set_options(res["hooks"], value=None)
+            warn = f" The AI skipped panels {', '.join(map(str, res['missing']))} - write them or run it again." if res["missing"] else ""
+            ui.notify(f'"{res["title"]}": {len(res["plot"])} panels written.{warn} Read them in step 2, then add one picture per panel.',
+                      type="warning" if res["missing"] else "positive")
+
+        def pick_hook(e):
+            res = last.get("res")
+            if not res or not e.value:
+                return
+            res["plot"][0]["narration"] = e.value
+            ref["script"].value = story.plot_to_script(res["plot"])
+        hook_sel.on_value_change(pick_hook)
+        with ui.row().style("gap:10px"):
+            ui.button("Write the whole story with the AI", icon="auto_stories", on_click=write_whole).props("color=primary no-caps")
+            ui.button("Stop", icon="close", on_click=lambda: wprog.update(cancel=True)).props("flat no-caps")
+        ui.label("It works like a writers' room: characters and twist first, then the beats, then the panels one beat at a time, then an edit "
+                 "pass and hook ideas. It takes a few minutes on a local model.").classes("lv-sub")
+        ui.label("Or do it by hand with any chat AI:").classes("lv-sub").style("margin-top:10px")
         prompt_box = ui.textarea("Prompt to copy").classes("w-full").props("rows=5 readonly")
 
         def make_prompt():
@@ -112,7 +197,7 @@ def build_story_tab(config):
                 ui.notify(str(ex), type="negative")
                 return
             use_answer()
-        ui.button("Write it with the app's AI (no copy-paste)", icon="smart_toy", on_click=ai_plot).props("color=primary no-caps")
+        ui.button("Quick version (one call)", icon="smart_toy", on_click=ai_plot).props("outline no-caps")
 
         ui.separator().style("margin:18px 0 10px")
         ui.label("Recap / review video (\"review truyen\")").classes("lv-sub").style("font-weight:600;margin:0")
@@ -164,6 +249,7 @@ def build_story_tab(config):
            "Narration: one paragraph per panel (blank line between), or \"Panel 3: ...\".")
         with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
             t_title = ui.input("Title").classes("w-64")
+            ref["title"] = t_title
             t_author = ui.input("Author / artist").classes("w-52")
             t_lic = ui.select(story.LICENSE_LABELS, label="Licence - may you use these pictures live?", value="own").classes("w-96")
             t_src = ui.input("Source link (optional)").classes("w-64")
@@ -283,7 +369,7 @@ def build_story_tab(config):
                 ui.notify("The app's AI is rewriting ... you can undo with Reload.", type="info")
                 names = ref["names"].value if ref.get("names") else ""
                 try:
-                    new, kept = await run.io_bound(story_tools.polish_narration, cur, ask_llm, story_tools.POLISH[polish_sel.value],
+                    new, kept = await run.io_bound(story_tools.polish_narration, cur, ask_exact, story_tools.POLISH[polish_sel.value],
                                                    "vi" if (ref.get("lang_sel") is None) else ref["lang_sel"].value, names or "")
                 except Exception as ex:
                     ui.notify(str(ex), type="negative")
@@ -386,7 +472,7 @@ def build_story_tab(config):
                 ocr_prog.update(busy=True, a=0, b=1, msg="Asking the app's AI ...")
                 try:
                     outs, missing = await run.io_bound(
-                        story_tools.write_narration, texts, ask_llm, meta["title"], o_lang.value, o_style.value, o_mode.value,
+                        story_tools.write_narration, texts, ask_exact, meta["title"], o_lang.value, o_style.value, o_mode.value,
                         o_names.value or "", 8, 220, lambda a, b, m: ocr_prog.update(a=a, b=b, msg=m))
                 except Exception as ex:
                     ocr_prog.update(busy=False, msg="")

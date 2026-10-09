@@ -309,3 +309,129 @@ def test_polish_keeps_old_text_when_ai_skips_a_panel():
     assert out == ["MỘT", "", "ba"] and kept == [3]
     assert "Panel 1: một" in st.polish_prompt(["một"], "x") and "Panel 7: -" in st.polish_prompt(["-"], "x", start=7)
     assert st.parse_numbered("Panel 1: a\nb\n\nPanel 2. c\n- panel 3 - -") == {1: "a b", 2: "c", 3: ""}
+
+
+# ---------------------------------------------------------------- direct AI + story writer
+def _fake_openai(models=("qwen2.5:7b",), reply=lambda body: "Panel 1: ok"):
+    import json, threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    seen = []
+
+    class H(BaseHTTPRequestHandler):
+        def _send(self, code, obj):
+            b = json.dumps(obj).encode(); self.send_response(code); self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b)
+        def do_GET(self):
+            seen.append(("GET", self.path, self.headers.get("Authorization")))
+            self._send(200, {"data": [{"id": m} for m in models]})
+        def do_POST(self):
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            seen.append(("POST", self.path, body))
+            if body["model"] == "missing":
+                return self._send(404, {"error": "model not found"})
+            self._send(200, {"choices": [{"message": {"content": reply(body)}}]})
+        def log_message(self, *a): pass
+    srv = HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    return srv, seen
+
+
+def test_story_llm_direct_without_start_run():
+    from utils import story_llm as L
+    srv, seen = _fake_openai(reply=lambda b: "<think>plan</think>\n```\nPanel 1: Xin chào\n```")
+    cfg = {"chat_type": "chatgpt", "openai": {"api": f"http://127.0.0.1:{srv.server_port}/v1", "api_key": ["k"]}, "chatgpt": {"model": "qwen2.5:7b"}}
+    assert L.list_models(cfg) == ["qwen2.5:7b"] and seen[0][2] == "Bearer k"
+    assert L.make_llm(cfg, temperature=0.3)("hi") == "Panel 1: Xin chào"
+    assert seen[-1][2]["temperature"] == 0.3 and seen[-1][2]["model"] == "qwen2.5:7b" and seen[-1][2]["stream"] is False
+    assert L.make_llm(cfg, model="other")("x") and seen[-1][2]["model"] == "other"
+    with pytest.raises(RuntimeError, match="404"):
+        L.chat(cfg, "x", model="missing")
+    # another provider goes through the running app
+    cfg2 = dict(cfg, chat_type="gemini")
+    assert L.make_llm(cfg2, app_llm=lambda p: "<think>x</think>via app")("p") == "via app"
+    srv.shutdown()
+    with pytest.raises(RuntimeError, match="Cannot reach"):
+        L.list_models({"openai": {"api": "http://127.0.0.1:1/v1"}}, timeout=2)
+
+
+def test_parse_numbered_single_line_and_credit_cards():
+    from utils import story_tools as st
+    assert st.parse_numbered("Panel 1: Một. Panel 2: Hai. Panel 3: - Panel 4: Bốn") == {1: "Một.", 2: "Hai.", 3: "", 4: "Bốn"}
+    assert st.looks_like_credits("Pháp Sư Mo DKKT: Chủ bút: Bốn Trực Thần Chi Assistant: Yusheng")
+    assert st.looks_like_credits("出品 主笔 编剧") and not st.looks_like_credits("Cô ấy là writer giỏi nhất thành phố, ai cũng biết.")
+    calls = []
+    out, miss = st.write_narration(["Chủ bút: A Assistant: B", "Xin chào"], lambda p: calls.append(p) or "Panel 2: Hello", batch=8)
+    assert out == ["", "Hello"] and miss == [] and "Chủ bút" not in calls[0].split("--- PANEL TEXT ---")[1]
+
+
+def _scripted_writer():
+    """A fake writers' room that answers each stage in the format the prompts ask for."""
+    import re
+    log = []
+
+    def llm(prompt):
+        log.append(prompt)
+        if prompt.startswith("You are the head writer"):
+            return ("TITLE: Cánh cửa lúc nửa đêm\nLOGLINE: Một thợ sửa khóa muốn tìm em gái nhưng cánh cửa đòi một ký ức.\n"
+                    "HERO: Minh | 29 | gầy, áo khoác xanh, sẹo ở mày | hay nói dối | tìm em gái\nOTHER: Lan | chủ tiệm | tóc bạc | giữ chìa khóa\n"
+                    "WORLD: Sài Gòn, mùa mưa.\nSECRET: Minh mới là người đã khóa em gái lại.\nTHEME: nỗi sợ quên đi lỗi lầm")
+        if "Plan the story panel by panel" in prompt:
+            return "\n".join(f"BEAT {n}: chuyện {n} xảy ra" for n in re.findall(r"(?m)^BEAT (.+?) \(panels", prompt))
+        if prompt.startswith("You are writing panels"):
+            first, last = map(int, re.search(r"panels (\d+)-(\d+) of", prompt).groups())
+            return "\n\n".join(f"PANEL {k}\nPICTURE: Minh áo xanh cảnh {k}\nNARRATION: Câu chuyện {k}. Hết." for k in range(first, last + 1))
+        if "Edit like a sharp story editor" in prompt:
+            return "\n".join(f"Panel {k}: Viết lại {k}" for k in range(1, 40) if f"Panel {k}:" in prompt)
+        if "opening hook lines" in prompt:
+            return "1. Cánh cửa mở lúc nửa đêm, và tôi nghe tiếng mình gọi.\n2. Tôi đã khóa em gái mình lại.\n3. Bạn sẽ đổi gì để quên một lỗi lầm?"
+        raise AssertionError(prompt[:80])
+    return llm, log
+
+
+def test_story_writer_pipeline():
+    from utils import story_writer as w
+    llm, log = _scripted_writer()
+    steps = []
+    res = w.write_story("thợ khóa tìm em gái", llm, "mystery", "scary", "vi", 10, progress=lambda a, b, m: steps.append(m))
+    assert res["title"] == "Cánh cửa lúc nửa đêm" and len(res["plot"]) == 10 and res["missing"] == [] and res["polished"]
+    assert all(p["picture"] and p["narration"].startswith("Viết lại") for p in res["plot"])
+    assert len(res["hooks"]) == 3 and steps[0].startswith("Inventing") and steps[-1] == "Done"
+    writes = [p for p in log if p.startswith("You are writing panels")]
+    assert len(writes) == 7 and "HOOK" in writes[0] and "no 'once upon a time'" in writes[0]
+    assert "cliffhanger" in writes[-1] and "STORY BIBLE" in writes[1] and "Câu chuyện 1" in writes[1]     # continuity
+    assert "Minh | 29" in writes[3]
+
+
+def test_story_writer_retries_short_answers_and_survives_polish_failure():
+    from utils import story_writer as w
+    llm, log = _scripted_writer()
+
+    def flaky(prompt):
+        if prompt.startswith("You are writing panels") and "panels 4-6" in prompt and not any("panels 6-6" in p or "panels 5-6" in p for p in log):
+            log.append(prompt)
+            return "PANEL 4\nPICTURE: a\nNARRATION: chỉ một panel"
+        if "Edit like a sharp story editor" in prompt:
+            raise RuntimeError("model crashed")
+        return llm(prompt)
+    res = w.write_story("x", flaky, "fantasy", "dramatic", "vi", 12)
+    assert len(res["plot"]) == 12 and res["missing"] == [] and not res["polished"]
+    assert w.allocate(12) == w.allocate(12) and sum(c for *_, c in w.allocate(33)) == 33 and sum(c for *_, c in w.allocate(3)) == 7
+    with pytest.raises(RuntimeError, match="story bible"):
+        w.write_story("x", lambda p: "nonsense", panels=8)
+
+
+def test_story_writer_parsers():
+    from utils import story_writer as w
+    b = w.parse_bible("**TITLE:** A\n- LOGLINE: x\ny continues\nHERO: Minh | 29")
+    assert b["TITLE"] == "A" and b["LOGLINE"] == "x y continues" and b["HERO"].startswith("Minh")
+    plan = w.allocate(8)
+    out = w.parse_outline("BEAT HOOK: một\nBEAT TWIST + CLIFFHANGER (panels 7-8): hai", plan)
+    assert out[0] == "một" and out[-1] == "hai" and out[1] == plan[1][1]
+    assert w.parse_hooks("1. Câu hook đầu tiên khá dài.\n2) Câu thứ hai cũng ổn.\nrác\n3: ngắn") == ["Câu hook đầu tiên khá dài.", "Câu thứ hai cũng ổn."]
+
+
+def test_best_model_prefers_settings_then_biggest_chat_model():
+    from utils.story_llm import best_model
+    names = ["nomic-embed-text:latest", "llama3.2:3b", "qwen2.5:14b-instruct", "qwen2.5:7b", "llama3.1:70b"]
+    assert best_model(names, "qwen2.5:7b") == "qwen2.5:7b"
+    assert best_model(names, "gpt-3.5-turbo") == "qwen2.5:14b-instruct"
+    assert best_model(["nomic-embed-text"], "") == "nomic-embed-text" and best_model([], "") == ""
