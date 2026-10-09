@@ -130,6 +130,10 @@ def build_story_tab(config):
         ui.timer(0.5, lambda: (setattr(wbar, "value", wprog["a"] / max(1, wprog["b"])), setattr(wmsg, "text", wprog["msg"])))
         bible_box = ui.textarea("Story bible (names, looks, secret) - paste the looks into your image AI so every picture matches").classes("w-full").props("rows=6")
         hook_sel = ui.select([], label="Other hook lines - pick one to replace the opening").classes("w-full")
+        notes_box = ui.textarea("Writer's notes (ideas considered, plot holes found, panels rewritten, part 2 pitch)").classes("w-full").props("rows=5 readonly")
+        with ui.row().style("gap:18px;flex-wrap:wrap"):
+            sw_concepts = ui.switch("Pitch 3 ideas and keep the freshest", value=True)
+            sw_check = ui.switch("Check the plot and fix weak panels (slower, better)", value=True)
 
         async def write_whole():
             if wprog["busy"]:
@@ -138,7 +142,8 @@ def build_story_tab(config):
             try:
                 res = await run.io_bound(story_writer.write_story, premise.value or "", make_fn(0.9), genre.value, tone.value, lang.value,
                                          int(n_panels.value or 12), True, True,
-                                         lambda a, b, m: wprog.update(a=a, b=b, msg=m), lambda: wprog["cancel"])
+                                         lambda a, b, m: wprog.update(a=a, b=b, msg=m), lambda: wprog["cancel"], make_fn,
+                                         bool(sw_concepts.value), bool(sw_check.value))
             except Exception as ex:
                 wprog.update(busy=False, msg="")
                 ui.notify(str(ex), type="negative")
@@ -151,6 +156,17 @@ def build_story_tab(config):
             if res["title"] and not (ref["title"].value or "").strip():
                 ref["title"].value = res["title"]
             hook_sel.set_options(res["hooks"], value=None)
+            notes = []
+            if res["concepts"]:
+                notes.append("Ideas pitched:\n" + "\n".join(f"{'>> ' if c == res['chosen'] else '   '}{c}" for c in res["concepts"]))
+            if res["problems"]:
+                notes.append("Plot holes found in the outline (fixed):\n" + "\n".join("- " + x for x in res["problems"]))
+            if res["issues"]:
+                notes.append("Weak spots found:\n" + "\n".join(f"- panel {i['panel']}: {i['reason']}" for i in res["issues"][:12])
+                             + (f"\nRewritten: panels {', '.join(map(str, res['fixed']))}" if res["fixed"] else ""))
+            if res["part2"]:
+                notes.append("Part 2 pitch:\n" + res["part2"])
+            notes_box.value = "\n\n".join(notes)
             warn = f" The AI skipped panels {', '.join(map(str, res['missing']))} - write them or run it again." if res["missing"] else ""
             ui.notify(f'"{res["title"]}": {len(res["plot"])} panels written.{warn} Read them in step 2, then add one picture per panel.',
                       type="warning" if res["missing"] else "positive")

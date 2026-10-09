@@ -363,26 +363,48 @@ def test_parse_numbered_single_line_and_credit_cards():
     assert out == ["", "Hello"] and miss == [] and "Chủ bút" not in calls[0].split("--- PANEL TEXT ---")[1]
 
 
-def _scripted_writer():
+def _line(k):
+    """A panel text with unique words (no repeated openers / phrases) that names the hero."""
+    return " ".join(f"tu{k}x{j}" if j != 5 else "Minh" for j in range(11))
+
+
+def _scripted_writer(outline_answer="OK", audit_answer="OK"):
     """A fake writers' room that answers each stage in the format the prompts ask for."""
     import re
     log = []
 
     def llm(prompt):
         log.append(prompt)
+        if prompt.startswith("You are a story editor at a hit"):
+            return ("CONCEPT 1: Một thợ khóa muốn tìm em gái | TWIST: anh đã khóa em lại\nCONCEPT 2: Một cô lao công nghe tiếng gõ | TWIST: là chính cô\n"
+                    "CONCEPT 3: Một đứa trẻ giữ chìa khóa của tòa nhà | TWIST: tòa nhà là một con tàu")
+        if prompt.startswith("You are the editorial director"):
+            return "Số 2 là mạnh nhất."
         if prompt.startswith("You are the head writer"):
             return ("TITLE: Cánh cửa lúc nửa đêm\nLOGLINE: Một thợ sửa khóa muốn tìm em gái nhưng cánh cửa đòi một ký ức.\n"
                     "HERO: Minh | 29 | gầy, áo khoác xanh, sẹo ở mày | hay nói dối | tìm em gái\nOTHER: Lan | chủ tiệm | tóc bạc | giữ chìa khóa\n"
-                    "WORLD: Sài Gòn, mùa mưa.\nSECRET: Minh mới là người đã khóa em gái lại.\nTHEME: nỗi sợ quên đi lỗi lầm")
+                    "WORLD: Sài Gòn, mùa mưa.\nSTAKES: Em gái biến mất vĩnh viễn trước bình minh.\nSECRET: Minh mới là người đã khóa em gái lại.\n"
+                    "CLUES: chìa khóa ấm; tiếng gõ ba nhịp; vết sơn mới\nMOTIF: tiếng gõ ba nhịp\nVOICE: Minh nhìn lại, khàn và thành thật\n"
+                    "THEME: nỗi sợ quên đi lỗi lầm")
         if "Plan the story panel by panel" in prompt:
-            return "\n".join(f"BEAT {n}: chuyện {n} xảy ra" for n in re.findall(r"(?m)^BEAT (.+?) \(panels", prompt))
+            return "\n".join(f"BEAT {n}: chuyện {n} xảy ra [clue 1]" for n in re.findall(r"(?m)^BEAT (.+?) \(panels", prompt))
+        if prompt.startswith("You are a continuity editor. Read the story bible and the outline"):
+            return outline_answer
+        if prompt.startswith("You are a continuity editor. Read the finished narration"):
+            return audit_answer
         if prompt.startswith("You are writing panels"):
             first, last = map(int, re.search(r"panels (\d+)-(\d+) of", prompt).groups())
-            return "\n\n".join(f"PANEL {k}\nPICTURE: Minh áo xanh cảnh {k}\nNARRATION: Câu chuyện {k}. Hết." for k in range(first, last + 1))
+            return "\n\n".join(f"PANEL {k}\nPICTURE: Minh áo xanh cảnh {k}\nNARRATION: nháp {k}." for k in range(first, last + 1))
         if "Edit like a sharp story editor" in prompt:
-            return "\n".join(f"Panel {k}: Viết lại {k}" for k in range(1, 40) if f"Panel {k}:" in prompt)
+            return "\n".join(f"Panel {k}: {_line(k)}" for k in range(1, 40) if f"Panel {k}:" in prompt)
+        if prompt.startswith("Rewrite ONE panel"):
+            return "Panel 9: Minh đẩy cánh cửa, ngửi mùi sơn còn ướt và nhận ra mình đã đứng đúng chỗ này một lần."
         if "opening hook lines" in prompt:
             return "1. Cánh cửa mở lúc nửa đêm, và tôi nghe tiếng mình gọi.\n2. Tôi đã khóa em gái mình lại.\n3. Bạn sẽ đổi gì để quên một lỗi lầm?"
+        if prompt.startswith("Story bible:") and "Pitch part 2" in prompt:
+            return "Tiếng gõ không dừng. Minh phải mở cánh cửa cuối. Và Lan không phải người giữ chìa."
+        if "Rewrite the whole outline" in prompt:
+            return "\n".join(f"BEAT {n}: chuyện {n} đã sửa" for n in re.findall(r"(?m)^BEAT (.+?):", prompt.split("nothing else:")[1]))
         raise AssertionError(prompt[:80])
     return llm, log
 
@@ -391,14 +413,38 @@ def test_story_writer_pipeline():
     from utils import story_writer as w
     llm, log = _scripted_writer()
     steps = []
-    res = w.write_story("thợ khóa tìm em gái", llm, "mystery", "scary", "vi", 10, progress=lambda a, b, m: steps.append(m))
+    temps = []
+    res = w.write_story("thợ khóa tìm em gái", llm, "mystery", "scary", "vi", 10, progress=lambda a, b, m: steps.append((a, b, m)),
+                        llm_for=lambda t: (temps.append(t), llm)[1])
     assert res["title"] == "Cánh cửa lúc nửa đêm" and len(res["plot"]) == 10 and res["missing"] == [] and res["polished"]
-    assert all(p["picture"] and p["narration"].startswith("Viết lại") for p in res["plot"])
-    assert len(res["hooks"]) == 3 and steps[0].startswith("Inventing") and steps[-1] == "Done"
+    assert res["chosen"].startswith("Một cô lao công") and len(res["concepts"]) == 3 and res["problems"] == [] and res["fixed"] == []
+    assert all(p["picture"] and p["narration"] == _line(i) for i, p in enumerate(res["plot"], 1))
+    assert len(res["hooks"]) == 3 and res["part2"].startswith("Tiếng gõ") and steps[0][2].startswith("Pitching") and steps[-1][2] == "Done"
+    assert all(a <= b for a, b, _ in steps) and max(a for a, _, _ in steps[:-1]) < steps[0][1]
+    assert min(temps) <= 0.2 and max(temps) >= 1.0                       # careful editing, wild idea stages
     writes = [p for p in log if p.startswith("You are writing panels")]
     assert len(writes) == 7 and "HOOK" in writes[0] and "no 'once upon a time'" in writes[0]
-    assert "cliffhanger" in writes[-1] and "STORY BIBLE" in writes[1] and "Câu chuyện 1" in writes[1]     # continuity
-    assert "Minh | 29" in writes[3]
+    assert "cliffhanger" in writes[-1] and "STORY BIBLE" in writes[1] and "nháp 1." in writes[1]               # continuity
+    assert "Minh | 29" in writes[3] and "continue directly from the last panel" in writes[1] and "Keep the narrator's voice" in writes[1]
+    assert "MOTIF: tiếng gõ ba nhịp" in writes[2] and "recurring" not in writes[1]
+    bible_p = next(p for p in log if p.startswith("You are the head writer"))
+    assert "lao công" in bible_p                                          # the picked concept feeds the bible
+
+
+def test_story_writer_fixes_plot_holes_and_weak_panels():
+    from utils import story_writer as w
+    llm, log = _scripted_writer(outline_answer="PROBLEM: BEAT RISING - Minh biết chìa khóa ở đâu mà chưa ai nói.",
+                                audit_answer="Panel 4: Lan xuất hiện mà chưa được giới thiệu\nPanel 99: bỏ qua")
+    res = w.write_story("x", llm, "mystery", "scary", "vi", 8, polish=False)
+    assert res["problems"] and "Minh biết chìa khóa" in res["problems"][0]
+    assert any("Rewrite the whole outline" in p for p in log) and all("đã sửa" in o for o in res["outline"])
+    # draft panels are 3 words -> flagged 'too short' by the local checks, the audit adds panel 4; each is rewritten once
+    assert 4 in res["fixed"] and all(1 <= k <= 8 for k in res["fixed"])
+    assert res["plot"][3]["narration"].startswith("Minh đẩy cánh cửa")
+    assert sum(1 for p in log if p.startswith("Rewrite ONE panel")) == len(res["fixed"])
+    llm2, log2 = _scripted_writer()
+    res2 = w.write_story("x", llm2, panels=8, polish=True, check=False, concepts=False, hooks=False)
+    assert not any(p.startswith(("You are a continuity", "Rewrite ONE", "You are a story editor")) for p in log2) and res2["fixed"] == []
 
 
 def test_story_writer_retries_short_answers_and_survives_polish_failure():
@@ -412,11 +458,49 @@ def test_story_writer_retries_short_answers_and_survives_polish_failure():
         if "Edit like a sharp story editor" in prompt:
             raise RuntimeError("model crashed")
         return llm(prompt)
-    res = w.write_story("x", flaky, "fantasy", "dramatic", "vi", 12)
+    res = w.write_story("x", flaky, "fantasy", "dramatic", "vi", 12, check=False)
     assert len(res["plot"]) == 12 and res["missing"] == [] and not res["polished"]
     assert w.allocate(12) == w.allocate(12) and sum(c for *_, c in w.allocate(33)) == 33 and sum(c for *_, c in w.allocate(3)) == 7
     with pytest.raises(RuntimeError, match="story bible"):
         w.write_story("x", lambda p: "nonsense", panels=8)
+
+
+def test_quality_report_flags_weak_panels_without_an_ai():
+    from utils import story_writer as w
+    bible = {"HERO": "Minh | 29 | gầy | nói dối | tìm em"}
+    plot = [{"narration": n} for n in [
+        "Minh mở cánh cửa gỗ cũ kỹ và nghe tiếng bản lề rít lên giữa căn nhà vắng lặng như tờ lúc nửa đêm.",
+        "Minh bỗng nhiên nhớ ra định mệnh của mình đã được viết sẵn từ rất lâu trước khi anh biết đọc chữ.",
+        "Ngắn quá.",
+        "Minh " + " ".join(f"từ{j}" for j in range(80)),
+        "Ánh đèn pin quét qua tường lộ ra vết sơn mới màu xanh rêu ở góc phòng phía sau tủ sách cũ kỹ ấy.",
+        "Ánh trăng đổ xuống sân gạch rêu phong còn Minh thì đứng yên nghe nhịp tim mình đập từng hồi chậm rãi.",
+        "Cô chủ tiệm gõ ba nhịp lên mặt bàn và nghe tiếng gõ ba nhịp lên mặt bàn vọng lại từ tầng hầm sâu.",
+        "Tiếng gõ ba nhịp lên mặt bàn lại vang lên, lần này nhanh hơn, như thể ai đó dưới kia đang rất sốt ruột.",
+        "Anh gõ ba nhịp lên mặt bàn để đáp lại, và cánh cửa tầng hầm hé ra một khe hẹp lạnh toát hơi nước.",
+    ]]
+    rep = w.quality_report(plot, bible, "vi")
+    why = {(i["panel"], i["reason"].split(" ")[0]) for i in rep["issues"]}
+    assert (3, "too") in why and (4, "too") in why and (6, "starts") in why          # short, long, repeated opener (Ánh / Ánh)
+    assert any(i["panel"] == 2 and "cliche" in i["reason"] for i in rep["issues"])
+    assert any(i["panel"] in (8, 9) and "repeats the phrase" in i["reason"] for i in rep["issues"])
+    assert rep["stats"]["panels"] == 9
+    few = [{"narration": "Cô ấy mở cửa bước vào căn phòng tối " + str(i) + " và đứng yên thật lâu nghe tiếng mưa."} for i in range(8)]
+    assert any("hero Minh is hardly named" in i["reason"] for i in w.quality_report(few, bible, "vi")["issues"])
+    assert not w.quality_report([{"narration": _line(i)} for i in range(1, 9)], bible)["issues"]
+
+
+def test_story_writer_new_parsers():
+    from utils import story_writer as w
+    cs = w.parse_concepts("**CONCEPT 1:** Một thợ khóa muốn tìm em gái | TWIST: x\nconcept 2 - Một cô lao công nghe tiếng gõ | TWIST: y\nrác")
+    assert len(cs) == 2 and cs[0].startswith("Một thợ khóa") and w.parse_pick("Số 2 là mạnh nhất", 3) == 1 and w.parse_pick("9", 3) == 0
+    assert w.parse_problems("OK") == [] and w.parse_problems("ok.") == []
+    assert w.parse_problems("PROBLEM: BEAT RISING - Minh biết chìa khóa ở đâu mà chưa ai nói.\nPROBLEM 2: stakes biến mất ở beat 5") != []
+    assert w.parse_audit("OK", 5) == [] and w.parse_audit("Panel 2: tên đổi từ Lan sang Lam\nPanel 8: x", 5) == [
+        {"panel": 2, "reason": "tên đổi từ Lan sang Lam"}]
+    bible = w.parse_bible("TITLE: A\nHERO: Minh | 29\nCLUES: a; b; c\nMOTIF: m\nVOICE: v\nSTAKES: s")
+    assert w.bible_text(bible).splitlines() == ["TITLE: A", "HERO: Minh | 29", "STAKES: s", "CLUES: a; b; c", "MOTIF: m", "VOICE: v"]
+    assert w.hero_name(bible) == "Minh"
 
 
 def test_story_writer_parsers():
