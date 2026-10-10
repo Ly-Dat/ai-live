@@ -50,3 +50,16 @@ Features borrowed from the popular web-novel sites and AI reading apps, all buil
 - **Reading stats**: listening minutes today / this week / total, chapters finished, day streak (`data/novel_stats.json`).
 
 The AI is the OpenAI-compatible one from Settings (Ollama, LM Studio, OpenAI): no Start Run needed for the AI itself, but viewer questions need the app running (Start Run) because the answer is spoken through it. A 7B+ model is recommended.
+
+## Novel writer (write a whole novel with the AI)
+
+Tab **Novel writer**. Built from two product briefs on what makes an AI story worth finishing and returning to: the AI works on a story system, not one big prompt.
+
+1. **Premise**: three distinct premises (hook, protagonist, goal, conflict, stakes, twist); pick and edit one.
+2. **Story bible**: characters (goal, fear, flaw, secret, voice, arc), world, rules the AI may never break, ending direction, and *threads* (clues, promises, mysteries with the chapter they are planted and paid off). Controls: point of view, tense, prose density, romance / violence level, "may add twists", things to never include, and a sample of your own writing to match your voice.
+3. **Outline**: one line per chapter with the turning point, hook type (question / decision / reveal / reversal / threat / emotion) and the threads it plants and pays off. Edit it freely.
+4. **Chapters**: draft one chapter at a time from a compact context (canon, this chapter's plan, relevant characters, memory, open threads, the end of the last chapter), never the whole book. After each draft the story **memory** is updated (facts, who knows what, changes, new and paid threads). Checks without AI: length, repeated openers, cliches, pacing (dialogue share), the planned hook, unknown names, overdue threads, reveals paid before they are planted. Optional AI **continuity audit** (with quotes as evidence) and **reader review** (diagnosis only: curious, drop, unclear, predictable, unearned).
+5. **Revise with a diff**: pick a goal (tension, emotion, dialogue, motivation, pace, senses, hook, shorten, cliches) and a paragraph or the whole chapter, see the green / red diff, accept or reject. Every change is a version you can restore; approve a chapter to lock it. After a chapter the AI offers three consequential directions (or write your own) that the next chapter must follow.
+6. **Control room, resume card, export**: open threads / paid / overdue, everything the story remembers, a "where we left off" card with 2-4 next actions and a daily word goal. Download Markdown (optionally with the story bible) or **Publish to the Novel reader** (licence: your own work) so the host reads it on your live and the Companion answers viewers' questions without spoilers.
+
+Projects are private files in `data/novel_projects/`. Use a 7B+ model; bigger models write the bible and outline much better. Files: `utils/novel_writer.py`, `utils/webui_writer.py`.

@@ -3525,6 +3525,7 @@ def goto_func_page():
         teach_page = ui.tab('Teach')
         schedule_page = ui.tab('Schedule')
         novel_page = ui.tab('Novel reader')
+        writer_page = ui.tab('Novel writer')
         story_page = ui.tab('Story studio')
         talk_page = ui.tab('Chat')
         image_recognition_page = ui.tab('Image Recognition')
@@ -3549,7 +3550,7 @@ def goto_func_page():
 
     select_page = build_shell(tabs, [
         ("Studio", [("Home", "home", home_page), ("Setup", "rocket_launch", setup_page), ("Dashboard", "insights", dashboard_page),
-                    ("Teach", "school", teach_page), ("Schedule", "event", schedule_page), ("Live tools", "bolt", tools_page), ("Novel reader", "menu_book", novel_page), ("Story studio", "auto_stories", story_page), ("Products", "shopping_bag", products_page)]),
+                    ("Teach", "school", teach_page), ("Schedule", "event", schedule_page), ("Live tools", "bolt", tools_page), ("Novel reader", "menu_book", novel_page), ("Novel writer", "edit", writer_page), ("Story studio", "auto_stories", story_page), ("Products", "shopping_bag", products_page)]),
         ("Host", [("Voice", "record_voice_over", voice_page), ("AI model", "psychology", llm_page),
                   ("Text-to-Speech", "graphic_eq", tts_page), ("Virtual body", "face", visual_body_page),
                   ("Copywriting", "edit_note", copywriting_page), ("Chat", "forum", talk_page),
@@ -6198,6 +6199,9 @@ def goto_func_page():
         with ui.tab_panel(novel_page).style(tab_panel_css):
             from utils.webui_novel import build_novel_tab
             build_novel_tab(config)
+        with ui.tab_panel(writer_page).style(tab_panel_css):
+            from utils.webui_writer import build_writer_tab
+            build_writer_tab(config)
         with ui.tab_panel(story_page).style(tab_panel_css):
             from utils.webui_story import build_story_tab
             build_story_tab(config)
