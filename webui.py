@@ -3560,9 +3560,20 @@ def goto_func_page():
         bridge = _PM.running("bridge")
         engine = config.get("audio_synthesis_type") or "edge-tts"
         voice_txt = {"edge-tts": "Voice: Edge", "vieneu": "Voice: VieNeu"}.get(engine, f"Voice: {engine}")
+        try:   # how fast the AI answers (main.py saves these numbers; see the AI engine tab)
+            from utils import engine_stats as _es
+            _d = _es.load()
+            _l = ((_d.get("stats") or {}).get("llm") or {})
+            if _l.get("calls") and time.time() - float(_d.get("at") or 0) < 900:
+                _slow = _l["p50_ms"] >= 4000
+                ai = (f"AI {_l['p50_ms'] / 1000:.1f} s" + (" slow" if _slow else ""), (not _slow) and _l["fail_rate"] < 0.3)
+            else:
+                ai = ("AI idle", False)
+        except Exception:
+            ai = ("AI idle", False)
         return {"app": ("Streamer online" if api_ok else "Streamer offline", api_ok),
                 "bridge": ("LIVE" if bridge else "Not live", bridge),
-                "voice": (voice_txt, True)}
+                "voice": (voice_txt, True), "ai": ai}
 
     select_page = build_shell(tabs, [
         ("Studio", [("Home", "home", home_page), ("Setup", "rocket_launch", setup_page), ("Dashboard", "insights", dashboard_page),

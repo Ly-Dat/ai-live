@@ -278,6 +278,7 @@ def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark
                 "app": _pill("Streamer offline"),
                 "bridge": _pill("Not live"),
                 "voice": _pill("Voice: edge-tts"),
+                "ai": _pill("AI idle"),
             }
         theme_switch(dark)
 
