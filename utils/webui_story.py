@@ -317,13 +317,15 @@ def build_story_tab(config):
             preview.refresh()
         up = ui.upload(label="Panel pictures (several at once, or a .zip)", on_upload=on_upload, multiple=True,
                        auto_upload=True).props("accept=.png,.jpg,.jpeg,.webp,.zip flat dense").classes("w-full")
-        url_box = ui.textarea("...or paste a list of picture links (a JSON list [\"https://...\", ...] or one link per line)").classes("w-full").props("rows=4")
+        url_box = ui.textarea("...or paste picture links, one per line (quotes and commas are fine, no [ ] needed)").classes("w-full").props("rows=4")
         url_lbl = ui.label("").classes("lv-sub").style("white-space:pre-line")
 
         async def load_links():
             urls = story.parse_url_list(url_box.value)
             if not urls:
-                ui.notify("No http(s) links found.", type="warning")
+                raw = (url_box.value or "").strip()
+                ui.notify(f"No picture links found in what was pasted ({len(raw)} characters"
+                          + (f": {raw[:50]!r}" if raw else ", the box is empty - paste the links first") + "). A link looks like https://site.com/1.jpg", type="warning")
                 return
             url_lbl.text = f"Downloading {len(urls)} picture(s) ..."
             pics, bad = await run.io_bound(story.fetch_images, urls)
@@ -421,6 +423,14 @@ def build_story_tab(config):
                 story.delete_story(meta["id"])
                 sel["story"] = ""
                 library.refresh()
+            def drop_blank():
+                story.set_texts(meta["id"], [b.value or "" for b in boxes])
+                gone = story.remove_blank_panels(meta["id"], level=int(blank_lvl.value or 2))
+                if gone:
+                    ui.notify("Removed blank panel(s): " + ", ".join(map(str, gone)) + ".", type="positive")
+                else:
+                    ui.notify("No blank panels found at this sensitivity. Try a higher one (Very light too).", type="info")
+                library.refresh()
             polish_sel = ui.select({"natural": "Sound natural (fix translation feel)", "shorter": "Shorter and punchier", "dramatic": "More dramatic",
                                     "funny": "Funnier", "simple": "Simpler words"}, value="natural", label="Improve all narration with the AI").classes("w-80")
 
@@ -444,6 +454,9 @@ def build_story_tab(config):
             with ui.row().classes("items-end").style("gap:10px;margin-top:10px"):
                 ui.button("Improve with the AI", icon="auto_fix_high", on_click=polish).props("outline no-caps")
                 ui.button("Reload", icon="undo", on_click=lambda: library.refresh()).props("flat no-caps")
+                blank_lvl = ui.select({1: "Pure white only", 2: "Almost white (recommended)", 3: "Very light too (may remove panels with only a few dots)"}, value=2,
+                                      label="Blank panel sensitivity").classes("w-72")
+                ui.button("Remove blank panels", icon="layers_clear", on_click=drop_blank).props("outline no-caps")
             with ui.row().style("gap:10px;margin-top:10px"):
                 ui.button("Save narration", icon="save", on_click=save).props("color=primary no-caps")
                 ui.button("Delete this story", icon="delete", on_click=delete).props("flat no-caps color=negative")
@@ -787,7 +800,7 @@ def build_story_tab(config):
             try:
                 results = await run.io_bound(lambda: story_video.build_parts(
                     panels, base, float(split_min.value or 0) * 60, int(part.value or 1), hook_in.value or "", outro_in.value or "",
-                    v_lang.value, progress, voice=v_voice2.value or "", tts=tts_fn, tts_workers=(1 if v_engine.value == "vieneu" else 3), rate=int(rate2.value or 0), title=m["title"],
+                    v_lang.value, progress, voice=v_voice2.value or "", tts=tts_fn, tts_workers=(2 if v_engine.value == "vieneu" else 4), rate=int(rate2.value or 0), title=m["title"],
                     music=os.path.join(music.MUSIC_DIR, mt["file"]) if mt else None, music_volume=(mvol.value or 12) / 100.0,
                     size=story_video.FORMATS.get(fmt.value, (1080, 1920)), cancel=lambda: prog["cancel"], motion=motion.value,
                     fade=bool(fade.value)))
@@ -813,8 +826,9 @@ def build_story_tab(config):
                         with ui.row().style("gap:8px"):
                             for key, label, icon in (("video", f'Video part {r["part"]} (.mp4)' if len(results) > 1 else "Video (.mp4)", "movie"),
                                                      ("srt", "Subtitles (.srt)", "subtitles"), ("cover", "Cover (.png)", "image")):
-                                ui.button(label, icon=icon, on_click=lambda p=r[key]: ui.download(f"/story-out/{os.path.basename(p)}")).props(
-                                    "outline no-caps")
+                                _fn = os.path.basename(r[key])
+                                # a plain browser link: exactly one download (no JavaScript pushed from the server)
+                                ui.button(label, icon=icon).props(f'outline no-caps href="/story-out/{_fn}" download="{_fn}"')
                 ui.label("Saved in " + os.path.abspath(OUT_DIR)).classes("lv-sub")
 
         thumb_in = ui.input("Thumbnail words (3-5 big words)", placeholder="CÔ GÁI VÀ CÁNH CỬA LÚC NỬA ĐÊM").classes("w-full")
@@ -836,7 +850,7 @@ def build_story_tab(config):
             thumb_res.clear()
             with thumb_res:
                 ui.image(f"/story-out/{name}").style("max-width:420px;border-radius:10px")
-                ui.button("Download thumbnail", icon="download", on_click=lambda: ui.download(f"/story-out/{name}")).props("outline no-caps")
+                ui.button("Download thumbnail", icon="download").props(f'outline no-caps href="/story-out/{name}" download="{name}"')
 
         with ui.row().style("gap:10px;margin-top:8px"):
             ui.button("Make the video", icon="movie_creation", on_click=make).props("color=primary no-caps")

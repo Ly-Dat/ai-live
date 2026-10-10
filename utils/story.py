@@ -82,9 +82,10 @@ def zip_images(data: bytes) -> List[Tuple[str, bytes]]:
 
 
 def parse_url_list(text: str) -> List[str]:
-    """Image links from pasted text: a JSON array ["https://...", ...], or one link per line / separated by spaces or commas.
-    Order is kept, duplicates dropped, only http(s) links."""
-    text = (text or "").strip()
+    """Image links from pasted text: a JSON array ["https://...", ...], or one link per line / separated by spaces or commas
+    (quotes, trailing commas and [ ] are fine). Also understands links copied from JSON (https:\\/\\/host\\/x), from page source
+    (&amp;), protocol-relative (//host/x.jpg) and bare ones (host.com/x.jpg). Order is kept, duplicates dropped."""
+    text = (text or "").strip().replace("&amp;", "&").replace("\\/", "/")
     urls: List[str] = []
     if text.startswith("["):
         try:
@@ -92,8 +93,12 @@ def parse_url_list(text: str) -> List[str]:
             urls = [str(u) for u in data if isinstance(u, str)]
         except ValueError:
             urls = []
+    stop = "\\s\"'\u201c\u201d\u2018\u2019<>,\\[\\]\\\\"
     if not urls:
-        urls = re.findall(r"https?://[^\s\"'<>,\[\]]+", text)
+        urls = re.findall(r"https?://[^" + stop + "]+", text)
+    if not urls:   # protocol-relative or bare host links
+        found = re.findall(r"(?:^|(?<=[" + stop + "]))((?://)?[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)+(?::\\d+)?/[^" + stop + "]+)", text)
+        urls = [("https:" + u) if u.startswith("//") else ("https://" + u) for u in found]
     seen, out = set(), []
     for u in (x.strip() for x in urls):
         if u.lower().startswith(("http://", "https://")) and u not in seen:
@@ -175,10 +180,76 @@ def thumb_data_uri(data: bytes, box: Tuple[int, int] = (192, 256)) -> str:
     except Exception:
         return ""
 
-def split_strip(data: bytes, name: str = "strip", min_h: int = 420, max_h: int = 1700, tol: int = 10, gutter: int = 16) -> List[Tuple[str, bytes]]:
+# How much counts as "blank". level: (flat-row contrast, white if brighter than, black if darker than, ink-rows allowed, minimum rows)
+BLANK_LEVELS = {1: (30, 215, 40, 0.012, 4),     # pure white / black, a thin line or speck is tolerated
+                2: (45, 200, 55, 0.03, 6),      # almost white: also soft smudges, watermarks, a few stray lines (default)
+                3: (70, 170, 85, 0.08, 10)}     # very light: also faint ghost drawings and fade-outs
+
+
+def _level(level) -> tuple:
+    try:
+        return BLANK_LEVELS[max(1, min(3, int(level)))]
+    except (TypeError, ValueError):
+        return BLANK_LEVELS[2]
+
+
+def _ink_rows(im, level: int = 2, aw: int = 200) -> Tuple[List[int], List[int]]:
+    """Per pixel row: ink[y] = 0 when the row is (almost) one flat white or black colour = nothing drawn, else 1; cnt[y] = how many
+    pixels of the row are drawn. Measured on a 200 px wide copy so even small text still counts as ink."""
+    from PIL import Image
+    tol, white, black, _, _ = _level(level)
+    g = im.convert("L")
+    W, H = g.size
+    data = g.resize((aw, H), getattr(Image, "Resampling", Image).BOX).tobytes()
+    ink, cnt = [], []
+    for y in range(H):
+        row = data[y * aw:(y + 1) * aw]
+        hi, lo = max(row), min(row)
+        mid = (hi + lo) / 2
+        if hi - lo <= tol and (mid >= white or mid <= black):
+            ink.append(0)
+            cnt.append(0)
+        else:
+            ink.append(1)
+            med = sorted(row)[aw // 2]
+            cnt.append(sum(1 for v in row if abs(v - med) > 35))
+    return ink, cnt
+
+
+SLIVER_H = 200     # a piece shorter than this (full-size pixels) is a sliver, not a real panel
+
+
+def _is_blank_rows(ink: List[int], cnt: List[int], a: int, b: int, level: int = 2, aw: int = 200) -> bool:
+    """A piece is blank when (almost) no row has anything on it: a few stray lines (a thin edge, a page number) do not count.
+    A thin sliver is also blank when only a few specks are drawn on it, however many rows they touch."""
+    _, _, _, frac, floor = _level(level)
+    n = b - a
+    if sum(ink[a:b]) <= max(floor, int(frac * n)):
+        return True
+    if n < SLIVER_H:
+        speck = {1: 0.005, 2: 0.012, 3: 0.03}[max(1, min(3, int(level)))]
+        return sum(cnt[a:b]) <= speck * aw * n
+    return False
+
+
+def is_blank_image(data: bytes, level: int = 2) -> bool:
+    """True for an empty white (or black) picture, also when it has only a faint smudge, a thin line, a watermark or a few specks."""
+    try:
+        from PIL import Image
+        im = Image.open(io.BytesIO(data)).convert("RGB")
+        ink, cnt = _ink_rows(im, level)
+        return _is_blank_rows(ink, cnt, 0, len(ink), level)
+    except Exception:
+        return False
+
+
+def split_strip(data: bytes, name: str = "strip", min_h: int = 420, max_h: int = 1700, tol: int = 10, gutter: int = 16,
+                drop_blank: bool = True, blank_level: int = 2) -> List[Tuple[str, bytes]]:
     """Cut one tall webtoon-style strip into panels at the empty bands (gutters) between them.
-    A band is a run of rows (>= `gutter` px at full size) where every pixel is almost the same colour. Pieces shorter than `min_h`
-    are merged into a neighbour; a piece taller than `max_h` with no gutter is cut at its calmest row."""
+    A band is a run of rows (>= `gutter` px at full size) where every pixel is almost the same colour. A normal narrow gutter is
+    cut in the middle; a tall EMPTY white/black band is thrown away (only ~24 px of it is kept around the picture), and pieces
+    that are blank are dropped (`drop_blank`). Pieces shorter than `min_h` are merged into a touching neighbour; a piece taller
+    than `max_h` with no gutter is cut at its calmest row."""
     try:
         from PIL import Image
     except Exception:
@@ -196,22 +267,35 @@ def split_strip(data: bytes, name: str = "strip", min_h: int = 420, max_h: int =
         row = [px[x, y] for x in range(aw)]
         rng.append(max(row) - min(row))
     quiet = [r <= tol for r in rng]
-    cuts, y = [], 0
+    ink, cnt = _ink_rows(im, blank_level) if drop_blank else ([1] * H, [10 ** 6] * H)
+    bands, y = [], 0
     while y < H:
         if quiet[y]:
             z = y
             while z < H and quiet[z]:
                 z += 1
             if z - y >= gutter:
-                cuts.append((y + z) // 2)
+                bands.append((y, z))
             y = z
         else:
             y += 1
-    bounds = [0] + [c for c in cuts if 0 < c < H] + [H]
-    parts = [(a, b) for a, b in zip(bounds, bounds[1:]) if b - a > 4]
+    keep = 24
+    parts, start = [], 0
+    for y, z in bands:
+        if drop_blank and z - y > 2 * keep and not any(ink[y:z]):   # a tall empty band: cut it out instead of halving it
+            parts.append((start, y + keep))
+            start = z - keep
+        else:
+            mid = (y + z) // 2
+            if 0 < mid < H:
+                parts.append((start, mid))
+                start = mid
+    parts.append((start, H))
+    parts = [(a, b) for a, b in parts if b - a > 4]
     merged: List[List[int]] = []
     for a, b in parts:
-        if merged and (b - a < min_h or merged[-1][1] - merged[-1][0] < min_h) and (b - merged[-1][0]) <= max_h:
+        if (merged and merged[-1][1] == a and (b - a < min_h or merged[-1][1] - merged[-1][0] < min_h)
+                and (b - merged[-1][0]) <= max_h):
             merged[-1][1] = b
         else:
             merged.append([a, b])
@@ -223,12 +307,56 @@ def split_strip(data: bytes, name: str = "strip", min_h: int = 420, max_h: int =
             final.append([a, c])
             a = c
         final.append([a, b])
+    if drop_blank:
+        kept = [[a, b] for a, b in final if not _is_blank_rows(ink, cnt, a, b, blank_level)]
+        final = kept or final
     out = []
     for i, (a, b) in enumerate(final):
         buf = io.BytesIO()
         im.crop((0, a, W, b)).save(buf, "PNG")
         out.append((f"{name}-{i + 1:03d}.png", buf.getvalue()))
     return out
+
+
+def remove_blank_panels(story_id: str, root: str = STORIES_DIR, level: int = 2) -> List[int]:
+    """Delete the empty white/black panels of a story that is already saved. The narration of a removed panel is not lost: it is
+    added to the previous picture (or to the next one if the blank panel was first). `level` 1..3 = how light a panel may be
+    and still count as blank. Returns the numbers (1, 2, 3 ... as shown in the list) of the removed panels."""
+    m = get_story(story_id, root)
+    if not m:
+        return []
+    folder = os.path.join(_folder(story_id, root), "panels")
+    flags = []
+    for p in m["panels"]:
+        try:
+            with open(os.path.join(folder, p["image"]), "rb") as f:
+                flags.append(is_blank_image(f.read(), level))
+        except OSError:
+            flags.append(False)
+    if not any(flags) or all(flags):
+        return []
+    new, carry, removed = [], "", []
+    for k, (p, blank) in enumerate(zip(m["panels"], flags), 1):
+        t = (p.get("text") or "").strip()
+        if blank:
+            if t:
+                if new:
+                    new[-1]["text"] = ((new[-1].get("text") or "").strip() + " " + t).strip()
+                else:
+                    carry = (carry + " " + t).strip()
+            try:
+                os.remove(os.path.join(folder, p["image"]))
+            except OSError:
+                pass
+            removed.append(k)
+        else:
+            if carry:
+                p["text"] = (carry + " " + t).strip()
+                carry = ""
+            new.append(p)
+    m["panels"] = new
+    save_story(m, root)
+    return removed
 
 
 def parse_script(text: str, n: int) -> List[str]:
