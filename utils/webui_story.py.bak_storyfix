@@ -74,11 +74,8 @@ def build_story_tab(config):
     def ask_llm(prompt: str) -> str:
         return make_fn(0.9)(prompt)
 
-    def ask_exact(prompt: str, images=None) -> str:   # translating / polishing: stay close to the text
-        return make_fn(0.3)(prompt, images)
-
-    def ask_expand(prompt: str, images=None) -> str:  # expanding the story: a bit more freedom
-        return make_fn(0.7)(prompt, images)
+    def ask_exact(prompt: str) -> str:   # translating / polishing: stay close to the text
+        return make_fn(0.3)(prompt)
     ref = {}
     sel = {"story": ""}
     ctl0 = story.read_control()
@@ -419,11 +416,9 @@ def build_story_tab(config):
             ref["lang_sel"] = o_lang
             o_ocr = ui.select({"vie+eng": "Text in pictures: Vietnamese + English", "eng": "English", "chi_sim+eng": "Chinese + English"},
                               value="vie+eng", label="OCR language (Tesseract only)").classes("w-72")
-            o_mode = ui.select({"faithful": "Read what the panels say (translate, nothing added)", "recap": "Recap in my own words (shorter)",
-                                "expand": "Tell it as a full story (longer, adds what the pictures show)"},
+            o_mode = ui.select({"faithful": "Read what the panels say (translate, nothing added)", "recap": "Recap in my own words (shorter)"},
                                value="faithful", label="Narration").classes("w-80")
-            o_style = ui.select(["dramatic", "funny", "sweet", "scary", "mysterious"], value="dramatic", label="Style (recap / full story)").classes("w-48")
-            o_vision = ui.checkbox("Send the pictures to the AI (needs a vision model, e.g. qwen2.5vl / llava / gpt-4o)", value=False)
+            o_style = ui.select(["dramatic", "funny", "sweet", "scary", "mysterious"], value="dramatic", label="Style (recap only)").classes("w-48")
         o_names = ui.textarea("Names to keep (optional, one per line: original = what to write, e.g. 林风 = Lâm Phong)").classes("w-full").props("rows=2")
         ref["names"] = o_names
         o_text = ui.textarea("Text found in the panels (editable)").classes("w-full").props("rows=6")
@@ -492,14 +487,9 @@ def build_story_tab(config):
                 texts = story.parse_script(o_text.value, len(meta["panels"]))
                 ocr_prog.update(busy=True, a=0, b=1, msg="Asking the app's AI ...")
                 try:
-                    expand = o_mode.value == "expand"
-                    imgs = ((lambda idx: [story_tools.panel_data_url(story.image_path(meta, j)) for j in idx])
-                            if (expand and o_vision.value) else None)
                     outs, missing = await run.io_bound(
-                        lambda: story_tools.write_narration(
-                            texts, ask_expand if expand else ask_exact, meta["title"], o_lang.value, o_style.value, o_mode.value,
-                            o_names.value or "", 8, 450 if expand else 220, lambda a, b, m: ocr_prog.update(a=a, b=b, msg=m),
-                            images_for=imgs))
+                        story_tools.write_narration, texts, ask_exact, meta["title"], o_lang.value, o_style.value, o_mode.value,
+                        o_names.value or "", 8, 220, lambda a, b, m: ocr_prog.update(a=a, b=b, msg=m))
                 except Exception as ex:
                     ocr_prog.update(busy=False, msg="")
                     ui.notify(str(ex), type="negative")

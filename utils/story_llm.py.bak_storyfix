@@ -16,12 +16,10 @@ DEFAULT_BASE = "http://127.0.0.1:11434/v1"
 
 
 def _cfg(config, key, default=None):
-    # config may be a plain dict or utils.config.Config, whose get(*keys) walks nested keys:
-    # get("chat_type", "chatgpt") would call .get on the string "chatgpt". Always pass ONE key.
     try:
+        v = config.get(key, default) if hasattr(config, "get") else default
+    except TypeError:
         v = config.get(key)
-    except Exception:
-        v = None
     return default if v is None else v
 
 
@@ -76,13 +74,11 @@ def clean_reply(text: str) -> str:
 
 
 def chat(config, prompt: str, model: str = "", system: str = "", temperature: float = 0.9, max_tokens: int = 4096,
-         timeout: float = 600.0, images: Optional[List[str]] = None) -> str:
+         timeout: float = 600.0) -> str:
     """One chat completion. Long timeout: local models are slow. Raises RuntimeError with a readable message."""
     ep = endpoint(config)
     model = model or ep["model"]
-    # images: data URLs; sent as OpenAI-style image_url parts (needs a vision model: qwen2.5vl, llava, gemma3, gpt-4o ...)
-    content = ([{"type": "text", "text": prompt}] + [{"type": "image_url", "image_url": {"url": u}} for u in images]) if images else prompt
-    msgs = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": content}]
+    msgs = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
     body = {"model": model, "messages": msgs, "temperature": temperature, "max_tokens": max_tokens, "stream": False}
     try:
         res = _http(ep["base"] + "/chat/completions", ep["key"], body, timeout)
@@ -106,10 +102,10 @@ def chat(config, prompt: str, model: str = "", system: str = "", temperature: fl
 
 
 def make_llm(config, model: str = "", system: str = "", temperature: float = 0.9, app_llm: Optional[Callable[[str], str]] = None,
-             progress_note: Optional[Callable[[str], None]] = None) -> Callable[..., str]:
+             progress_note: Optional[Callable[[str], None]] = None) -> Callable[[str], str]:
     """llm_fn(prompt) -> reply. chat_type 'chatgpt' (the OpenAI-compatible setting) goes direct, no Start Run needed;
     any other provider uses `app_llm` (the running app's /llm)."""
     ctype = str(_cfg(config, "chat_type", "chatgpt"))
     if ctype == "chatgpt" or app_llm is None:
-        return lambda prompt, images=None: chat(config, prompt, model, system, temperature, images=images)
-    return lambda prompt, images=None: clean_reply(app_llm(prompt))   # the running app's /llm is text-only
+        return lambda prompt: chat(config, prompt, model, system, temperature)
+    return lambda prompt: clean_reply(app_llm(prompt))

@@ -216,27 +216,6 @@ Nếu phát hiện lỗi, hãy sửa trước khi xuất kết quả cuối cùn
 # <<VI_FAITHFUL_END>>
 
 
-# <<VI_EXPAND_BEGIN>>
-VI_EXPAND = """Bạn là người dẫn truyện cho video kể chuyện tranh{name}. Dưới đây là chữ OCR của từng panel. {seen}Hãy viết MỘT đoạn lời dẫn tiếng Việt cho mỗi panel, giọng kể cuốn hút, tự nhiên, dễ đọc thành tiếng (voice-over). Phong cách: {style}.
-
-QUY TẮC
-
-1. Mỗi panel đúng một dòng `Panel N:`, đúng số thứ tự, không gộp, không bỏ sót panel nào. Panel nào cũng phải có lời dẫn để đọc; chỉ ghi `-` cho panel chỉ có logo hoặc danh sách nhân sự sản xuất (chủ bút, trợ lý, họa sĩ, biên tập...).
-2. Panel có chữ: dịch đầy đủ ý nghĩa (cả tiếng Trung lẫn tiếng Anh, sửa lỗi OCR hiển nhiên), giữ đúng ai nói gì, rồi làm phong phú thêm bằng những gì ảnh cho thấy: bối cảnh, hành động, biểu cảm, cảm giác nguy hiểm.
-3. Câu bị ngắt giữa hai panel liên tiếp (ví dụ tiêu đề bị cắt đôi): ghép thành câu trọn vẹn khi đọc. Panel đầu kết thúc bằng "…", panel sau mở đầu bằng "…".
-4. Thông tin giới thiệu, bản quyền, nền tảng, tác giả, nhà xuất bản: đọc lại ngắn gọn, tự nhiên trong một đến hai câu, không liệt kê khô khan.
-5. Panel không có chữ: nếu nhìn thấy ảnh thì kể 2-3 câu về điều đang diễn ra trong ảnh (bối cảnh, hành động, cảm xúc, nguy hiểm) và nối tiếp mạch của panel trước, không lặp lại. Nếu không nhìn thấy ảnh thì viết 1-2 câu nối mạch dựa trên các panel xung quanh, không thêm sự kiện mới.
-6. Mỗi panel 2-3 câu, tối đa {max_chars} ký tự. Panel đầu tiên của truyện là lời mở đầu thu hút người xem; panel cuối cùng kết bằng một câu gợi sự tò mò.
-7. Không bịa tên nhân vật, sức mạnh, địa danh hay sự kiện mà chữ và ảnh không cho thấy. Giữ tên riêng và thuật ngữ nhất quán.
-8. Không thêm tiêu đề, giải thích, nhận xét hay Markdown. Chỉ xuất kết quả theo định dạng:
-
-Panel {p1}: ...
-Panel {p2}: ...
-Panel {p3}: ...
-(tiếp tục cho đến panel cuối cùng, mỗi panel một dòng)"""
-# <<VI_EXPAND_END>>
-
-
 def panel_data_url(path: str, max_side: int = 896) -> str:
     """A panel picture as a small JPEG data URL, to send to a vision model."""
     import base64
@@ -269,13 +248,6 @@ def recap_prompt(texts: List[str], title: str = "", lang: str = "vi", style: str
     if context.strip():
         extra += "Story so far (already narrated - continue from it, never repeat it):\n" + context.strip() + "\n\n"
     tail = extra + f"--- PANEL TEXT ---\n{body}"
-    if mode == "expand" and lang == "vi":
-        seen = (f"{len(texts)} ảnh của các panel được đính kèm theo đúng thứ tự (ảnh đầu tiên là Panel {start}); hãy nhìn ảnh. "
-                if has_images else "Bạn không nhìn thấy ảnh, chỉ có chữ OCR. ")
-        style_vi = {"dramatic": "kịch tính", "funny": "hài hước", "sweet": "ngọt ngào", "scary": "rùng rợn", "mysterious": "bí ẩn"}
-        return (VI_EXPAND.replace("{name}", name).replace("{seen}", seen).replace("{style}", style_vi.get(style, style))
-                .replace("{max_chars}", str(max_chars)).replace("{p1}", str(start)).replace("{p2}", str(start + 1))
-                .replace("{p3}", str(start + 2)) + "\n\n" + tail)
     if mode == "expand":
         seen = (f"The {len(texts)} picture(s) are attached in the same order (first picture = Panel {start}); look at them. "
                 if has_images else "You cannot see the pictures, only the text. ")
@@ -374,8 +346,7 @@ def write_narration(texts: List[str], llm_fn: Callable[[str], str], title: str =
         batch = min(batch, 3)       # pictures are heavy for a local vision model: few panels per request
     out: List[str] = [""] * n
     missing: List[int] = []
-    # title cards / staff pages stay silent (no AI call), except in "expand" mode where the AI decides (it may answer `-`)
-    credits = set() if mode == "expand" else {i for i, t in enumerate(texts) if looks_like_credits(t)}
+    credits = {i for i, t in enumerate(texts) if looks_like_credits(t)}      # title cards / staff pages stay silent, no AI call
     batches = [[j for j in range(i, min(n, i + batch)) if j not in credits] for i in range(0, n, batch)]
     batches = [b for b in batches if b]
     for bi, idx in enumerate(batches):
@@ -396,7 +367,7 @@ def write_narration(texts: List[str], llm_fn: Callable[[str], str], title: str =
                 key = first + k
                 if reply.get(key):
                     got[j] = reply[key]
-                elif key in reply and mode in ("faithful", "expand"):
+                elif key in reply and mode == "faithful":
                     got[j] = ""        # the AI said `-`: credits / no text -> silent panel, not a failure
             want = [j for j in idx if j not in got]
             if not want:
