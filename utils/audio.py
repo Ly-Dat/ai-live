@@ -1399,6 +1399,12 @@ class Audio:
                         self.common.write_content_to_file(captions_config["file_path"], data_json["content"], write_log=False)
 
 
+                    try:   # the on-stream avatar moves its mouth and shows a caption in time with this line
+                        from utils import speaking
+                        speaking.say(data_json["content"], voice_tmp_path)
+                    except Exception:
+                        pass
+
                     # Check whether to send to the web subtitle printer
                     if self.config.get("web_captions_printer", "enable"):
                         await self.common.send_to_web_captions_printer(self.config.get("web_captions_printer", "api_ip_port"), data_json)

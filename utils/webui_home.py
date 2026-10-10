@@ -111,8 +111,19 @@ def build_home_tab(config, go):
                     nop = sum(1 for p in data.get("products", []) if p.get("active", True) and not p.get("price"))
                 except Exception:
                     pass
+                extra = {}
+                try:
+                    from . import avatar, avatar_roster, host_control, engine_stats
+                    av = avatar.load_settings()
+                    ch = avatar.active_character(av)
+                    ls = ((engine_stats.load() or {}).get("stats") or {}).get("llm") or {}
+                    extra = {"avatar_enabled": av["enabled"], "avatar_ready": bool(ch and "idle" in avatar_roster.drawn(ch["id"], ch["look"])),
+                             "host_state": host_control.load()["state"], "llm_calls": ls.get("calls", 0),
+                             "llm_p50_ms": ls.get("p50_ms", 0), "llm_fail_rate": ls.get("fail_rate", 0)}
+                except Exception:
+                    pass
                 rows = preflight.run(dict(facts, engine=engine, no_price=nop, own_voice=setup.get("own_voice"),
-                                          bridge_health=bridge_health.assess(bridge_health.read())))
+                                          bridge_health=bridge_health.assess(bridge_health.read()), **extra))
                 box.clear()
                 with box:
                     ui.label(preflight.summary(rows)).style("font-weight:600")
@@ -327,6 +338,7 @@ def build_home_tab(config, go):
             with ui.card().classes("lv-card w-full").style("padding:18px 20px"):
                 ui.label("Tip").classes("lv-stat-label")
                 ui.label(home_status.tip(datetime.date.today().toordinal())).style("margin-top:6px;line-height:1.5")
+                webui_mascot.picker()
 
     ui.label("Quick actions").style("font-weight:700;font-size:16px;margin:26px 0 10px")
     with ui.row().classes("w-full").style("gap:14px"):
@@ -342,7 +354,7 @@ def build_home_tab(config, go):
             ("record_voice_over", "Try a voice", "Free Vietnamese voices", "Voice"),
             ("insights", "See stats", "What viewers asked", "Dashboard"),
         ]
-        for icon, title, sub, tab in actions:
+        for icon, title, sub, tab in actions + [("face_retouching_natural", "Your avatar", "Draw, dress, stage", "Avatar studio")]:
             with ui.card().classes("lv-card lv-action").style("flex:1 1 200px;padding:18px;cursor:pointer").on("click", lambda t=tab: go(t)):
                 with ui.element("div").classes("lv-ico"):
                     ui.icon(icon)

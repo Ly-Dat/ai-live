@@ -14,6 +14,7 @@ For the local engine each expression is an img2img pass from the base picture, w
 Plain-background removal is a flood fill from the picture edges, so the prompt asks for a flat white background.
 """
 import base64
+import hashlib
 import io
 import json
 import os
@@ -23,7 +24,7 @@ import urllib.request
 from typing import Callable, Dict, List, Optional
 
 CORE = ["idle", "talking", "happy", "surprised", "confused", "thinking"]
-EXTRA = ["wink", "shy", "excited", "sad", "sleepy", "laughing", "love", "proud"]
+EXTRA = ["wink", "shy", "excited", "sad", "sleepy", "laughing", "love", "proud", "blink"]
 EXPRESSIONS = CORE + EXTRA
 _EXPR_TAGS = {
     "idle": "calm smile, closed mouth, looking at viewer",
@@ -40,11 +41,12 @@ _EXPR_TAGS = {
     "laughing": "laughing, closed eyes, open mouth, tears of joy",
     "love": "heart-shaped pupils, blush, smile, floating hearts",
     "proud": "smug, proud smile, hand on hip, closed eyes",
+    "blink": "eyes closed, calm smile, closed mouth, looking at viewer",
 }
 # When a picture is missing the page uses the next one in the chain, ending at idle.
 FALLBACK = {"talking": "idle", "happy": "idle", "surprised": "idle", "confused": "idle", "thinking": "idle",
             "wink": "happy", "shy": "happy", "excited": "happy", "sad": "confused", "sleepy": "idle",
-            "laughing": "happy", "love": "happy", "proud": "happy"}
+            "laughing": "happy", "love": "happy", "proud": "happy", "blink": "idle"}
 
 
 def resolve(expr: str, have) -> str:
@@ -133,6 +135,29 @@ def pollinations(cfg: Dict, prompt: str, seed: int, fetch: Fetch = _http) -> byt
     return fetch(url, None, float(cfg["timeout"]))
 
 
+def _reach(close, seed):
+    """Cells of `close` connected (4-neighbour) to a seed cell. Spreads along whole runs of pixels at once, so it takes a few
+    passes instead of one pass per pixel of distance (same result as the old one-pixel-at-a-time grow)."""
+    import numpy as np
+    cur = seed & close
+    for _ in range(400):
+        before = int(cur.sum())
+        for transposed in (False, True):
+            c = close.T if transposed else close
+            s = cur.T if transposed else cur
+            flat = c.ravel()
+            starts = flat & ~np.concatenate(([False], flat[:-1]))
+            starts[::c.shape[1]] = flat[::c.shape[1]]          # a run never continues onto the next row
+            lab = np.cumsum(starts) * flat
+            hit = np.bincount(lab[(s & c).ravel()], minlength=int(lab.max()) + 1) > 0
+            hit[0] = False
+            res = hit[lab].reshape(c.shape) & c
+            cur = res.T if transposed else res
+        if int(cur.sum()) == before:
+            break
+    return cur
+
+
 def remove_flat_background(png: bytes, tolerance: int = 28) -> bytes:
     """Make the plain background transparent: the pixels close to the corner colour that connect to the picture edge."""
     from PIL import Image
@@ -143,18 +168,9 @@ def remove_flat_background(png: bytes, tolerance: int = 28) -> bytes:
     corners = np.array([rgb[0, 0], rgb[0, -1], rgb[-1, 0], rgb[-1, -1]])
     ref = np.median(corners, axis=0)
     close = np.abs(rgb - ref).max(axis=2) <= tolerance
-    bg = np.zeros_like(close)
-    bg[0, :], bg[-1, :], bg[:, 0], bg[:, -1] = close[0, :], close[-1, :], close[:, 0], close[:, -1]
-    for _ in range(max(a.shape[:2])):   # grow inwards through connected background pixels
-        grown = bg.copy()
-        grown[1:, :] |= bg[:-1, :]
-        grown[:-1, :] |= bg[1:, :]
-        grown[:, 1:] |= bg[:, :-1]
-        grown[:, :-1] |= bg[:, 1:]
-        grown &= close
-        if (grown == bg).all():
-            break
-        bg = grown
+    edge = np.zeros_like(close)
+    edge[0, :], edge[-1, :], edge[:, 0], edge[:, -1] = True, True, True, True
+    bg = _reach(close, edge)    # background = close-to-corner pixels that connect to the picture edge
     a[bg, 3] = 0
     out = io.BytesIO()
     Image.fromarray(a).save(out, "PNG")
@@ -178,11 +194,29 @@ def generate_pack(char: Dict, cfg: Dict, out_dir: str, seed: int = 1234, express
         problem = check_server(cfg, fetch)
         if problem:
             return {"made": [], "failed": {"all": problem}}
-        say("Drawing the base picture ...")
+        # The base picture is kept (_base.png) so a later "draw the missing ones" keeps the same face instead of a new one.
+        base_key = hashlib.sha1(json.dumps([character_prompt(char), int(seed), cfg["width"], cfg["height"], cfg["steps"], cfg["cfg"],
+                                            cfg["sampler"], cfg.get("checkpoint", "")], sort_keys=True, default=str).encode()).hexdigest()
+        base_png, base_meta = os.path.join(out_dir, "_base.png"), os.path.join(out_dir, "_base.json")
         try:
-            base = txt2img(cfg, character_prompt(char), seed, fetch)
-        except Exception as e:
-            return {"made": [], "failed": {"all": f"Base picture failed: {e}"}}
+            with open(base_meta, "r", encoding="utf-8") as f:
+                same = json.load(f).get("key") == base_key
+            if same:
+                with open(base_png, "rb") as f:
+                    base = f.read()
+                say("Reusing the base picture (same face) ...")
+        except (OSError, ValueError):
+            base = None
+        if not base:
+            say("Drawing the base picture ...")
+            try:
+                base = txt2img(cfg, character_prompt(char), seed, fetch)
+                with open(base_png, "wb") as f:
+                    f.write(base)
+                with open(base_meta, "w", encoding="utf-8") as f:
+                    json.dump({"key": base_key}, f)
+            except Exception as e:
+                return {"made": [], "failed": {"all": f"Base picture failed: {e}"}}
     for ex in expressions:
         say(f"Drawing {ex} ...")
         try:

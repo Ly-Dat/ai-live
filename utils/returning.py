@@ -23,6 +23,10 @@ GREETINGS_MANY = [
     "{name} lại ở đây rồi, fan cứng của live mình đây nè, cảm ơn bạn nhiều!",
     "Bạn {name} ghé live nhiều lần rồi, cảm ơn bạn luôn đồng hành nha!",
 ]
+INTEREST_LINES = [
+    "Lần trước bạn có hỏi về {product}, hôm nay mình vẫn đang giới thiệu nha.",
+    "Mình nhớ bạn từng quan tâm {product}, bạn cần hỏi thêm gì cứ nói nha.",
+]
 MAX_VIEWERS = 20000
 
 
@@ -65,6 +69,20 @@ class ViewerBook:
             self._save()
             return before if fresh else 0
 
+    def note_interest(self, name: str, product_id: str) -> None:
+        """Remember the last product this viewer asked about (only if we already know the viewer: an entrance came first)."""
+        if not (name or "").strip() or not product_id:
+            return
+        with self._lock:
+            v = self.data["viewers"].get(self._key(name))
+            if v is not None and v.get("interest") != product_id:
+                v["interest"] = str(product_id)[:60]
+                self._save()
+
+    def interest(self, name: str) -> Optional[str]:
+        v = self.data["viewers"].get(self._key(name))
+        return v.get("interest") if v else None
+
     def _trim(self) -> None:
         viewers = self.data["viewers"]
         if len(viewers) > MAX_VIEWERS:
@@ -91,9 +109,13 @@ class ViewerBook:
                 pass
 
 
-def greeting(name: str, earlier_visits: int, rng=random) -> Optional[str]:
-    """None for a first-time viewer; otherwise a short Vietnamese welcome-back line."""
+def greeting(name: str, earlier_visits: int, rng=random, product_name: Optional[str] = None) -> Optional[str]:
+    """None for a first-time viewer; otherwise a short Vietnamese welcome-back line (plus what they asked about last time)."""
     if earlier_visits <= 0 or not (name or "").strip():
         return None
     pool = GREETINGS_MANY if earlier_visits >= 3 else GREETINGS
-    return rng.choice(pool).format(name=name.strip())
+    line = rng.choice(pool).format(name=name.strip())
+    if product_name and (product_name or "").strip():
+        short = product_name.strip()[:40]
+        line += " " + rng.choice(INTEREST_LINES).format(product=short)
+    return line

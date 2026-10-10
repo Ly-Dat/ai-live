@@ -3,6 +3,7 @@ Cursor-following mascot for the web UI. A vanilla-JS port of page-mascot (MIT, (
 https://github.com/nilbuild/page-mascot): the head follows the pointer, a click makes it blink and react, and
 poking it fast makes it dizzy. Sprite sheets live in data/mascots/ (see LICENSE-page-mascot.txt there).
 """
+import json
 import os
 
 from nicegui import app, ui
@@ -13,6 +14,13 @@ _mounted = False
 
 _JS = r"""
 window.lvMascot = function (id, dirUrl, reactUrl) {
+  try {   // the animal the user picked last time
+    const nm = localStorage.getItem("lvMascot");
+    if (nm && /^(cat|fox|bunny|panda)$/.test(nm)) {
+      dirUrl = dirUrl.replace(/\/[a-z]+-directions/, "/" + nm + "-directions");
+      reactUrl = reactUrl.replace(/\/[a-z]+-reactions/, "/" + nm + "-reactions");
+    }
+  } catch (e) {}
   const root = document.getElementById(id);
   if (!root || root.dataset.ready) return;
   root.dataset.ready = "1";
@@ -35,6 +43,12 @@ window.lvMascot = function (id, dirUrl, reactUrl) {
   const d = mk(dirUrl), r = mk(reactUrl);
   pos(d, 4); pos(r, 0); r.style.opacity = 0;
   body.append(d, r); root.append(body);
+  const bub = document.createElement("span");   // speech bubble, to the left of the mascot
+  bub.style.cssText = "position:absolute;right:100%;top:6px;margin-right:6px;width:max-content;max-width:210px;text-align:left;" +
+    "font-size:12px;line-height:1.35;font-weight:600;padding:7px 11px;border-radius:12px 12px 4px 12px;background:var(--lv-surface);" +
+    "color:var(--lv-text);border:1px solid var(--lv-border);box-shadow:0 8px 22px rgba(0,0,0,.18);opacity:0;transform:translateY(4px);" +
+    "transition:opacity .2s,transform .2s;pointer-events:none;z-index:5";
+  root.append(bub);
   const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
   let sector = -1, pointer = null, timers = [], boops = {n: 0, at: 0};
   function aim() {
@@ -64,7 +78,40 @@ window.lvMascot = function (id, dirUrl, reactUrl) {
     else { show("blink"); later(120, PAYOFFS[(boops.n - 1) % 3]); later(560, null); }
     if (!matchMedia("(prefers-reduced-motion: reduce)").matches)
       body.animate(SQUASH, {duration: 420, easing: "linear"});
+    let total = 0;   // she gets fond of you
+    try { total = (+localStorage.getItem("lvBoops") || 0) + 1; localStorage.setItem("lvBoops", total); } catch (e) {}
+    const LINES = {10: "Hehe, that tickles!", 30: "We are friends now, right?", 60: "You really like me!", 100: "Best human ever."};
+    if (LINES[total]) say(LINES[total], "heart");
   });
+  let hideT = null, sleepT = null, asleep = false;
+  function say(text, react, ms) {
+    bub.textContent = text; bub.style.opacity = 1; bub.style.transform = "none";
+    clearTimeout(hideT);
+    hideT = setTimeout(() => { bub.style.opacity = 0; bub.style.transform = "translateY(4px)"; }, ms || 4500);
+    if (react) { timers.forEach(clearTimeout); timers = []; show(react); timers.push(setTimeout(() => show(null), 1500)); }
+  }
+  function nap() { asleep = true; show("sleepy"); }
+  function wake() { clearTimeout(sleepT); if (asleep) { asleep = false; show(null); } sleepT = setTimeout(nap, 90000); }
+  ["pointermove", "keydown", "pointerdown"].forEach((ev) => addEventListener(ev, wake, {passive: true}));
+  wake();
+  window.lvMascotApi = {
+    say: say,
+    react: (n) => { show(n); setTimeout(() => show(null), 1400); },
+    set: (nm) => {
+      if (!/^(cat|fox|bunny|panda)$/.test(nm)) return;
+      try { localStorage.setItem("lvMascot", nm); } catch (e) {}
+      d.style.backgroundImage = "url(" + dirUrl.replace(/\/[a-z]+-directions/, "/" + nm + "-directions") + ")";
+      r.style.backgroundImage = "url(" + reactUrl.replace(/\/[a-z]+-reactions/, "/" + nm + "-reactions") + ")";
+      say("Hi, I am your " + nm + " now!", "wink");
+    },
+  };
+  try {
+    if (!sessionStorage.getItem("lvHi")) {
+      sessionStorage.setItem("lvHi", "1");
+      const h = new Date().getHours();
+      setTimeout(() => say(h < 11 ? "Good morning! Ready to sell?" : h < 18 ? "Hi! Let us make a great live." : "Evening! Big live tonight?", "delighted", 5000), 900);
+    }
+  } catch (e) {}
 };
 """
 
@@ -76,6 +123,22 @@ def _mount() -> None:
     if os.path.isdir(_DIR):
         app.add_static_files("/lv-mascots", _DIR)
     _mounted = True
+
+
+def say(text: str, react: str = None) -> None:
+    """Make the mascot speak (and react) if one is on the page."""
+    try:
+        ui.run_javascript(f"window.lvMascotApi&&lvMascotApi.say({json.dumps(text)},{json.dumps(react)})")
+    except Exception:
+        pass
+
+
+def picker() -> None:
+    """Small row to choose the animal; remembered in this browser."""
+    with ui.row().style("gap:4px;align-items:center;margin-top:10px"):
+        ui.label("Your mascot").classes("lv-stat-label").style("margin-right:6px")
+        for n in NAMES:
+            ui.button(n.capitalize(), on_click=lambda n=n: ui.run_javascript(f"window.lvMascotApi&&lvMascotApi.set('{n}')")).props("flat dense no-caps")
 
 
 def mascot(name: str = "cat", size: int = 120) -> None:

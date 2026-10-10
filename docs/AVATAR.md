@@ -30,3 +30,11 @@ Answers from the catalog only, before the LLM is asked: compare two products ("s
 
 ## Not done
 Smart chat modes (auto-switch between explaining and entertaining), quizzes and a learning loop that changes the plan by itself are not built; Dashboard and Recap already show what worked.
+
+## Life on stage (v3)
+
+- **Blink**: a 15th expression, `blink` (closed eyes). While idle the avatar blinks every few seconds; if it is not drawn yet, "Draw missing" in the Draw tab makes it. Without it nothing blinks, nothing breaks.
+- **Mouth and caption follow the voice**: the voice player tells the overlay what it is saying and for how long (`data/avatar/speaking.json`). The mouth runs exactly that long and a caption bubble above the avatar shows the sentence being spoken (switch it off in Stage). The length of an .mp3 is estimated from its size (edge-tts), so it can be a little off; a .wav is exact. If the voice never reports (older setup), the old 6-second guess is used.
+- **Pop and sparkles** when the mood changes (love, happy, surprised ...). They are skipped when the system asks for reduced motion.
+- **Same face on later draws**: the first picture is kept (`_base.png`) while the seed and settings stay the same, so "draw the missing ones" no longer changes the face.
+- **Regulars** (opt-in "returning viewers" in Setup): the host can add "last time you asked about X" to the welcome-back line. Only the hashed name and a product id are stored.

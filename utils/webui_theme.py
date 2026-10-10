@@ -149,6 +149,27 @@ body.body--dark .lv-card, body.body--dark .q-expansion-item, body.body--dark .q-
 .q-field__native,.q-field__input{ font-size:15px; }
 .q-field--standard .q-field__control{ min-height:44px; }
 @media (max-width: 900px){ .q-tab-panel{ padding:16px 14px 110px !important; } .lv-title{ font-size:22px; } }
+/* ---- phones, touch and small polish ---- */
+@media (max-width: 600px){
+  .lv-header{ padding:0 10px; }
+  .lv-header .lv-pill:not(.live){ display:none; }
+  .lv-brand-sub{ display:none; }
+  .q-tab-panel{ padding:12px 10px 110px !important; }
+  .q-field__native,.q-field__input,input,textarea{ font-size:16px !important; }   /* stops iOS zooming in on focus */
+  .q-btn{ min-height:42px; }
+  .q-field{ margin:4px 0; }
+  .lv-hero{ padding:16px 18px; border-radius:16px; }
+  .lv-stat-value{ font-size:26px; }
+  .q-table td,.q-table th{ padding:6px 8px; max-width:150px; }
+  .lv-mascot{ display:none; }
+  .bottom-bar{ left:8px; right:8px; transform:none; width:auto; flex-wrap:wrap; justify-content:center; }
+}
+@media (pointer: coarse){ .lv-nav,.lv-bn{ min-height:46px; } }
+@media (prefers-reduced-motion: reduce){ *,*::before,*::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
+::selection{ background:var(--lv-accent); color:#fff; }
+.q-btn:active{ transform:scale(.97); }
+.lv-stat-value{ font-variant-numeric:tabular-nums; }
+.lv-sub{ max-width:76ch; }
 """
 
 
@@ -207,6 +228,14 @@ _THEME_JS = """
 """
 
 
+def _mascot_say(text, react=None):
+    try:
+        import json
+        ui.run_javascript(f"window.lvMascotApi&&lvMascotApi.say({json.dumps(text)},{json.dumps(react)})")
+    except Exception:
+        pass
+
+
 def theme_switch(dark=None):
     """Sun/moon button, always visible (also on phones). Remembers the choice in this browser; default is dark."""
     ui.add_head_html("<style>.lv-sun{display:none}.lv-moon{display:inline-flex}"
@@ -252,6 +281,8 @@ def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark
             }
         theme_switch(dark)
 
+    last = {}
+
     def refresh():
         if not status_fn:
             return
@@ -265,6 +296,9 @@ def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark
             el.classes(add="on" if on else None, remove=None if on else "on")
             if key == "bridge":
                 el.classes(add="live" if on else None, remove=None if on else "live")
+                was, last["bridge"] = last.get("bridge"), on
+                if was is not None and was != on:   # the mascot cheers the start and the end of a live
+                    _mascot_say("We are live! Good luck." if on else "Nice stream! Your recap is on Home.", "delighted" if on else "heart")
     ui.timer(4.0, refresh)
 
     drawer = ui.left_drawer(value=None, fixed=True, bordered=False).props("width=250 breakpoint=900").classes("lv-drawer")

@@ -40,7 +40,7 @@ def _h(text):
 
 def build_avatar_tab(config):
     _mount()
-    page_title("Avatar studio", "Pick or draw a character with a free AI, show it on stream with 14 expressions, dress and stage it, and watch it grow "
+    page_title("Avatar studio", "Pick or draw a character with a free AI, show it on stream with 15 expressions, dress and stage it, and watch it grow "
                                 "with every live. A Pause / Take-over switch is always within reach.")
     log_dir = config.get("analytics", "dir") or "log/analytics"
     st = {"sel": "", "busy": False, "msg": ""}
@@ -304,10 +304,10 @@ def build_avatar_tab(config):
                     with ui.row().style("gap:10px;flex-wrap:wrap"):
                         ui.button("Save", icon="save", on_click=save_all)
                         ui.button("Draw the 6 core", icon="brush", on_click=lambda: start("core")).props("color=primary")
-                        ui.button("Draw all 14", icon="auto_awesome", on_click=lambda: start("all")).props("color=primary")
+                        ui.button(f"Draw all {len(avatar_gen.EXPRESSIONS)}", icon="auto_awesome", on_click=lambda: start("all")).props("color=primary")
                         ui.button("Draw missing", icon="add_photo_alternate", on_click=lambda: start("missing")).props("flat")
                         ui.button("New face", icon="shuffle", on_click=new_seed).props("flat")
-                    ui.label("The first picture takes a minute; all 14 take several minutes on a mid-range card. Expressions are redrawn from the first picture so the "
+                    ui.label("The first picture takes a minute; all of them take several minutes on a mid-range card. Expressions are redrawn from the first picture so the "
                              "face stays the same. Results vary: redraw, or replace any picture by hand. A look with only the 6 core pictures still works.").classes("lv-sub")
                     ui.timer(1.0, lambda: info.set_text(st["msg"]))
                     refresh_gallery()
@@ -336,6 +336,7 @@ def build_avatar_tab(config):
                 with ui.row().style("gap:18px"):
                     nametag = ui.switch("Name tag", value=stg["nametag"])
                     badge = ui.switch("Show level and streak to viewers", value=stg["badge"])
+                    caption = ui.switch("Live caption of what she says", value=stg.get("caption", True))
                 tips = ui.textarea("Hint bubbles, one per line (rotate under the avatar), e.g. Ask me about sizes!", value="\n".join(stg["tips"])).props("outlined dense").style("width:100%")
                 ui.label("Short invitations make viewers type a question. Up to 6.").classes("lv-sub")
 
@@ -343,7 +344,7 @@ def build_avatar_tab(config):
                     s = avatar.load_settings()
                     s["enabled"] = bool(enable.value)
                     s["stage"].update({"side": side.value, "motion": motion.value, "frame": frame.value, "height_vh": int(height.value),
-                                       "nametag": bool(nametag.value), "badge": bool(badge.value),
+                                       "nametag": bool(nametag.value), "badge": bool(badge.value), "caption": bool(caption.value),
                                        "tips": [t.strip() for t in (tips.value or "").splitlines() if t.strip()][:6]})
                     avatar.save_settings(s)
                     ui.notify("Saved.")

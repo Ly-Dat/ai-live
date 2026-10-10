@@ -1082,7 +1082,7 @@ def goto_func_page():
         except Exception:
             out["story"] = None
         try:
-            from utils import avatar as _av, bond as _bd, host_control as _hc, music as _m2, live_analytics as _la2, webui_avatar as _wa
+            from utils import avatar as _av, bond as _bd, host_control as _hc, music as _m2, live_analytics as _la2, webui_avatar as _wa, speaking as _sp_
             _wa._mount()
             now_ = time.time()
             try:
@@ -1092,7 +1092,7 @@ def goto_func_page():
             if stale:
                 _bd.refresh(config.get("analytics", "dir") or "log/analytics")
             out["avatar"] = _av.overlay_avatar(_av.load_settings(), _m2.tail_events(_la2.latest_session_file()), now_, _hc.load()["state"],
-                                               _bd.load_cache(), preview=_av.read_preview(now_))
+                                               _bd.load_cache(), preview=_av.read_preview(now_), speaking_state=_sp_.state(now_))
         except Exception:
             out["avatar"] = None
         return JSONResponse(out, headers={"Cache-Control": "no-store"})
@@ -3541,6 +3541,7 @@ def goto_func_page():
         novel_page = ui.tab('Novel reader')
         writer_page = ui.tab('Novel writer')
         avatar_page = ui.tab('Avatar studio')
+        engine_page = ui.tab('AI engine')
         story_page = ui.tab('Story studio')
         talk_page = ui.tab('Chat')
         image_recognition_page = ui.tab('Image Recognition')
@@ -3565,7 +3566,7 @@ def goto_func_page():
 
     select_page = build_shell(tabs, [
         ("Studio", [("Home", "home", home_page), ("Setup", "rocket_launch", setup_page), ("Dashboard", "insights", dashboard_page),
-                    ("Teach", "school", teach_page), ("Schedule", "event", schedule_page), ("Live tools", "bolt", tools_page), ("Novel reader", "menu_book", novel_page), ("Novel writer", "edit", writer_page), ("Avatar studio", "face_retouching_natural", avatar_page), ("Story studio", "auto_stories", story_page), ("Products", "shopping_bag", products_page)]),
+                    ("Teach", "school", teach_page), ("Schedule", "event", schedule_page), ("Live tools", "bolt", tools_page), ("Novel reader", "menu_book", novel_page), ("Novel writer", "edit", writer_page), ("Avatar studio", "face_retouching_natural", avatar_page), ("AI engine", "speed", engine_page), ("Story studio", "auto_stories", story_page), ("Products", "shopping_bag", products_page)]),
         ("Host", [("Voice", "record_voice_over", voice_page), ("AI model", "psychology", llm_page),
                   ("Text-to-Speech", "graphic_eq", tts_page), ("Virtual body", "face", visual_body_page),
                   ("Copywriting", "edit_note", copywriting_page), ("Chat", "forum", talk_page),
@@ -6217,6 +6218,9 @@ def goto_func_page():
         with ui.tab_panel(avatar_page).style(tab_panel_css):
             from utils.webui_avatar import build_avatar_tab
             build_avatar_tab(config)
+        with ui.tab_panel(engine_page).style(tab_panel_css):
+            from utils.webui_engine import build_engine_tab
+            build_engine_tab(config)
         with ui.tab_panel(writer_page).style(tab_panel_css):
             from utils.webui_writer import build_writer_tab
             build_writer_tab(config)

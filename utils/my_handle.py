@@ -19,7 +19,7 @@ from .db import SQLiteDB
 from .my_translate import My_Translate
 
 from .luoxi_project.live_comment_assistant import send_msg_to_live_comment_assistant
-from . import tiktok_safety, product_catalog, live_analytics, flash_sale, engage, coverage, lang_guard, answer_cache
+from . import tiktok_safety, product_catalog, live_analytics, flash_sale, engage, coverage, lang_guard, answer_cache, llm_guard
 
 
 """
@@ -1875,7 +1875,17 @@ class My_handle(metaclass=SingletonMeta):
                 }
 
             # Use a dict mapping to get the response content
-            resp_content = chat_model_methods.get(chat_type, lambda: data["content"])()
+            def _ask(name):
+                # a fallback provider may not be set up yet: do it on first use
+                if name != chat_type and type == "chat" and getattr(self, name, None) is None:
+                    self.get_chat_model(name, My_handle.config)
+                return chat_model_methods.get(name, lambda: data["content"])()
+
+            if type == "chat":
+                # timeout, optional fallback provider and a breaker, so one slow provider cannot stall the stream
+                resp_content = llm_guard.call(chat_type, _ask, log=logger.warning)
+            else:
+                resp_content = _ask(chat_type)
 
             if resp_content is not None:
                 resp_content = resp_content.strip()
@@ -3507,6 +3517,13 @@ class My_handle(metaclass=SingletonMeta):
             analytics = self.get_analytics()
             analytics.record("comment", user=username, text=data["content"], intent=intent,
                              product_id=matched_product["id"] if matched_product else None)
+            if matched_product:
+                try:   # opt-in viewer book: remember what a regular asked about (hashed name, product id only)
+                    book = self._get_viewer_book()
+                    if book is not None:
+                        book.note_interest(username, matched_product["id"])
+                except Exception as e:
+                    logger.debug(f"viewer interest: {e}")
             if self.coverage_human():   # the seller is hosting: keep the question for them, say nothing
                 analytics.record("handoff", user=username, text=data["content"], intent=intent)
                 return None
@@ -3892,7 +3909,16 @@ class My_handle(metaclass=SingletonMeta):
             welcome_back = None
             if returning_visits:
                 from utils import returning as _returning
-                welcome_back = _returning.greeting(data['username'], returning_visits)
+                interest_name = None
+                try:   # "last time you asked about X": only if X is still in the cart
+                    book = self._get_viewer_book()
+                    pid = book.interest(data['username']) if book is not None else None
+                    cat = self.get_product_catalog() if pid else None
+                    if cat is not None:
+                        interest_name = next((p["name"] for p in cat.all_products() if p.get("id") == pid and p.get("active", True)), None)
+                except Exception as e:
+                    logger.debug(f"viewer interest greeting: {e}")
+                welcome_back = _returning.greeting(data['username'], returning_visits, product_name=interest_name)
 
             if welcome_back:
                 resp_content = welcome_back

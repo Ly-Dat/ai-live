@@ -70,6 +70,8 @@ Manual route for developers: `python main.py`, then `python webui.py`, then in t
 
 Free AI-drawn seller characters on the overlay (local Stable Diffusion + Animagine XL 3.1, or your own pictures): 8 ready-made originals or your own, outfits, 14 expressions that follow the live, stage options, a level / streak / achievements journey, a Pause / Take-over switch, and catalog-only answers for compare, budget and price/trust doubts. Details and limits: [docs/AVATAR.md](docs/AVATAR.md).
 
+**AI engine** (sidebar tab): the AI reply gets a timeout, an optional fallback provider and a breaker, so one slow provider cannot stall the stream; repeated voice lines come from a cache; reply and voice speed are shown, and the pre-live check warns when replies are slow. Providers are loaded only when used, so the panel starts faster. The avatar blinks, pops and sparkles when its mood changes, and shows a live caption in time with the voice. The panel mascot can be chosen (cat, fox, bunny, panda), reacts when you go live, and the layout works better on phones.
+
 ## Stories on your live
 
 Three tabs turn the host into a storyteller, which keeps viewers watching and is a second way to grow a channel. The AI is the

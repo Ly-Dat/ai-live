@@ -10,6 +10,8 @@ import random, copy
 
 from utils.common import Common
 from utils.my_log import logger
+from utils import tts_cache, engine_stats, llm_guard
+import time as _time
 from utils.config import Config
 
 
@@ -341,6 +343,15 @@ class MY_TTS:
             # Filter" 'Character
             data["content"] = data["content"].replace('"', '').replace("'", '')
 
+            t0 = _time.time()
+            ck = None
+            if llm_guard.tts_cache_enabled():
+                ck = tts_cache.key("edge", data["content"], {k: data["edge-tts"].get(k) for k in ("voice", "rate", "volume")})
+                hit = tts_cache.lookup(ck, ".mp3", voice_tmp_path)
+                if hit:
+                    engine_stats.record("tts", (_time.time() - t0) * 1000, cached=True)
+                    return hit
+
             proxy = data["edge-tts"]["proxy"] if data["edge-tts"]["proxy"] != "" else None
 
             # Use Edge TTS to generate the voice file for the reply message
@@ -353,8 +364,11 @@ class MY_TTS:
             )
             await communicate.save(voice_tmp_path)
 
+            engine_stats.record("tts", (_time.time() - t0) * 1000)
+            tts_cache.store(ck, ".mp3", voice_tmp_path)
             return voice_tmp_path
         except Exception as e:
+            engine_stats.record("tts", 0, ok=False, error=str(e))
             logger.error(traceback.format_exc())
             logger.error(e)
             return None
@@ -367,8 +381,18 @@ class MY_TTS:
             from utils import vieneu_tts
             file_name = 'vieneu_' + self.common.get_bj_time(4) + '.wav'
             out_path = self.common.get_new_audio_path(self.audio_out_path, file_name)
+            t0 = _time.time()
+            ck = None
+            if llm_guard.tts_cache_enabled():
+                ck = tts_cache.key("vieneu", data["content"], data.get("vieneu"))
+                hit = tts_cache.lookup(ck, ".wav", out_path)
+                if hit:
+                    engine_stats.record("tts", (_time.time() - t0) * 1000, cached=True)
+                    return hit
             path = await asyncio.to_thread(vieneu_tts.synthesize, data["content"], data["vieneu"], out_path)
             if path:
+                engine_stats.record("tts", (_time.time() - t0) * 1000)
+                tts_cache.store(ck, ".wav", path)   # only VieNeu's own audio; the edge-tts fallback below is never cached under this key
                 return path
             logger.warning("VieNeu server not reachable or returned no audio; falling back to edge-tts")
             if data.get("edge-tts"):

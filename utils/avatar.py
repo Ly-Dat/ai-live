@@ -21,7 +21,7 @@ SLEEP_AFTER = 180.0
 SIDES = ("right", "left", "center")
 DEFAULTS = {"enabled": False, "active": "", "gen": {},
             "stage": {"side": "right", "height_vh": 62, "motion": "bob", "frame": "none", "nametag": True, "badge": True,
-                      "tips": [], "tip_seconds": 9}}
+                      "tips": [], "tip_seconds": 9, "caption": True}}
 
 _LOVE = re.compile(r"(yeu|thuong|tym|<3|love|❤|😍)")
 _COMPLIMENT = re.compile(r"(xinh|de thuong|cute|kawaii|dep qua|dep ghe|duyen)")
@@ -54,6 +54,7 @@ def load_settings(path: str = SETTINGS_PATH) -> Dict:
         s["motion"] = str(st.get("motion") or s["motion"])
         s["frame"] = str(st.get("frame") or s["frame"])
         s["nametag"], s["badge"] = bool(st.get("nametag", True)), bool(st.get("badge", True))
+        s["caption"] = bool(st.get("caption", True))
         s["tips"] = [str(x).strip()[:90] for x in (st.get("tips") or []) if str(x).strip()][:6]
     except (OSError, ValueError, TypeError):
         pass
@@ -131,7 +132,7 @@ def pick_expression(events: List[Dict], now: float) -> Dict:
 
 
 def overlay_avatar(settings: Dict, events: List[Dict], now: float, host_state: str = "live", cache: Optional[Dict] = None,
-                   root: str = avatar_roster.ROOT, preview: Optional[str] = None) -> Optional[Dict]:
+                   root: str = avatar_roster.ROOT, preview: Optional[str] = None, speaking_state: Optional[Dict] = None) -> Optional[Dict]:
     if not settings.get("enabled"):
         return None
     char = active_character(settings, root)
@@ -147,6 +148,13 @@ def overlay_avatar(settings: Dict, events: List[Dict], now: float, host_state: s
         pick = {"mood": "sleepy" if "sleepy" in files else "idle", "talking": False}
     else:
         pick = pick_expression(events, now)
+    sp = speaking_state or {}
+    caption = None
+    if sp.get("tracking") and not preview and not paused:
+        # the voice player reports what it is saying: the mouth runs exactly as long as the audio
+        pick = {"mood": pick["mood"], "talking": bool(sp.get("active"))}
+        if settings["stage"].get("caption", True) and sp.get("active") and sp.get("text"):
+            caption = {"text": sp["text"], "elapsed": round(float(sp.get("elapsed") or 0), 2), "dur": round(float(sp.get("dur") or 0), 2)}
     base = f"{URL_PREFIX}{char['id']}/looks/{char['look']}/"
     images = {ex: f"{base}{ex}.png?v={int(mt)}" for ex, mt in files.items()}
     mood = avatar_gen.resolve(pick["mood"], files)
@@ -159,4 +167,5 @@ def overlay_avatar(settings: Dict, events: List[Dict], now: float, host_state: s
         badge = f"Lv {level}" + (f" · {cache['streak']}-day streak" if cache.get("streak", 0) >= 2 else "")
     return {"name": char["name"] if st["nametag"] else "", "badge": badge, "images": images, "mood": mood,
             "talking": bool(pick["talking"] and "talking" in files), "height": st["height_vh"], "side": st["side"],
-            "frame": frame, "motion": motion, "tips": st["tips"], "tip_seconds": st["tip_seconds"], "paused": paused}
+            "frame": frame, "motion": motion, "tips": st["tips"], "tip_seconds": st["tip_seconds"], "paused": paused,
+            "caption": caption}

@@ -31,6 +31,18 @@ def run(f: Dict) -> List[Dict]:
         if n and nop:
             add("prices", None, f"{nop} product{'s' if nop != 1 else ''} without a price",
                 "Price questions get a weaker answer when the price is empty.", "Products")
+    if f.get("host_state") in ("paused", "takeover"):
+        add("host", None, "The AI host is paused" if f["host_state"] == "paused" else "You are hosting (the AI is silent)",
+            "Resume it in Avatar studio > Control before you expect answers.", "Avatar studio")
+    if f.get("avatar_enabled") and not f.get("avatar_ready"):
+        add("avatar", None, "The avatar is on but has no picture yet", "Draw or pick a character in Avatar studio.", "Avatar studio")
+    calls = int(f.get("llm_calls") or 0)
+    if calls >= 3:
+        p50, fail = int(f.get("llm_p50_ms") or 0), float(f.get("llm_fail_rate") or 0)
+        if fail >= 0.3:
+            add("ai_fail", False, f"{int(fail * 100)}% of AI replies failed", "Check the AI provider or set a fallback in AI engine.", "AI engine")
+        elif p50 >= 4000:
+            add("ai_speed", None, f"AI replies take {p50 / 1000:.1f} s", "Viewers wait that long. Try a faster model or a fallback in AI engine.", "AI engine")
     bh = f.get("bridge_health")
     if bh and bh.get("level") in ("down", "warn") and f.get("bridge_on"):
         add("bridge_health", False if bh["level"] == "down" else None, bh["message"],

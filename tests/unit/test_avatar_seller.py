@@ -93,7 +93,7 @@ def test_host_control_roundtrip(tmp_path):
 
 
 def test_fourteen_expressions_and_fallback_chain():
-    assert len(avatar_gen.EXPRESSIONS) == 14 and avatar_gen.EXPRESSIONS[:6] == avatar_gen.CORE
+    assert len(avatar_gen.EXPRESSIONS) == 15 and avatar_gen.EXPRESSIONS[:6] == avatar_gen.CORE
     assert set(avatar_gen.EXPRESSIONS) == set(avatar_gen._EXPR_TAGS)
     assert avatar_gen.resolve("love", {"idle", "happy"}) == "happy"
     assert avatar_gen.resolve("sad", {"idle", "confused"}) == "confused"
