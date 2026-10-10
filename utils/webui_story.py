@@ -787,7 +787,7 @@ def build_story_tab(config):
             try:
                 results = await run.io_bound(lambda: story_video.build_parts(
                     panels, base, float(split_min.value or 0) * 60, int(part.value or 1), hook_in.value or "", outro_in.value or "",
-                    v_lang.value, progress, voice=v_voice2.value or "", tts=tts_fn, tts_workers=(2 if v_engine.value == "vieneu" else 4), rate=int(rate2.value or 0), title=m["title"],
+                    v_lang.value, progress, voice=v_voice2.value or "", tts=tts_fn, tts_workers=(1 if v_engine.value == "vieneu" else 3), rate=int(rate2.value or 0), title=m["title"],
                     music=os.path.join(music.MUSIC_DIR, mt["file"]) if mt else None, music_volume=(mvol.value or 12) / 100.0,
                     size=story_video.FORMATS.get(fmt.value, (1080, 1920)), cancel=lambda: prog["cancel"], motion=motion.value,
                     fade=bool(fade.value)))

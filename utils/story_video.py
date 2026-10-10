@@ -304,7 +304,7 @@ def build(panels: List[Dict], out_path: str, tts: Optional[Callable] = None, voi
           title: str = "", part: int = 0, hook: str = "", outro: str = "", music: Optional[str] = None, music_volume: float = 0.12,
           size: Tuple[int, int] = (1080, 1920), fps: int = 25, gap: float = 0.25, silent_s: float = 2.5,
           progress: Optional[Callable[[int, int, str], None]] = None, cancel: Optional[Callable[[], bool]] = None,
-          motion: str = "off", fade: bool = False, workers: int = 0, tts_workers: int = 4) -> Dict:
+          motion: str = "off", fade: bool = False, workers: int = 0, tts_workers: int = 2) -> Dict:
     """panels: [{image: path or None, text}]. motion: "off" | "zoom" | "auto"; fade: dip between different pictures.
     Returns {video, srt, cover, seconds, pieces, marks: [{t, label}] (one per scene, for YouTube chapters)}."""
     ff = ffmpeg_exe()
@@ -319,7 +319,7 @@ def build(panels: List[Dict], out_path: str, tts: Optional[Callable] = None, voi
     badge = f"Part {part}" if part else ""
     work = tempfile.mkdtemp(prefix="story_video_")
     n = len(segs)
-    total = 3 * n + 2
+    total = 4 * n + 2
     t_now, srt, files, marks = 0.0, [], [], []
     try:
         cover = os.path.splitext(out_path)[0] + "-cover.png"
@@ -380,12 +380,13 @@ def build(panels: List[Dict], out_path: str, tts: Optional[Callable] = None, voi
                 render_frame(sg["image"], sg["caption"], frame, size, badge, sg.get("top", ""), title, seed=seed)
             return i
 
-        def encode_job(i, dur, p0, p1):
+        def encode_job(i, frames, p0, p1):
+            """The silent clip of piece i with EXACTLY `frames` frames (the voice is laid under the whole video later, see audio_job)."""
             check_cancel()
             sg, kind = segs[i], kinds[i]
             frame = os.path.join(work, f"f{i:04d}.png")
             seg = os.path.join(work, f"s{i:04d}.mp4")
-            frames = max(1, int(round(dur * fps)))
+            dur = frames / float(fps)
             fades = ""
             if fins[i]:
                 fades += f"fade=t=in:st=0:d={FADE_S},"
@@ -397,18 +398,25 @@ def build(panels: List[Dict], out_path: str, tts: Optional[Callable] = None, voi
                        f"[bg][1:v]overlay=0:0:format=auto,{fades}format=yuv420p[v]")
                 cmd = [ff, "-y", "-loglevel", "error", "-i", os.path.join(work, f"b{i:04d}.png"), "-loop", "1", "-framerate", str(fps),
                        "-i", os.path.join(work, f"t{i:04d}.png")]
-                inputs_audio = 2
             else:
                 flt = f"[0:v]{fades}format=yuv420p[v]"
                 cmd = [ff, "-y", "-loglevel", "error", "-loop", "1", "-framerate", str(fps), "-i", frame]
-                inputs_audio = 1
-            if auds[i]:
-                cmd += ["-i", auds[i], "-af", f"apad=pad_dur={gap}"]
-            else:
-                cmd += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
-            cmd += ["-filter_complex", flt, "-map", "[v]", "-map", f"{inputs_audio}:a", "-t", f"{dur:.3f}", "-c:v", "libx264", "-preset", "veryfast",
-                    "-r", str(fps), "-c:a", "aac", "-ar", "44100", "-ac", "2", seg]
+            cmd += ["-filter_complex", flt, "-map", "[v]", "-an", "-frames:v", str(frames), "-c:v", "libx264", "-preset", "veryfast",
+                    "-r", str(fps), seg]
             _run(cmd)
+            return i
+
+        def audio_job(i, frames):
+            """The voice of piece i as PCM, padded / cut to exactly the length of its clip. Sample-exact audio, joined once at the end,
+            cannot drift against the picture (AAC clips joined with -c copy add a little silence at every joint)."""
+            check_cancel()
+            dur = frames / float(fps)
+            out = os.path.join(work, f"w{i:04d}.wav")
+            if auds[i]:
+                cmd = [ff, "-y", "-loglevel", "error", "-i", auds[i], "-af", f"apad=whole_dur={dur:.6f},atrim=end={dur:.6f}"]
+            else:
+                cmd = [ff, "-y", "-loglevel", "error", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", "-t", f"{dur:.6f}"]
+            _run(cmd + ["-ar", "44100", "-ac", "2", "-c:a", "pcm_s16le", out])
             return i
 
         def run_parallel(pools_jobs, on_done):
@@ -440,7 +448,14 @@ def build(panels: List[Dict], out_path: str, tts: Optional[Callable] = None, voi
         report("Starting ...")
         run_parallel([(n_tts, [(voice_job, (i,), "voice") for i in range(n)]),
                       (n_img, [(frame_job, (i,), "pic") for i in range(n)])], on_pass1)
-        # the real lengths are known now: where each scene starts and how far the picture moves in each piece
+        # the real lengths are known now. Every piece gets a WHOLE number of frames, counted cumulatively, so the clips add up to the
+        # voice length (rounding each piece separately drifts by up to a frame per piece: seconds over a long video)
+        cum, frames_of = 0.0, []
+        for d in durs:
+            a = int(round(cum * fps))
+            cum += d
+            frames_of.append(max(1, int(round(cum * fps)) - a))
+        durs = [fr / float(fps) for fr in frames_of]
         scene_total: Dict[int, float] = {}
         for sg, d in zip(segs, durs):
             scene_total[sg["panel"]] = scene_total.get(sg["panel"], 0.0) + d
@@ -454,7 +469,8 @@ def build(panels: List[Dict], out_path: str, tts: Optional[Callable] = None, voi
             p0 = scene_pos[k] / scene_total[k]
             scene_pos[k] += dur
             p1 = scene_pos[k] / scene_total[k]
-            jobs3.append((encode_job, (i, dur, p0, p1), "enc"))
+            jobs3.append((encode_job, (i, frames_of[i], p0, p1), "enc"))
+            jobs3.append((audio_job, (i, frames_of[i]), "enc"))
             files.append(f"s{i:04d}.mp4")
             if sg["caption"]:
                 srt.append((t_now, t_now + dur - gap, sg["caption"]))
@@ -463,23 +479,29 @@ def build(panels: List[Dict], out_path: str, tts: Optional[Callable] = None, voi
         # pass 2: several clips are encoded at once
         def on_pass2(tag, res):
             done["enc"] += 1
-            report(f"Video clips {done['enc']}/{n}")
+            report(f"Clips and sound {done['enc'] // 2}/{n}")
         run_parallel([(n_enc, jobs3)], on_pass2)
         if progress:
             progress(3 * n, total, "Joining the clips")
         with open(os.path.join(work, "list.txt"), "w", encoding="utf-8") as f:
             for fn in files:
                 f.write(f"file '{fn}'\n")
+        with open(os.path.join(work, "alist.txt"), "w", encoding="utf-8") as f:
+            for i in range(n):
+                f.write(f"file 'w{i:04d}.wav'\n")
         joined = os.path.join(work, "joined.mp4")
+        voice_all = os.path.join(work, "voice.wav")
         _run([ff, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", "list.txt", "-c", "copy", joined], cwd=work)
+        _run([ff, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", "alist.txt", "-c", "copy", voice_all], cwd=work)
         if music and os.path.exists(music):
             if progress:
-                progress(3 * n + 1, total, "Adding the music")
-            _run([ff, "-y", "-loglevel", "error", "-i", joined, "-stream_loop", "-1", "-i", music, "-filter_complex",
-                  f"[1:a]volume={music_volume}[m];[0:a][m]amix=inputs=2:duration=first:dropout_transition=0[a]",
+                progress(4 * n, total, "Adding the music")
+            _run([ff, "-y", "-loglevel", "error", "-i", joined, "-i", voice_all, "-stream_loop", "-1", "-i", music, "-filter_complex",
+                  f"[2:a]volume={music_volume}[m];[1:a][m]amix=inputs=2:duration=first:dropout_transition=0[a]",
                   "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-movflags", "+faststart", out_path])
         else:
-            _run([ff, "-y", "-loglevel", "error", "-i", joined, "-c", "copy", "-movflags", "+faststart", out_path])
+            _run([ff, "-y", "-loglevel", "error", "-i", joined, "-i", voice_all, "-map", "0:v", "-map", "1:a", "-c:v", "copy",
+                  "-c:a", "aac", "-movflags", "+faststart", out_path])
     finally:
         shutil.rmtree(work, ignore_errors=True)
     srt_path = os.path.splitext(out_path)[0] + ".srt"

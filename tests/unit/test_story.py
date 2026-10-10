@@ -1,3 +1,4 @@
+import re
 import io, os, shutil, subprocess, tempfile, zipfile
 import pytest
 from utils import story, story_video as sv
@@ -247,7 +248,7 @@ def test_recap_prompt_and_roundtrip():
     r = st.recap_prompt(["Hello", ""], "My story", "en", mode="recap")
     assert "cliffhanger" in r and "Be faithful" not in r
     zh = st.recap_prompt(["你看这样", "好的"], "", "vi")
-    assert "The text is in Chinese: translate it into Vietnamese" in zh and "Do NOT summarise" in zh
+    assert "Panel 1: 你看这样" in zh and "tiếng Việt" in zh
     assert "in Chinese" not in st.recap_prompt(["xin chào"], "", "vi")
     assert story.parse_script("Panel 1: a\nPanel 2: b", 2) == ["a", "b"]
 
@@ -519,3 +520,29 @@ def test_best_model_prefers_settings_then_biggest_chat_model():
     assert best_model(names, "qwen2.5:7b") == "qwen2.5:7b"
     assert best_model(names, "gpt-3.5-turbo") == "qwen2.5:14b-instruct"
     assert best_model(["nomic-embed-text"], "") == "nomic-embed-text" and best_model([], "") == ""
+
+
+@pytest.mark.skipif(not (sv.ffmpeg_exe() and sv.find_font()), reason="needs ffmpeg and a font")
+def test_video_and_voice_stay_in_sync_over_many_pieces(root):
+    """Many pieces with awkward lengths: the picture track and the voice track must end together (no drift) and match the planned length."""
+    pytest.importorskip("PIL")
+    ff = sv.ffmpeg_exe()
+    text = "\n\n".join(f"Câu số {k} nói về một chuyện." for k in range(40))
+    m = story.add_story("Sync", "", "own", "", [("1.png", png((200, 50, 50)))], text, root)
+    lengths = [0.37, 0.61, 0.43, 0.88, 0.53]
+    counter = {"n": 0}
+    def tts(t, v, r, o):
+        d = lengths[counter["n"] % len(lengths)]
+        counter["n"] += 1
+        subprocess.run([ff, "-y", "-loglevel", "error", "-f", "lavfi", "-i", f"sine=frequency=300:duration={d}", "-q:a", "5", o], check=True)
+    out = os.path.join(root, "o", "sync.mp4")
+    res = sv.build(sv.panels_from_story(m, root), out, tts=tts, title="S", size=(270, 480), tts_workers=3)
+
+    def track_seconds(sel):
+        p = subprocess.run([ff, "-i", out, "-map", sel, "-f", "null", "-"], capture_output=True, text=True)
+        t = re.findall(r"time=(\d+):(\d+):([\d.]+)", p.stderr)[-1]
+        return int(t[0]) * 3600 + int(t[1]) * 60 + float(t[2])
+    v, a = track_seconds("0:v"), track_seconds("0:a")
+    assert res["pieces"] >= 30
+    assert abs(v - a) < 0.08, (v, a)
+    assert abs(v - res["seconds"]) < 0.15, (v, res["seconds"])
