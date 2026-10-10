@@ -11,6 +11,8 @@ automatic TikTok LIVE seller:
 - **Vietnamese locale pack**: `python apply_locale.py data/locale_vi.json` switches every spoken template and trigger word in `config.json` to Vietnamese (code and UI stay English).
 - Tour extras: AI disclosure line, follow/ask/cart reminders between products, `"active": false` to skip sold-out items.
 - Speaks Vietnamese (edge-tts `vi-VN-HoaiMyNeural`) and drives a Live2D avatar; the codebase and UI are English.
+- **Not only selling**: the same AI host can read a story aloud on your live (**Novel reader**), tell picture stories and make recap videos
+  (**Story studio**), and write a whole novel with you (**Novel writer**). See [Stories on your live](#stories-on-your-live).
 
 ## Why sellers use it
 
@@ -56,7 +58,36 @@ Manual route for developers: `python main.py`, then `python webui.py`, then in t
 - **Flash sale** (Live tools tab): pick a product, minutes, optional sale price and stock. The AI announces the time left on a schedule and in the last minute. It only says what you entered and passes the safety filter.
 - **Shoutouts**: thank-you lines for gifts, follows and joins mention the viewer and the product on screen (`{username}`, `{product}` in `config.json -> thanks`).
 - **Draft with AI** (Products tab): the LLM drafts aliases, a description, highlights and the questions viewers will ask. You review and apply; nothing is saved automatically, and drafts are safety-filtered.
+- **Giveaways and polls** (Live tools): one entry per viewer, uniform random draw, announced by the host and shown on the overlay (`utils/engage.py`).
+- **Background music** (Live tools): only tracks with a safe licence are played, CC BY credits appear on screen ([docs/MUSIC.md](docs/MUSIC.md)).
+- **Teach** tab: the questions the host was unsure about; type the answer once and it says exactly that next time (through the safety filter).
+- **Schedule** tab: one-click live-room templates and coverage hours (when you host, when the AI hosts).
+- **Sound like me** (Voice tab): clone your own voice locally from a short clip, with a consent record.
+- **Welcome back** (opt-in): recognises returning viewers by a salted hash only; "Forget all viewers" erases it.
 - **Personas** (`data/personas.json`): friendly girl, cheerful host, calm expert. Each sets voice, speed, speaking style and avatar while keeping the compliance rules.
+
+## Stories on your live
+
+Three tabs turn the host into a storyteller, which keeps viewers watching and is a second way to grow a channel. The AI is the
+OpenAI-compatible one from Settings (Ollama, LM Studio, OpenAI, ...) and is called **directly: no Start Run needed to write**; a
+7B+ model is recommended, bigger for the plot. Every spoken line goes through the TikTok safety filter, and a story needs a licence
+you may use on a live (public domain, your own, CC0 / CC BY, or written permission). Details: [docs/NOVEL.md](docs/NOVEL.md), [docs/STORY.md](docs/STORY.md).
+
+- **Novel reader**: add a story (paste, .txt, .epub), pick narrator / dialogue / per-character voices, press Start. It reads chapter after
+  chapter, resumes where you stopped, shows the line on the overlay, and always yields to viewer comments.
+  - Viewers steer with comments (opt-in): `!tiep` / `!lai` / `!truoc` need several different viewers; an end-of-chapter vote (1 = next, 2 = again).
+  - **Companion** sub-tab (AI, no spoilers): viewers ask `!hoi <question>` and the host answers only from what has been read so far;
+    an AI "previously on ..." recap, chapter summaries, character cards, and reading stats with a day streak.
+  - Search, bookmarks, pronunciation dictionary, sleep timer, audiobook MP3 export.
+- **Novel writer**: a long-form workspace, not a "generate" button. Premise options, story bible (characters with goal / fear / flaw / secret),
+  editable outline, chapter-by-chapter drafting with narrative memory, a thread / foreshadowing tracker, local checks and an AI continuity audit,
+  revise-with-a-diff, version history, approve / lock, steering the next chapter, a "where we left off" card, Markdown export, and
+  **Publish to the Novel reader**. Projects are private files in `data/novel_projects/`.
+- **Story studio**: write a short picture story with the AI (pitch, bible, beats, polish, continuity repair), add your own pictures, and the host
+  tells it live or you export a **video** (vertical or wide, zoom / pan, fades, music, thumbnail, YouTube title / chapters / checklist).
+  Step 3b turns manhua / webtoon pages into a recap script with OCR and a faithful translation. It never downloads from pirate sites.
+
+Optional installs for stories: `pip install Pillow imageio-ffmpeg` (video, audiobook), `pip install rapidocr-onnxruntime` (OCR on pictures).
 
 ## Getting the cart into the catalog
 
@@ -86,7 +117,7 @@ product data, and once chat has been quiet for 2 seconds it continues the produc
 
 ## Control panel
 
-The web UI opens on **Home**: a readiness checklist with one-click fixes, a LIVE badge in the header when the TikTok bridge runs, last-session stats, and sidebar search across all settings. After a live, Home shows a recap with concrete "do this next live" tips, a streak and lives-this-week count. Dark and light themes.
+The web UI opens on **Home**: a readiness checklist with one-click fixes, a LIVE badge in the header when the TikTok bridge runs, last-session stats, and sidebar search across all settings. After a live, Home shows a recap with concrete "do this next live" tips, a streak and lives-this-week count. Dark and light themes. Tabs: Home, Setup, Dashboard, Teach, Schedule, Live tools, Novel reader, Novel writer, Story studio, Products, then Voice, AI model, TTS, avatar and the other settings.
 
 ## Voices (free)
 
@@ -116,13 +147,13 @@ Not used: VietTTS / viXTTS (non-commercial licenses).
 
 ## Tests
 
-`python -m py_compile` over the sources, and see `tests/` for per-backend API experiments inherited from upstream.
+`python -m pytest tests/unit` (about 240 offline tests: safety filter, catalog, stories, novel reader and writer, voices, analytics ...; the AI parts use scripted fake models).
+`tests/` also holds per-backend API experiments inherited from upstream.
 
 ## Catalog tools
 
 - **Products tab** (web UI): edit the catalog, import CSV/XLSX, say a pitch now, test comment replies.
 - `python sync_shop_products.py [--details] [--dry-run] [--status]`: pull products from the TikTok Shop Partner API. Put credentials in `tiktok_shop_credentials.json` (git-ignored) or `TTS_*` env vars. Not yet verified against a real shop.
-- Tests: `python -m pytest tests/unit`
 
 ## Supported platforms
 
@@ -135,5 +166,7 @@ View it in the web UI **Dashboard** tab, or run `python report_session.py [--out
 Toggle with `config.json -> analytics.enable`.
 
 ## Credits
+
+- Story and novel features take ideas from popular web-novel sites, AI reading apps and the open-source editor [steven-tey/novel](https://github.com/steven-tey/novel) (Apache-2.0); no code was copied.
 
 - Home mascot: [page-mascot](https://github.com/nilbuild/page-mascot) by Kamran Ahmed (MIT), ported to plain JS in `utils/webui_mascot.py`. Sprite sheets and licence in `data/mascots/`.
