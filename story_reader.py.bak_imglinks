@@ -115,7 +115,7 @@ class StoryReader:
     def play_panel(self, meta, i, ctl):
         s, seq = ctl["settings"], ctl["seq"]
         t0 = time.time()
-        pieces = story.caption_chunks(meta["panels"][i].get("text", ""), 180, keep_phrases=True)
+        pieces = story.caption_chunks(meta["panels"][i].get("text", ""), 180)
         pron = novel.load_pron()
         if not pieces:
             self.status("playing", meta, i, "")

@@ -11,7 +11,7 @@ import time
 
 from nicegui import app, run, ui
 
-from . import music, novel, setup_wizard, story, story_llm, story_tools, story_video, story_writer, vieneu_tts, voice_catalog
+from . import music, novel, setup_wizard, story, story_llm, story_tools, story_video, story_writer, voice_catalog
 from .webui_novel import VOICES, _tour_running
 from .webui_theme import page_title
 
@@ -277,30 +277,6 @@ def build_story_tab(config):
         cut_strips = ui.switch("Tall webtoon strip? Cut it into panels automatically", value=True)
         count = ui.label("No pictures chosen yet.").classes("lv-chip")
 
-        def drop(k):
-            if 0 <= k < len(pending):
-                pending.pop(k)
-            count.text = f"{len(pending)} picture(s) chosen." if pending else "No pictures chosen yet."
-            preview.refresh()
-
-        def drop_all():
-            pending.clear()
-            count.text = "No pictures chosen yet."
-            preview.refresh()
-
-        @ui.refreshable
-        def preview():
-            if not pending:
-                return
-            with ui.row().classes("w-full").style("gap:10px;flex-wrap:wrap"):
-                for k, (nm, data) in enumerate(pending):
-                    with ui.column().style("gap:2px;width:96px;align-items:center"):
-                        ui.image(story.thumb_data_uri(data)).style("width:96px;height:128px;object-fit:cover;border-radius:8px")
-                        ui.label(f"{k + 1}").classes("lv-sub")
-                        ui.button(icon="close", on_click=lambda k=k: drop(k)).props("flat round dense size=sm color=negative")
-            ui.button("Remove all", icon="delete_sweep", on_click=drop_all).props("flat no-caps color=negative")
-        preview()
-
         async def on_upload(e):
             data = e.content.read()
             name = e.name or "panel.png"
@@ -314,27 +290,8 @@ def build_story_tab(config):
             except Exception as ex:
                 ui.notify(f"{name}: {ex}", type="negative")
             count.text = f"{len(pending)} picture(s) chosen."
-            preview.refresh()
         up = ui.upload(label="Panel pictures (several at once, or a .zip)", on_upload=on_upload, multiple=True,
                        auto_upload=True).props("accept=.png,.jpg,.jpeg,.webp,.zip flat dense").classes("w-full")
-        url_box = ui.textarea("...or paste a list of picture links (a JSON list [\"https://...\", ...] or one link per line)").classes("w-full").props("rows=4")
-        url_lbl = ui.label("").classes("lv-sub").style("white-space:pre-line")
-
-        async def load_links():
-            urls = story.parse_url_list(url_box.value)
-            if not urls:
-                ui.notify("No http(s) links found.", type="warning")
-                return
-            url_lbl.text = f"Downloading {len(urls)} picture(s) ..."
-            pics, bad = await run.io_bound(story.fetch_images, urls)
-            pending.extend(pics)
-            url_box.value = ""
-            count.text = f"{len(pending)} picture(s) chosen."
-            preview.refresh()
-            url_lbl.text = f"Got {len(pics)}/{len(urls)}." + "".join(f"\n- failed: {u[:70]}... ({why})" for u, why in bad[:10])
-            ui.notify(f"{len(pics)} picture(s) downloaded." + (f" {len(bad)} failed." if bad else ""),
-                      type="warning" if bad else "positive")
-        ui.button("Download these links", icon="link", on_click=load_links).props("outline no-caps")
         script = ui.textarea("Narration (one paragraph per panel)").classes("w-full").props("rows=6")
         ref["script"] = script
         check_lbl = ui.label("").classes("lv-sub").style("white-space:pre-line")
@@ -357,7 +314,6 @@ def build_story_tab(config):
             pending.clear()
             up.reset()
             count.text = "No pictures chosen yet."
-            preview.refresh()
             script.value = ""
             sel["story"] = m["id"]
             ui.notify(f'Added "{m["title"]}" ({len(m["panels"])} panels).', type="positive")
@@ -670,36 +626,12 @@ def build_story_tab(config):
             el.bind_visibility_from(src, "value", backward=lambda v: v == "novel")
         with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
             v_lang = ui.select({"vi": "Vietnamese", "en": "English"}, label="Language", value="vi").classes("w-40")
-            v_engine = ui.select({"edge": "Edge (free, online)", "vieneu": "VieNeu (local, on this PC)"}, label="Voice engine",
-                                 value="vieneu" if str(config.get("audio_synthesis_type")) == "vieneu" else "edge").classes("w-60")
-            v_voice2 = ui.select({"": "Default for the language", **{k: v for k, v in VOICES.items() if k}}, label="Voice (Edge)", value="",
+            v_voice2 = ui.select({"": "Default for the language", **{k: v for k, v in VOICES.items() if k}}, label="Voice", value="",
                                  with_input=True).classes("w-80")
-            vie_cfg = dict(config.get("vieneu") or {})
-            vie_url = vie_cfg.get("api_url") or vieneu_tts.DEFAULT_URL
-            vie_sel = ui.select([vie_cfg["voice"]] if vie_cfg.get("voice") else [], label="Voice (VieNeu)", value=vie_cfg.get("voice") or None,
-                                with_input=True, new_value_mode="add-unique").classes("w-64")
-            vie_btn = ui.button("Load VieNeu voices", icon="refresh").props("outline no-caps")
-            for el in (v_voice2,):
-                el.bind_visibility_from(v_engine, "value", backward=lambda v: v == "edge")
-            for el in (vie_sel, vie_btn):
-                el.bind_visibility_from(v_engine, "value", backward=lambda v: v == "vieneu")
             part = ui.number("Part number", value=1, min=0, max=99, format="%.0f").classes("w-32")
             with ui.column().style("gap:0;min-width:200px"):
                 ui.label("Speed (%)").classes("lv-sub").style("margin:0")
                 rate2 = ui.slider(min=-30, max=40, value=0).props("label-always").style("margin-top:30px")
-        vie_note = ui.label("").classes("lv-sub")
-        vie_note.bind_visibility_from(v_engine, "value", backward=lambda v: v == "vieneu")
-
-        async def load_vie():
-            ok = await run.io_bound(vieneu_tts.is_up, vie_url)
-            if not ok:
-                vie_note.text = "The VieNeu server is not running. Start it from the Voice tab, then press the button again."
-                return
-            names = await run.io_bound(vieneu_tts.list_voices, vie_url, vie_cfg.get("api_key", ""))
-            if names:
-                vie_sel.set_options(names, value=(vie_sel.value if vie_sel.value in names else names[0]))
-            vie_note.text = f"VieNeu is running: {len(names)} voice(s)."
-        vie_btn.on_click(load_vie)
         hook_in = ui.input("Hook (first line, makes people stay)", placeholder="Bạn có tin vào định mệnh?").classes("w-full")
         outro_in = ui.input("Ending line", value="Theo dõi để xem phần 2!").classes("w-full")
         tracks = {t["file"]: t for t in music.playable(music.tracks())}
@@ -750,7 +682,6 @@ def build_story_tab(config):
 
         async def make():
             if prog["busy"]:
-                ui.notify("A video is already being made (" + (prog["msg"] or "working") + "). Wait for it, or press Cancel.", type="warning")
                 return
             m, panels = panels_now()
             if src.value == "story":
@@ -763,23 +694,13 @@ def build_story_tab(config):
             if not panels:
                 ui.notify("Nothing to make a video from yet.", type="warning")
                 return
-            if story_video.missing_tools(need_edge=v_engine.value == "edge"):
+            if story_video.missing_tools():
                 ui.notify("Install the missing tools first (see the red note).", type="negative")
                 return
-            tts_fn = None
-            if v_engine.value == "vieneu":
-                if not await run.io_bound(vieneu_tts.is_up, vie_url):
-                    ui.notify("The VieNeu server is not running. Start it from the Voice tab first (or choose Edge).", type="negative")
-                    return
-                vcfg = dict(vie_cfg)
-                if vie_sel.value:
-                    vcfg["voice"] = vie_sel.value
-                tts_fn = lambda t, v, r, o: story_video.vieneu_tts_file(t, vcfg, r, o)
             os.makedirs(OUT_DIR, exist_ok=True)
             base = os.path.join(OUT_DIR, f'{m["id"]}-{int(time.time()) % 100000}')
             mt = tracks.get(mus.value) if mus.value else None
             prog.update(a=0, b=1, msg="Starting...", busy=True, cancel=False)
-            ui.notify("Making the video ... this takes a few minutes. Watch the progress bar below.", type="info")
             result.clear()
 
             def progress(a, b, msg):
@@ -787,7 +708,7 @@ def build_story_tab(config):
             try:
                 results = await run.io_bound(lambda: story_video.build_parts(
                     panels, base, float(split_min.value or 0) * 60, int(part.value or 1), hook_in.value or "", outro_in.value or "",
-                    v_lang.value, progress, voice=v_voice2.value or "", tts=tts_fn, tts_workers=(2 if v_engine.value == "vieneu" else 4), rate=int(rate2.value or 0), title=m["title"],
+                    v_lang.value, progress, voice=v_voice2.value or "", rate=int(rate2.value or 0), title=m["title"],
                     music=os.path.join(music.MUSIC_DIR, mt["file"]) if mt else None, music_volume=(mvol.value or 12) / 100.0,
                     size=story_video.FORMATS.get(fmt.value, (1080, 1920)), cancel=lambda: prog["cancel"], motion=motion.value,
                     fade=bool(fade.value)))
@@ -797,7 +718,6 @@ def build_story_tab(config):
                 ui.notify(f"Video failed: {ex}", type="negative")
                 return
             prog.update(busy=False, msg=f'Done: {len(results)} video(s), {sum(r["seconds"] for r in results):.0f} s')
-            ui.notify(f'Video ready: {len(results)} file(s), {sum(r["seconds"] for r in results):.0f} s. Scroll down to watch / download it.', type="positive")
             credit = mt["credit"] if mt and mt.get("credit") else ""
             kits, yts = [], []
             for r in results:
@@ -840,7 +760,7 @@ def build_story_tab(config):
 
         with ui.row().style("gap:10px;margin-top:8px"):
             ui.button("Make the video", icon="movie_creation", on_click=make).props("color=primary no-caps")
-            ui.button("Cancel", icon="close", on_click=lambda: (prog.update(cancel=True), ui.notify("Cancelling after the current piece ...", type="info"))).props("flat no-caps")
+            ui.button("Cancel", icon="close", on_click=lambda: prog.update(cancel=True)).props("flat no-caps")
             ui.button("Copy caption", icon="content_copy", on_click=lambda: _copy(kit_box.value or "")).props("flat no-caps")
             ui.button("Copy YouTube text", icon="content_copy", on_click=lambda: _copy(yt_box.value or "")).props("flat no-caps")
             ui.button("Make a YouTube thumbnail", icon="image", on_click=make_thumb).props("outline no-caps")

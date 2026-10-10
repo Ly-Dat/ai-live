@@ -8,15 +8,10 @@ AI tool), public domain, CC, or used with written permission. Panels copied from
 copyrighted: they are blocked from the live and from video export. There is deliberately no "fetch from a site" button.
 """
 import io
-import ipaddress
-import json
 import os
 import re
 import shutil
-import socket
 import time
-import urllib.parse
-import urllib.request
 import zipfile
 from typing import Dict, List, Optional, Tuple
 
@@ -80,100 +75,6 @@ def zip_images(data: bytes) -> List[Tuple[str, bytes]]:
             out.append((os.path.basename(i.filename), z.read(i)))
     return out
 
-
-def parse_url_list(text: str) -> List[str]:
-    """Image links from pasted text: a JSON array ["https://...", ...], or one link per line / separated by spaces or commas.
-    Order is kept, duplicates dropped, only http(s) links."""
-    text = (text or "").strip()
-    urls: List[str] = []
-    if text.startswith("["):
-        try:
-            data = json.loads(text)
-            urls = [str(u) for u in data if isinstance(u, str)]
-        except ValueError:
-            urls = []
-    if not urls:
-        urls = re.findall(r"https?://[^\s\"'<>,\[\]]+", text)
-    seen, out = set(), []
-    for u in (x.strip() for x in urls):
-        if u.lower().startswith(("http://", "https://")) and u not in seen:
-            seen.add(u)
-            out.append(u)
-    return out[:MAX_PANELS]
-
-
-def _is_public_host(host: str) -> bool:
-    """Refuse localhost / LAN addresses so a link cannot be used to poke at the user's own network."""
-    try:
-        infos = socket.getaddrinfo(host, None)
-    except OSError:
-        return False
-    for info in infos:
-        ip = ipaddress.ip_address(info[4][0])
-        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
-            return False
-    return True
-
-
-class _SafeRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        u = urllib.parse.urlparse(newurl)
-        if u.scheme not in ("http", "https") or not _is_public_host(u.hostname or ""):
-            raise ValueError("redirect to a non-public address")
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
-
-
-def fetch_image(url: str, timeout: float = 20.0) -> Tuple[str, bytes]:
-    """Download one picture. The type is decided from the bytes (PNG / JPG / WEBP), not from the link, so links without an
-    extension (e.g. encrypted-tbn0.gstatic.com/images?q=tbn:...) and .webp links both work. Returns (file name, bytes)."""
-    u = urllib.parse.urlparse(url)
-    if u.scheme not in ("http", "https") or not u.hostname:
-        raise ValueError("not an http(s) link")
-    if not _is_public_host(u.hostname):
-        raise ValueError("address is not public")
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "image/*,*/*;q=0.8",
-                                               "Referer": f"{u.scheme}://{u.netloc}/"})
-    opener = urllib.request.build_opener(_SafeRedirect)
-    with opener.open(req, timeout=timeout) as r:
-        data = r.read(MAX_IMG_BYTES + 1)
-    if len(data) > MAX_IMG_BYTES:
-        raise ValueError("picture is larger than 15 MB")
-    ext = _sniff_ext(data)
-    if not ext:
-        raise ValueError("not a PNG / JPG / WEBP picture")
-    base = os.path.basename(urllib.parse.unquote(u.path)) or "img"
-    stem = re.sub(r"[^A-Za-z0-9_-]", "", os.path.splitext(base)[0])[:30] or "img"
-    return stem + ext, data
-
-
-def fetch_images(urls: List[str], progress=None) -> Tuple[List[Tuple[str, bytes]], List[Tuple[str, str]]]:
-    """Download a list of links in the SAME order. Names are prefixed 0001_, 0002_ ... so the story keeps your list order.
-    Returns (pictures, failures[(url, reason)])."""
-    pics, bad = [], []
-    for i, url in enumerate(urls, 1):
-        try:
-            name, data = fetch_image(url)
-            pics.append((f"{i:04d}_{name}", data))
-        except Exception as ex:
-            bad.append((url, str(ex)))
-        if progress:
-            progress(i, len(urls))
-    return pics, bad
-
-
-
-def thumb_data_uri(data: bytes, box: Tuple[int, int] = (192, 256)) -> str:
-    """Small JPEG preview of a picture as a data: URI (for the 'chosen pictures' row). Empty string if it cannot be read."""
-    import base64
-    try:
-        from PIL import Image
-        im = Image.open(io.BytesIO(data))
-        im.thumbnail(box)
-        out = io.BytesIO()
-        im.convert("RGB").save(out, "JPEG", quality=70)
-        return "data:image/jpeg;base64," + base64.b64encode(out.getvalue()).decode()
-    except Exception:
-        return ""
 
 def split_strip(data: bytes, name: str = "strip", min_h: int = 420, max_h: int = 1700, tol: int = 10, gutter: int = 16) -> List[Tuple[str, bytes]]:
     """Cut one tall webtoon-style strip into panels at the empty bands (gutters) between them.
@@ -252,54 +153,20 @@ def parse_script(text: str, n: int) -> List[str]:
     return out
 
 
-def _sentences(t: str) -> List[str]:
-    """Split at . ! ? ... only where a NEW sentence starts (capital letter, digit or opening quote), so a hesitation
-    like "Xin chào các... bạn đã đến" stays ONE sentence and is never read in two halves."""
-    parts, start = [], 0
-    for m in re.finditer(r"[.!?\u2026]+[\"\u201d\u00bb\u2019)]*\s+", t):
-        nxt = t[m.end():m.end() + 1]
-        lead = len(t[start:m.start()])
-        trailing_off = (".." in m.group() or "\u2026" in m.group()) and lead < 30   # "Xin chào các... Bạn đã đến": a pause, not a sentence end
-        if nxt and not trailing_off and (nxt.isupper() or nxt.isdigit() or nxt in "\"\u201c\u00ab(\u2018'"):
-            parts.append(t[start:m.end()].strip())
-            start = m.end()
-    parts.append(t[start:].strip())
-    return [p for p in parts if p]
-
-
-_CLAUSE_RX = re.compile(r"(?<=[.!?\u2026,;:\u2014\u2013])\s+")
-_SPACE_RX = re.compile(r"\s+")
-
-
-def _split_long(s: str, max_chars: int, keep: bool = False) -> List[str]:
-    """Cut a too-long sentence at a clause mark (, ; : - ...) near the MIDDLE, never in the middle of a phrase when a mark
-    exists; only if there is no mark at all, at the space nearest the middle. Both halves stay balanced."""
-    if len(s) <= max_chars:
-        return [s]
-    lo = 18
-
-    def cands(rx):
-        return [m.end() for m in rx.finditer(s) if lo <= m.end() <= len(s) - lo]
-    clause, spaces = cands(_CLAUSE_RX), cands(_SPACE_RX)
-    good = [c for c in clause if c <= max_chars and len(s) - c <= max_chars]
-    pool = good or clause
-    if not pool:
-        if keep and len(s) <= int(max_chars * 1.7):
-            return [s]      # no natural break: a slightly long line is better than a cut in the middle of a phrase
-        pool = spaces
-    cut = min(pool, key=lambda c: abs(c - len(s) / 2)) if pool else max_chars
-    return _split_long(s[:cut].strip(), max_chars, keep) + _split_long(s[cut:].strip(), max_chars, keep)
-
-
-def caption_chunks(text: str, max_chars: int = 70, keep_phrases: bool = False) -> List[str]:
-    """Subtitle-sized pieces: whole sentences first; a sentence longer than max_chars is cut at its clause marks
-    (commas etc.) near the middle, so every piece is a natural phrase the voice can read with a normal intonation."""
+def caption_chunks(text: str, max_chars: int = 70) -> List[str]:
+    """Short subtitle-sized pieces: split at sentence ends, then at commas / spaces."""
     t = re.sub(r"\s+", " ", novel.clean_for_speech(text or "")).strip()
     if not t:
         return []
     out: List[str] = []
-    for sent in _sentences(t):
-        out.extend(x for x in _split_long(sent, max_chars, keep_phrases) if x)
+    for sent in [s.strip() for s in novel._SENT.split(t) if s.strip()]:
+        while len(sent) > max_chars:
+            cut = max(sent.rfind(", ", 0, max_chars), sent.rfind("; ", 0, max_chars), sent.rfind(" ", 0, max_chars))
+            cut = cut if cut > 20 else max_chars
+            out.append(sent[:cut + 1].strip())
+            sent = sent[cut + 1:].strip()
+        if sent:
+            out.append(sent)
     # merge tiny leftovers ("Yes.") into the previous piece when it still fits
     merged: List[str] = []
     for c in out:
@@ -308,6 +175,7 @@ def caption_chunks(text: str, max_chars: int = 70, keep_phrases: bool = False) -
         else:
             merged.append(c)
     return merged
+
 
 # ------------------------------------------------------------------ library
 def _folder(story_id: str, root: str) -> str:
