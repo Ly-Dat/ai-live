@@ -31,7 +31,11 @@ html,body{margin:0;background:transparent;font-family:"Segoe UI",system-ui,sans-
 #sp .spt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.75;margin-top:6px;text-shadow:0 1px 4px rgba(0,0,0,.7)}
 #np{position:fixed;right:20px;bottom:20px;max-width:300px;text-align:right;font-size:13px;opacity:.88;text-shadow:0 1px 4px rgba(0,0,0,.7)}
 #cr{font-size:11px;opacity:.7}
-</style></head><body><div id="wrap"></div><div id="nv"><div class="nt" id="nvt"></div><div class="nprev" id="nvp"></div><div class="ncur" id="nvc"></div><div class="nnext" id="nvn"></div><div class="ncr" id="nvr"></div></div><div id="sp"><img id="spi" alt=""><div class="spc" id="spc"></div><div class="spt" id="spt"></div></div><div id="np"><div id="npt"></div><div id="cr"></div></div><audio id="bgm"></audio><script>
+#av{position:fixed;right:24px;bottom:56px;display:none;pointer-events:none}
+#av img{height:62vh;display:block;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45));animation:bob 3.4s ease-in-out infinite}
+#av.rest img{animation:none;opacity:.85}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+</style></head><body><div id="wrap"></div><div id="nv"><div class="nt" id="nvt"></div><div class="nprev" id="nvp"></div><div class="ncur" id="nvc"></div><div class="nnext" id="nvn"></div><div class="ncr" id="nvr"></div></div><div id="sp"><img id="spi" alt=""><div class="spc" id="spc"></div><div class="spt" id="spt"></div></div><div id="np"><div id="npt"></div><div id="cr"></div></div><div id="av"><img id="avi" alt=""></div><audio id="bgm"></audio><script>
 var items=[],at=Date.now();
 function mmss(s){s=Math.max(0,s);return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2)}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
@@ -49,7 +53,7 @@ function render(){var w=document.getElementById("wrap");w.textContent="";var dt=
   else{head(c,"Flash sale",mmss(left));c.appendChild(el("div","t",it.product||"Flash sale"));
    var m=[];if(it.price)m.push(it.price);if(it.stock)m.push(it.stock+" left");if(m.length)c.appendChild(el("div","big hot",m.join(" - ")))}
   w.appendChild(c)})}
-function poll(){fetch("/overlay/state").then(function(r){return r.json()}).then(function(d){items=d.items||[];at=Date.now();render();setMusic(d.music);setNovel(d.novel);setStory(d.story)}).catch(function(){})}
+function poll(){fetch("/overlay/state").then(function(r){return r.json()}).then(function(d){items=d.items||[];at=Date.now();render();setMusic(d.music);setNovel(d.novel);setStory(d.story);setAvatar(d.avatar)}).catch(function(){})}
 var bgm=document.getElementById("bgm"),mt=[],mi=0,mkey="",mtarget=0;
 function playCur(){var t=mt[mi%mt.length];bgm.src=t.url;
  document.getElementById("npt").textContent="\u266A "+t.title+(t.artist?" - "+t.artist:"");document.getElementById("cr").textContent=t.credit||"";
@@ -72,6 +76,14 @@ function setStory(n){var b=document.getElementById("sp");
  if(n.image!==spKey){spKey=n.image;im.style.opacity=0;im.onload=function(){im.style.opacity=1};im.src=n.image+"?t="+Date.now()}
  var c=document.getElementById("spc");c.textContent=n.text||"";c.style.display=n.text?"block":"none";
  document.getElementById("spt").textContent=(n.title||"")+" - "+n.index+"/"+n.total+(n.paused?" (paused)":"")+(n.credit?"  |  "+n.credit:"")+(n.hint?"  |  "+n.hint:"")}
+var avImgs={},avState=null,avTick=0;
+function showAv(open){var a=avState;if(!a)return;var k=(open&&a.images.talking)?"talking":a.mood;var u=a.images[k]||a.images.idle;
+ var im=document.getElementById("avi");if(im.getAttribute("data-u")!==u){im.setAttribute("data-u",u);im.src=u}}
+function setAvatar(a){var b=document.getElementById("av");
+ if(!a){b.style.display="none";avState=null;return}
+ b.style.display="block";b.className=a.paused?"rest":"";document.getElementById("avi").style.height=a.height+"vh";avState=a;
+ Object.keys(a.images).forEach(function(k){if(avImgs[k]!==a.images[k]){avImgs[k]=a.images[k];(new Image()).src=a.images[k]}});showAv(false)}
+setInterval(function(){if(avState&&avState.talking){avTick++;showAv(avTick%2===0)}},170);
 function setMusic(m){if(!m||!m.enabled||!m.tracks||!m.tracks.length){bgm.pause();mkey="";mt=[];
   document.getElementById("npt").textContent="";document.getElementById("cr").textContent="";return}
  var key=m.tracks.map(function(t){return t.url}).join("|");mtarget=m.volume;

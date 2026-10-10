@@ -66,6 +66,10 @@ Manual route for developers: `python main.py`, then `python webui.py`, then in t
 - **Welcome back** (opt-in): recognises returning viewers by a salted hash only; "Forget all viewers" erases it.
 - **Personas** (`data/personas.json`): friendly girl, cheerful host, calm expert. Each sets voice, speed, speaking style and avatar while keeping the compliance rules.
 
+## Avatar studio and seller brain
+
+A free AI-drawn seller character on the overlay (local Stable Diffusion + Animagine XL 3.1, or your own pictures), six expressions that follow the live, a Pause / Take-over switch, and catalog-only answers for compare, budget and price/trust doubts. Details and limits: [docs/AVATAR.md](docs/AVATAR.md).
+
 ## Stories on your live
 
 Three tabs turn the host into a storyteller, which keeps viewers watching and is a second way to grow a channel. The AI is the

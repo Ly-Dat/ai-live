@@ -3483,6 +3483,12 @@ class My_handle(metaclass=SingletonMeta):
                 logger.info(f"Taught answer: {quick_reply}")
             if not quick_reply and My_handle.config.get("products", "quick_answers") and catalog is not None:
                 quick_reply = catalog.quick_answer(data["content"])
+                if not quick_reply:   # compare / budget picks / price-trust-quality doubts, from catalog facts only
+                    try:
+                        from utils import seller_brain
+                        quick_reply = seller_brain.answer(catalog, data["content"])
+                    except Exception as e:
+                        logger.debug(f"seller brain: {e}")
                 if not quick_reply and intent == "buy" and matched_product:
                     quick_reply = catalog.buy_reply(matched_product)
                 if quick_reply:
@@ -3511,6 +3517,12 @@ class My_handle(metaclass=SingletonMeta):
 
             if quick_reply:
                 resp_content = quick_reply
+                if not taught_reply and not cache_hit:
+                    try:
+                        from utils import avatar as _avatar, seller_brain
+                        resp_content = seller_brain.add_catchphrase(resp_content, _avatar.load_settings()["catchphrases"])
+                    except Exception as e:
+                        logger.debug(f"catchphrase: {e}")
             elif chat_type in self.chat_type_list:
                 data_json["content"] = My_handle.config.get("before_prompt")
                 # Whether to enable the danmaku template
@@ -3772,6 +3784,9 @@ class My_handle(metaclass=SingletonMeta):
     def coverage_human(self):
         """True while the seller has marked these hours as 'I am hosting' (the AI then stays quiet). Re-read every 5 s."""
         try:
+            from utils import host_control
+            if host_control.is_silent():   # manual Pause / Take over from the Avatar studio tab
+                return True
             now = time.time()
             cache = self.__dict__.get("_coverage_cache")
             if not cache or now - cache[0] > 5:
