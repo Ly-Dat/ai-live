@@ -288,3 +288,6 @@ out/stories/
 
 data/novel_bookmarks.json
 data/*.tmp
+
+# generated avatar pictures and progress
+data/avatar/

@@ -3520,7 +3520,7 @@ class My_handle(metaclass=SingletonMeta):
                 if not taught_reply and not cache_hit:
                     try:
                         from utils import avatar as _avatar, seller_brain
-                        resp_content = seller_brain.add_catchphrase(resp_content, _avatar.load_settings()["catchphrases"])
+                        resp_content = seller_brain.add_catchphrase(resp_content, _avatar.catchphrases(_avatar.load_settings()))
                     except Exception as e:
                         logger.debug(f"catchphrase: {e}")
             elif chat_type in self.chat_type_list:

@@ -31,11 +31,26 @@ html,body{margin:0;background:transparent;font-family:"Segoe UI",system-ui,sans-
 #sp .spt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.75;margin-top:6px;text-shadow:0 1px 4px rgba(0,0,0,.7)}
 #np{position:fixed;right:20px;bottom:20px;max-width:300px;text-align:right;font-size:13px;opacity:.88;text-shadow:0 1px 4px rgba(0,0,0,.7)}
 #cr{font-size:11px;opacity:.7}
-#av{position:fixed;right:24px;bottom:56px;display:none;pointer-events:none}
-#av img{height:62vh;display:block;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45));animation:bob 3.4s ease-in-out infinite}
+#av{position:fixed;bottom:56px;display:none;pointer-events:none;text-align:center}
+#av.right{right:24px}#av.left{left:24px}#av.center{left:50%;margin-left:-15vh}
+#av img{height:62vh;display:block;margin:0 auto;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45))}
+#av.m-bob img{animation:bob 3.4s ease-in-out infinite}
+#av.m-breathe img{animation:breathe 4s ease-in-out infinite;transform-origin:50% 100%}
+#av.m-sway img{animation:sway 5s ease-in-out infinite;transform-origin:50% 100%}
+#av.m-float img{animation:float 6s ease-in-out infinite}
 #av.rest img{animation:none;opacity:.85}
+#av.f-glow img{filter:drop-shadow(0 0 14px rgba(255,255,255,.75))}
+#av.f-neon img{filter:drop-shadow(0 0 6px #22d3ee) drop-shadow(0 0 18px #8b5cf6)}
+#av.f-sakura img{filter:drop-shadow(0 0 14px #f9a8d4)}
+#av.f-gold img{filter:drop-shadow(0 0 10px #fbbf24) drop-shadow(0 0 22px #f59e0b)}
+#avn{margin-top:6px;display:inline-block;background:rgba(20,16,36,.82);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:4px 12px;font-size:14px;font-weight:700}
+#avb{font-size:11px;opacity:.8;font-weight:600;margin-left:8px}
+#avt{display:none;margin:6px auto 0;max-width:260px;background:rgba(255,255,255,.93);color:#1d1b2b;border-radius:12px;padding:6px 12px;font-size:13px}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-</style></head><body><div id="wrap"></div><div id="nv"><div class="nt" id="nvt"></div><div class="nprev" id="nvp"></div><div class="ncur" id="nvc"></div><div class="nnext" id="nvn"></div><div class="ncr" id="nvr"></div></div><div id="sp"><img id="spi" alt=""><div class="spc" id="spc"></div><div class="spt" id="spt"></div></div><div id="np"><div id="npt"></div><div id="cr"></div></div><div id="av"><img id="avi" alt=""></div><audio id="bgm"></audio><script>
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
+@keyframes sway{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
+@keyframes float{0%,100%{transform:translateY(0)}25%{transform:translateY(-10px)}75%{transform:translateY(4px)}}
+</style></head><body><div id="wrap"></div><div id="nv"><div class="nt" id="nvt"></div><div class="nprev" id="nvp"></div><div class="ncur" id="nvc"></div><div class="nnext" id="nvn"></div><div class="ncr" id="nvr"></div></div><div id="sp"><img id="spi" alt=""><div class="spc" id="spc"></div><div class="spt" id="spt"></div></div><div id="np"><div id="npt"></div><div id="cr"></div></div><div id="av"><img id="avi" alt=""><div id="avnw"><span id="avn"></span><span id="avb"></span></div><div id="avt"></div></div><audio id="bgm"></audio><script>
 var items=[],at=Date.now();
 function mmss(s){s=Math.max(0,s);return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2)}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
@@ -81,8 +96,15 @@ function showAv(open){var a=avState;if(!a)return;var k=(open&&a.images.talking)?
  var im=document.getElementById("avi");if(im.getAttribute("data-u")!==u){im.setAttribute("data-u",u);im.src=u}}
 function setAvatar(a){var b=document.getElementById("av");
  if(!a){b.style.display="none";avState=null;return}
- b.style.display="block";b.className=a.paused?"rest":"";document.getElementById("avi").style.height=a.height+"vh";avState=a;
- Object.keys(a.images).forEach(function(k){if(avImgs[k]!==a.images[k]){avImgs[k]=a.images[k];(new Image()).src=a.images[k]}});showAv(false)}
+ b.style.display="block";b.className=a.side+" m-"+a.motion+" f-"+a.frame+(a.paused?" rest":"");
+ document.getElementById("avi").style.height=a.height+"vh";avState=a;
+ document.getElementById("avn").textContent=a.name||"";document.getElementById("avn").style.display=a.name?"inline-block":"none";
+ document.getElementById("avb").textContent=a.badge||"";
+ Object.keys(a.images).forEach(function(k){if(avImgs[k]!==a.images[k]){avImgs[k]=a.images[k];(new Image()).src=a.images[k]}});showAv(false);tipTick()}
+function tipTick(){var a=avState,t=document.getElementById("avt");
+ if(!a||!a.tips||!a.tips.length||a.paused){t.style.display="none";return}
+ t.style.display="block";t.textContent=a.tips[Math.floor(Date.now()/(a.tip_seconds*1000))%a.tips.length]}
+setInterval(tipTick,1000);
 setInterval(function(){if(avState&&avState.talking){avTick++;showAv(avTick%2===0)}},170);
 function setMusic(m){if(!m||!m.enabled||!m.tracks||!m.tracks.length){bgm.pause();mkey="";mt=[];
   document.getElementById("npt").textContent="";document.getElementById("cr").textContent="";return}

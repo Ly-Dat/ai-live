@@ -1082,10 +1082,17 @@ def goto_func_page():
         except Exception:
             out["story"] = None
         try:
-            from utils import avatar as _av, host_control as _hc, music as _m2, live_analytics as _la2, webui_avatar as _wa
+            from utils import avatar as _av, bond as _bd, host_control as _hc, music as _m2, live_analytics as _la2, webui_avatar as _wa
             _wa._mount()
-            out["avatar"] = _av.overlay_avatar(_av.load_settings(), _av.pack_files(), _m2.tail_events(_la2.latest_session_file()),
-                                               time.time(), _hc.load()["state"])
+            now_ = time.time()
+            try:
+                stale = now_ - os.path.getmtime(_bd.PATH) > 600
+            except OSError:
+                stale = True
+            if stale:
+                _bd.refresh(config.get("analytics", "dir") or "log/analytics")
+            out["avatar"] = _av.overlay_avatar(_av.load_settings(), _m2.tail_events(_la2.latest_session_file()), now_, _hc.load()["state"],
+                                               _bd.load_cache(), preview=_av.read_preview(now_))
         except Exception:
             out["avatar"] = None
         return JSONResponse(out, headers={"Cache-Control": "no-store"})

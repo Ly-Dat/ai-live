@@ -68,7 +68,7 @@ Manual route for developers: `python main.py`, then `python webui.py`, then in t
 
 ## Avatar studio and seller brain
 
-A free AI-drawn seller character on the overlay (local Stable Diffusion + Animagine XL 3.1, or your own pictures), six expressions that follow the live, a Pause / Take-over switch, and catalog-only answers for compare, budget and price/trust doubts. Details and limits: [docs/AVATAR.md](docs/AVATAR.md).
+Free AI-drawn seller characters on the overlay (local Stable Diffusion + Animagine XL 3.1, or your own pictures): 8 ready-made originals or your own, outfits, 14 expressions that follow the live, stage options, a level / streak / achievements journey, a Pause / Take-over switch, and catalog-only answers for compare, budget and price/trust doubts. Details and limits: [docs/AVATAR.md](docs/AVATAR.md).
 
 ## Stories on your live
 

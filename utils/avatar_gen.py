@@ -22,7 +22,9 @@ import urllib.parse
 import urllib.request
 from typing import Callable, Dict, List, Optional
 
-EXPRESSIONS = ["idle", "talking", "happy", "surprised", "confused", "thinking"]
+CORE = ["idle", "talking", "happy", "surprised", "confused", "thinking"]
+EXTRA = ["wink", "shy", "excited", "sad", "sleepy", "laughing", "love", "proud"]
+EXPRESSIONS = CORE + EXTRA
 _EXPR_TAGS = {
     "idle": "calm smile, closed mouth, looking at viewer",
     "talking": "open mouth, cheerful, looking at viewer",
@@ -30,7 +32,30 @@ _EXPR_TAGS = {
     "surprised": "surprised, wide eyes, open mouth, raised eyebrows",
     "confused": "confused, tilted head, sweat drop, small frown",
     "thinking": "thinking, hand on chin, looking up, closed mouth",
+    "wink": "wink, one eye closed, smile, peace sign",
+    "shy": "blush, shy, embarrassed, looking away, hands on cheeks",
+    "excited": "excited, sparkling eyes, open mouth, fists raised",
+    "sad": "sad, teary eyes, small frown, looking down",
+    "sleepy": "sleepy, half-closed eyes, yawning",
+    "laughing": "laughing, closed eyes, open mouth, tears of joy",
+    "love": "heart-shaped pupils, blush, smile, floating hearts",
+    "proud": "smug, proud smile, hand on hip, closed eyes",
 }
+# When a picture is missing the page uses the next one in the chain, ending at idle.
+FALLBACK = {"talking": "idle", "happy": "idle", "surprised": "idle", "confused": "idle", "thinking": "idle",
+            "wink": "happy", "shy": "happy", "excited": "happy", "sad": "confused", "sleepy": "idle",
+            "laughing": "happy", "love": "happy", "proud": "happy"}
+
+
+def resolve(expr: str, have) -> str:
+    """The expression to actually show: expr itself if drawn, else down its fallback chain, else idle."""
+    for _ in range(4):
+        if expr in have:
+            return expr
+        expr = FALLBACK.get(expr, "idle")
+    return "idle"
+
+
 QUALITY = "masterpiece, best quality, very aesthetic, absurdres"
 NEGATIVE = ("lowres, bad anatomy, bad hands, text, error, missing finger, extra digits, fewer digits, cropped, "
             "worst quality, low quality, signature, watermark, username, blurry, background, scenery")
