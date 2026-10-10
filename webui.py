@@ -606,15 +606,15 @@ def goto_func_page():
                         resp_json = await common.send_async_request(API_URL, "GET", None, resp_data_type="json")
 
                         if resp_json is None:
-                            content = f"gpt_weights：{input_gpt_sovits_gpt_model_path.value} failed to load, please check both sides’ logs to troubleshoot"
+                            content = f"gpt_weights: {input_gpt_sovits_gpt_model_path.value} failed to load, please check both sides’ logs to troubleshoot"
                             logger.error(content)
                             return False
                         else:
                             if resp_json["message"] == "success":
-                                content = f"gpt_weights：{input_gpt_sovits_gpt_model_path.value} loaded successfully"
+                                content = f"gpt_weights: {input_gpt_sovits_gpt_model_path.value} loaded successfully"
                                 logger.info(content)
                             else:
-                                content = f"gpt_weights：{input_gpt_sovits_gpt_model_path.value} failed to load, please check both sides’ logs to troubleshoot"
+                                content = f"gpt_weights: {input_gpt_sovits_gpt_model_path.value} failed to load, please check both sides’ logs to troubleshoot"
                                 logger.error(content)
                                 return False
                         
@@ -632,15 +632,15 @@ def goto_func_page():
                         resp_json = await common.send_async_request(API_URL, "GET", None, resp_data_type="json")
 
                         if resp_json is None:
-                            content = f"sovits_weights：{input_gpt_sovits_sovits_model_path.value} failed to load, please check both sides’ logs to troubleshoot"
+                            content = f"sovits_weights: {input_gpt_sovits_sovits_model_path.value} failed to load, please check both sides’ logs to troubleshoot"
                             logger.error(content)
                             return False
                         else:
                             if resp_json["message"] == "success":
-                                content = f"sovits_weights：{input_gpt_sovits_sovits_model_path.value} loaded successfully"
+                                content = f"sovits_weights: {input_gpt_sovits_sovits_model_path.value} loaded successfully"
                                 logger.info(content)
                             else:
-                                content = f"sovits_weights：{input_gpt_sovits_sovits_model_path.value} failed to load, please check both sides’ logs to troubleshoot"
+                                content = f"sovits_weights: {input_gpt_sovits_sovits_model_path.value} failed to load, please check both sides’ logs to troubleshoot"
                                 logger.error(content)
                                 return False
                         
@@ -4610,7 +4610,7 @@ def goto_func_page():
                             options=data_json, 
                             value=config.get("chat_with_file", "chat_mode")
                         )
-                        input_chat_with_file_data_path = ui.input(label='Data File Path', placeholder='Path to the local ZIP data file to load (up to x.zip), e.g., ./data/伊卡洛斯百度百科.zip', value=config.get("chat_with_file", "data_path"))
+                        input_chat_with_file_data_path = ui.input(label='Data File Path', placeholder='Path to the local ZIP data file to load (up to x.zip), e.g., ./data/example.zip', value=config.get("chat_with_file", "data_path"))
                         input_chat_with_file_data_path.style("width:400px")
                     with ui.row():
                         input_chat_with_file_separator = ui.input(label='Separator', placeholder='The delimiter used to split the text. A line break is used as the separator.', value=config.get("chat_with_file", "separator"))
@@ -4652,7 +4652,7 @@ def goto_func_page():
                     with ui.row():
                         select_text_generation_webui_type = ui.select(
                             label='Type', 
-                            options={"官方API": "官方API", "coyude": "coyude"}, 
+                            options={"官方API": "Official API", "coyude": "coyude"}, 
                             value=config.get("text_generation_webui", "type")
                         )
                         input_text_generation_webui_api_ip_port = ui.input(
@@ -4738,7 +4738,7 @@ def goto_func_page():
                     with ui.row():
                         input_langchain_chatchat_api_ip_port = ui.input(
                             label='API address', 
-                            placeholder='Service URL after running the API version of Langchain-Chatchat (full URL required）', 
+                            placeholder='Service URL after running the API version of Langchain-Chatchat (full URL required)', 
                             value=config.get("langchain_chatchat", "api_ip_port"),
                             validation={
                                 'Please enter a URL in the correct format': lambda value: common.is_url_check(value),
@@ -5462,7 +5462,7 @@ def goto_func_page():
                     with ui.row():
                         select_bert_vits2_type = ui.select(
                             label='Type', 
-                            options={'hiyori': 'hiyori', '刘悦-中文特化API': '刘悦-中文特化API'}, 
+                            options={'hiyori': 'hiyori', '刘悦-中文特化API': 'Liuyue (Chinese-specialised API)'}, 
                             value=config.get("bert_vits2", "type")
                         ).style("width:200px;")
                         
@@ -5832,7 +5832,7 @@ def goto_func_page():
                             with ui.row():
                                 select_cosyvoice_gradio_0707_mode_checkbox_group = ui.select(
                                     label='Inference mode', 
-                                    options={'预训练音色': '预训练音色', '3s极速复刻': '3s极速复刻', '跨语种复刻': '跨语种复刻', '自然语言控制': '自然语言控制'}, 
+                                    options={'预训练音色': 'Pretrained voice', '3s极速复刻': '3s fast clone', '跨语种复刻': 'Cross-language clone', '自然语言控制': 'Natural-language control'}, 
                                     value=config.get("cosyvoice", "gradio_0707", "mode_checkbox_group")
                                 ).style("width:200px;")
                                 select_cosyvoice_gradio_0707_sft_dropdown = ui.select(
@@ -7319,6 +7319,6 @@ else:
         goto_func_page()
 
 
-ui.run(host=webui_ip, port=webui_port, title=webui_title, favicon="./ui/favicon-64.ico", language="zh-CN", dark=False, reload=False)
+ui.run(host=webui_ip, port=webui_port, title=webui_title, favicon="./ui/favicon-64.ico", language="en-US", dark=False, reload=False, show=False)  # launcher.py opens the single browser tab
 # ui.run(host=webui_ip, port=webui_port, title=webui_title, favicon="./ui/favicon-64.ico", language="zh-CN", dark=False, reload=False,
 #        ssl_certfile="F:\\FunASR_WS\\cert.pem", ssl_keyfile="F:\\FunASR_WS\\key.pem")

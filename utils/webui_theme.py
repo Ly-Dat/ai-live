@@ -12,6 +12,12 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 from nicegui import ui
 
+try:  # serves the Vietnamese dictionary at /lv_i18n
+    from utils import i18n as _i18n
+    _i18n.mount()
+except Exception:  # the UI still works, only the language switch is lost
+    _i18n = None
+
 ACCENT = "#8b5cf6"      # violet
 ACCENT_2 = "#ec4899"    # pink
 
@@ -206,6 +212,11 @@ def theme_switch(dark=None):
     ui.add_head_html("<style>.lv-sun{display:none}.lv-moon{display:inline-flex}"
                      "body.body--dark .lv-sun{display:inline-flex}body.body--dark .lv-moon{display:none}</style>")
     ui.add_body_html("<script>" + _THEME_JS + "</script>")
+    if _i18n is not None:
+        ui.add_body_html(_i18n.body_html())
+        with ui.button().props("flat dense no-caps id=lv-lang").classes("lv-no-i18n").tooltip("Language / Ngôn ngữ") as lb:
+            ui.label("EN").classes("lv-lang-t lv-no-i18n").style("font-weight:700;font-size:12px;letter-spacing:.04em")
+        lb.on("click", js_handler="() => window.lvToggleLang && window.lvToggleLang()")
     with ui.button(on_click=lambda: ui.run_javascript("window.lvToggleDark&&window.lvToggleDark()")).props("flat round dense").tooltip("Light / dark") as b:
         ui.icon("light_mode").classes("lv-sun")
         ui.icon("dark_mode").classes("lv-moon")

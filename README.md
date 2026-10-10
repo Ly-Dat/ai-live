@@ -123,6 +123,8 @@ product data, and once chat has been quiet for 2 seconds it continues the produc
 
 The web UI opens on **Home**: a readiness checklist with one-click fixes, a LIVE badge in the header when the TikTok bridge runs, last-session stats, and sidebar search across all settings. After a live, Home shows a recap with concrete "do this next live" tips, a streak and lives-this-week count. Dark and light themes. Tabs: Home, Setup, Dashboard, Teach, Schedule, Live tools, Novel reader, Novel writer, Story studio, Products, then Voice, AI model, TTS, avatar and the other settings.
 
+**Language:** the panel is written in English. The **EN / VI** button next to the dark/light toggle switches it to Vietnamese (remembered in the browser). Translation is done in the page from `utils/i18n/vi.json`; text without an entry stays English, so some places can be mixed. To fix or add a Vietnamese string, edit that file (`exact` = English -> Vietnamese, `re` = templates with `$1`). The panel opens in your browser once via `start.bat`; run `python webui.py` by hand and open the address yourself.
+
 ## Voices (free)
 
 Open the **Voice** tab to pick an engine and preview it.
