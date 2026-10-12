@@ -1,4 +1,5 @@
 """Spec features: comment triage, honest unknowns, cheaper compare, speech gate, honest report."""
+import json
 from utils import live_analytics, seller_brain, speech_gate
 from utils.product_catalog import ProductCatalog
 from utils.triage import Triage
@@ -124,3 +125,44 @@ def test_preflight_flags_catalog_gaps():
     rows = preflight.run({"tiktok_username": "u", "api_ok": True, "product_count": 2, "catalog_gaps": gaps})
     r = next(x for x in rows if x["id"] == "catalog_gaps")
     assert r["ok"] is None and "2 products" in r["label"]
+
+
+def test_draft_facts_are_never_spoken(tmp_path):
+    from utils.product_catalog import mark_draft, confirm_facts, draft_fields
+    p = dict(P1, highlights=["chống nắng tuyệt đối"], shipping="Giao 2 ngày", fact_status={})
+    c = cat(tmp_path, [p])
+    mark_draft(c.products[0], ["highlights", "shipping"])
+    prod = c.products[0]
+    assert "chống nắng" not in c.build_pitch(prod) and "Giao 2 ngày" not in c.build_pitch(prod)
+    assert "chống nắng" not in c.context_for("áo thun")
+    assert c.quick_answer("áo thun ship mấy ngày") is None
+    assert "chưa có thông tin" in c.unknown_answer("áo thun ship mấy ngày")     # a draft is treated as missing, never guessed
+    assert seller_brain.answer(c, "áo thun có tốt không") is None or "chống nắng" not in seller_brain.answer(c, "áo thun có tốt không")
+    assert any("AI draft" in m for r in c.audit() for m in r["missing"])
+    assert set(draft_fields(prod)) == {"highlights", "shipping"}
+    assert set(confirm_facts(prod)) == {"highlights", "shipping"} and "facts_confirmed_at" in prod
+    assert "Giao 2 ngày" in c.quick_answer("áo thun ship mấy ngày") or "Giao 2 ngày" in c.build_pitch(prod, 0)
+
+
+def test_degraded_mode_template_is_true_and_safe(tmp_path):
+    c = cat(tmp_path, [dict(P1), dict(P2)])
+    msg = c.safe_fallback("áo thun giá sao")
+    assert "Áo thun basic" in msg and "100.000₫" in msg and "giỏ hàng" in msg
+    assert c.safe_fallback("hôm nay trời đẹp") is None            # nothing to anchor on: stay quiet rather than invent
+    c.templates["lang"] = "en"
+    assert "can't answer" in c.safe_fallback("áo thun giá sao")
+
+
+def test_start_override_is_logged(tmp_path):
+    from utils import setup_wizard
+    cfg = {"filter": {"tiktok_safety": {"enable": False}}}
+    tp = tmp_path / "t.json"
+    tp.write_text("{}")
+    why = setup_wizard.safety_blockers(cfg, str(tp))
+    assert len(why) == 2 and "safety filter" in why[0] and "disclosure" in why[1]
+    tp.write_text('{"disclosure": "Mình là AI"}')
+    assert setup_wizard.safety_blockers({"filter": {"tiktok_safety": {"enable": True}}}, str(tp)) == []
+    log = tmp_path / "o.jsonl"
+    setup_wizard.log_override(why, str(log), now=123)
+    row = json.loads(log.read_text().strip())
+    assert row == {"ts": 123, "overrode": why}

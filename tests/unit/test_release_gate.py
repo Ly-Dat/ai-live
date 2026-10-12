@@ -76,3 +76,11 @@ def test_go_nogo_runs_and_reports():
     labels = {r[1]: r[0] for r in rows}
     assert labels["No browser profile / cookies tracked by git"] == go_nogo.PASS
     assert labels["Offline simulation meets its expectations"] == go_nogo.PASS
+
+
+def test_queue_drops_identical_waiting_lines():
+    from utils import speech_queue
+    q = [{"content": "Giá 100k nha"}, {"content": "Cảm ơn bạn"}]
+    assert speech_queue.is_duplicate(q, {"content": "  giá 100K   nha "})
+    assert not speech_queue.is_duplicate(q, {"content": "Giá 200k nha"})
+    assert not speech_queue.is_duplicate(q, {"content": ""})

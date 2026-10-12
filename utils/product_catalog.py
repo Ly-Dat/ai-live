@@ -23,6 +23,7 @@ import json
 import os
 import random
 import re
+import time
 import unicodedata
 from typing import Dict, List, Optional
 
@@ -35,6 +36,43 @@ def _fold(text: str) -> str:
 
 def _tokens(text: str) -> List[str]:
     return re.findall(r"[a-z0-9]+", _fold(text))
+
+
+def spoken_view(p: Dict) -> Dict:
+    """The product as the host may SPEAK it: fields marked "draft" in `fact_status` (AI-written, not yet confirmed by the
+    seller) are blanked, so they behave exactly like missing facts. Everything else passes through unchanged."""
+    st = p.get("fact_status") or {}
+    drafts = [k for k, v in st.items() if v == "draft"]
+    if not drafts:
+        return p
+    out = dict(p)
+    for k in drafts:
+        if isinstance(out.get(k), list):
+            out[k] = []
+        elif k in out:
+            out[k] = ""
+    return out
+
+
+def mark_draft(p: Dict, fields) -> None:
+    st = p.setdefault("fact_status", {})
+    for k in fields:
+        st[k] = "draft"
+
+
+def confirm_facts(p: Dict, fields=None) -> List[str]:
+    """Seller confirms the drafted facts (all, or the named ones). Returns what was confirmed; stamps the time."""
+    st = p.get("fact_status") or {}
+    names = [k for k, v in st.items() if v == "draft" and (fields is None or k in fields)]
+    for k in names:
+        st[k] = "confirmed"
+    if names:
+        p["facts_confirmed_at"] = int(time.time())
+    return names
+
+
+def draft_fields(p: Dict) -> List[str]:
+    return [k for k, v in (p.get("fact_status") or {}).items() if v == "draft"]
 
 
 class ProductCatalog:
@@ -129,6 +167,7 @@ class ProductCatalog:
     def build_pitch(self, product: Dict, round_no: int = 0) -> str:
         """Compose a spoken pitch for one product from templates + catalog fields."""
         t = self.templates
+        product = spoken_view(product)
         parts = []
         intro = t.get("intro", ["Next up: {name}."])
         parts.append(intro[round_no % len(intro)].format(name=product["name"], number=product.get("order", "")))
@@ -185,6 +224,7 @@ class ProductCatalog:
             return ""
         lines = []
         for p in found:
+            p = spoken_view(p)
             row = [f"Product: {p['name']}"]
             for key, label in (("price", "Price"), ("original_price", "Original price"), ("description", "Description"),
                                ("sizes_colors", "Options"), ("how_to_use", "How to use"), ("shipping", "Shipping"),
@@ -221,7 +261,7 @@ class ProductCatalog:
         found = self.find_relevant(text, 2)
         if not found or (len(found) > 1 and _scoring_tie(self, text, found)):
             return None
-        p = found[0]
+        p = spoken_view(found[0])
         folded = _fold(text)
         en = self.templates.get("lang") == "en"
         opts = (p.get("sizes_colors") or "").strip()
@@ -244,6 +284,19 @@ class ProductCatalog:
                         if en else "Phần này trong dữ liệu sản phẩm mình chưa có thông tin chắc chắn nên chưa dám xác nhận. Chủ shop sẽ kiểm tra lại giúp bạn nha.")
         return None
 
+    def safe_fallback(self, text: str) -> Optional[str]:
+        """Degraded mode: the AI model gave no answer (down, slow, breaker open). For a shopping question say something
+        true and harmless instead of going silent: the product name and its price if known, and where to look."""
+        found = self.find_relevant(text, 1)
+        en = self.templates.get("lang") == "en"
+        if not found:
+            return None
+        p = spoken_view(found[0])
+        price = f" ({p['price']})" if p.get("price") else ""
+        if en:
+            return f"I can't answer that one right now. {p['name']}{price}: please check the cart for details, or ask again in a moment."
+        return f"Câu này mình chưa trả lời kịp. {p['name']}{price}: bạn xem chi tiết trong giỏ hàng hoặc hỏi lại giúp mình sau nhé."
+
     def audit(self) -> List[Dict]:
         """Catalog health: which products are missing the facts viewers ask about. Pure read, nothing is changed."""
         return audit_products(self.all_products())
@@ -264,7 +317,7 @@ class ProductCatalog:
             return None
         if len(found) > 1 and _scoring_tie(self, text, found):
             return None
-        p = found[0]
+        p = spoken_view(found[0])
         folded = _fold(text)
         q_tokens = set(_tokens(text))
         for qa in p.get("faq", []):
@@ -300,7 +353,9 @@ def audit_products(products: List[Dict]) -> List[Dict]:
     for p in products:
         if p.get("active", True) is False:
             continue
-        miss = [label for key, label in _NEED if not p.get(key)]
+        v = spoken_view(p)
+        miss = [label for key, label in _NEED if not v.get(key)]
+        miss += [f"{k} (AI draft, not confirmed)" for k in draft_fields(p) if p.get(k)]
         if miss:
             rows.append({"id": p.get("id"), "name": p.get("name", ""), "missing": miss})
     return rows

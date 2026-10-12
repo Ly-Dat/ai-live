@@ -3615,6 +3615,13 @@ class My_handle(metaclass=SingletonMeta):
                     else:
                         resp_content = ""
                         logger.warning(f"Warning: {chat_type} has no return")
+                        try:   # degraded mode: say something true instead of going silent on a shopping question
+                            if matched_product and intent in live_analytics.SALES_INTENTS and catalog is not None:
+                                resp_content = catalog.safe_fallback(data["content"]) or ""
+                                if resp_content:
+                                    analytics.record("degraded", source="catalog_template", product_id=matched_product["id"])
+                        except Exception as e:
+                            logger.debug(f"degraded fallback: {e}")
             elif chat_type == "game":
                 if My_handle.config.get("game", "enable"):
                     self.game.parse_keys_and_simulate_keys_press(content.split(), 2)

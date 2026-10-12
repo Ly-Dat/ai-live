@@ -79,6 +79,29 @@ def start_blockers(answers: Dict, products_path: str = "data/products.json") -> 
     return []
 
 
+def safety_blockers(cfg: Dict, templates_path: str = "data/pitch_templates.json") -> List[str]:
+    """Problems that should stop a LIVE unless the seller overrides on purpose (the override is logged)."""
+    out = []
+    if not ((cfg.get("filter") or {}).get("tiktok_safety") or {}).get("enable"):
+        out.append("The TikTok safety filter is switched off.")
+    try:
+        with open(templates_path, "r", encoding="utf-8") as f:
+            has = bool((json.load(f) or {}).get("disclosure"))
+    except (OSError, ValueError):
+        has = False
+    if not has:
+        out.append("There is no AI-disclosure line, and TikTok requires you to disclose AI-generated hosting.")
+    return out
+
+
+def log_override(reasons: List[str], path: str = "data/start_overrides.jsonl", now: float = 0.0) -> None:
+    """Append one line per deliberate 'start anyway'. No secrets, no viewer data: just when and why."""
+    import time as _t
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps({"ts": int(now or _t.time()), "overrode": reasons}, ensure_ascii=False) + "\n")
+
+
 def apply_setup(config_path: str, products_path: str, personas_path: str, answers: Dict) -> List[str]:
     """Write the wizard answers into config.json and products.json. Returns what changed."""
     changes = []

@@ -217,12 +217,28 @@ def build_setup_tab(config):
                 for line in setup_wizard.tail(os.path.join(ROOT, "log", "bridge.log"), 8).splitlines():
                     logbox.push(line)
 
-            async def start():
+            async def start(override: bool = False):
                 save_tour_settings()
                 answers = setup_wizard.load_setup()
                 blockers = setup_wizard.start_blockers(answers, config.get("products", "path") or "data/products.json")
                 if blockers:
                     ui.notify(blockers[0], type="warning")
+                    return
+                soft = setup_wizard.safety_blockers(config.config if hasattr(config, "config") else {}, "data/pitch_templates.json")
+                if soft and not override:
+                    with ui.dialog() as dlg, ui.card():
+                        ui.label("Fix this before going live").classes("text-bold")
+                        for s_ in soft:
+                            ui.label("- " + s_)
+                        ui.label("Starting anyway is possible, but it is written to data/start_overrides.jsonl.").classes("lv-sub")
+                        with ui.row():
+                            ui.button("Cancel", on_click=dlg.close).props("flat")
+                            async def go_anyway():
+                                setup_wizard.log_override(soft)
+                                dlg.close()
+                                await start(True)
+                            ui.button("Start anyway (logged)", on_click=go_anyway).props("color=warning")
+                    dlg.open()
                     return
                 if "start" in RUN_HOOKS:          # same as the bottom 'Start Run' button
                     who = setup_wizard.clean_username(config.get("room_display_id") or answers.get("tiktok_username") or "")

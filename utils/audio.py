@@ -616,6 +616,11 @@ class Audio:
         if type == "Pending synthesis messages":
             logger.info(f"{type} Priority: {new_data_priority} Content: [{data_json['content']}]")
 
+            from utils import speech_queue
+            if speech_queue.is_duplicate(Audio.message_queue, data_json):
+                logger.info(f"Duplicate line already queued, dropped: [{data_json['content']}]")
+                return {"code": 1, "msg": f"duplicate line already queued: [{data_json['content']}]"}
+
             # If the new data has no 'type' Key or its type is not in priority_mapping, insert directly at the end
             if new_data_priority is None:
                 insert_position = len(Audio.message_queue)

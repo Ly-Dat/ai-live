@@ -3581,9 +3581,23 @@ def goto_func_page():
                 ai = ("AI idle", False)
         except Exception:
             ai = ("AI idle", False)
+        try:   # command centre: who is hosting, and which product is on now
+            from utils import host_control as _hc2, live_state as _ls2
+            _hs = _hc2.load()["state"]
+            host = {"live": ("AI hosting", True), "paused": ("PAUSED", False), "takeover": ("You are hosting", False)}[_hs]
+            _pid = _ls2.CURRENT_FLAG.read_text(encoding="utf-8").strip() if _ls2.CURRENT_FLAG.exists() else ""
+            _name = ""
+            if _pid:
+                import json as _j
+                for _p in _j.load(open(config.get("products", "path") or "data/products.json", encoding="utf-8")).get("products", []):
+                    if str(_p.get("id")) == _pid:
+                        _name = (_p.get("name") or "")[:24]
+            prod = (f"Now: {_name}" if _name else "Now: -", bool(_name))
+        except Exception:
+            host, prod = ("AI hosting", True), ("Now: -", False)
         return {"app": ("Streamer online" if api_ok else "Streamer offline", api_ok),
                 "bridge": ("LIVE" if bridge else "Not live", bridge),
-                "voice": (voice_txt, True), "ai": ai}
+                "voice": (voice_txt, True), "ai": ai, "host": host, "product": prod}
 
     select_page = build_shell(tabs, [
         ("Studio", [("Home", "home", home_page), ("Setup", "rocket_launch", setup_page), ("Dashboard", "insights", dashboard_page),

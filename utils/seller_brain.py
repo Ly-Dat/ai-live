@@ -86,9 +86,10 @@ def _hl(p: Dict, t: Dict) -> str:
 def answer(catalog, text: str) -> Optional[str]:
     t = _T["en" if catalog.templates.get("lang") == "en" else "vi"]
     f = _fold(text)
-    prods = [p for p in catalog.all_products() if p.get("price")]
+    from utils.product_catalog import spoken_view
+    prods = [spoken_view(p) for p in catalog.all_products() if spoken_view(p).get("price")]
     if _has(f, _CHEAPER):
-        found = [p for p in catalog.find_relevant(text, 2) if money(p.get("price"))]
+        found = [spoken_view(p) for p in catalog.find_relevant(text, 2) if money(spoken_view(p).get("price"))]
         pool = found if len(found) == 2 else prods
         if len(pool) < 2:
             return None
@@ -102,7 +103,7 @@ def answer(catalog, text: str) -> Optional[str]:
         return (f"{scope} {_short(lo['name'])} is cheaper at {lo['price']}; {_short(hi['name'])} is {hi['price']}.".strip() if en
                 else f"{scope} {_short(lo['name'])} rẻ hơn, giá {lo['price']}; {_short(hi['name'])} giá {hi['price']}.".strip())
     if _has(f, _COMPARE):
-        found = catalog.find_relevant(text, 2)
+        found = [spoken_view(p) for p in catalog.find_relevant(text, 2)]
         if len(found) == 2 and found[0].get("price") and found[1].get("price"):
             a, b = found
             return t["compare"].format(a=_short(a["name"]), pa=a["price"], ha=_hl(a, t), b=_short(b["name"]), pb=b["price"], hb=_hl(b, t))
@@ -127,7 +128,7 @@ def answer(catalog, text: str) -> Optional[str]:
             found = catalog.find_relevant(text, 1)
             if not found:
                 return None
-            p = found[0]
+            p = spoken_view(found[0])
             name = _short(p["name"])
             if kind == "price" and p.get("price"):
                 po, pp = money(p.get("original_price")), money(p["price"])

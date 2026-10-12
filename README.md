@@ -87,6 +87,8 @@ Before a real stream, read [docs/AUDIT.md](docs/AUDIT.md): a feature-to-code map
 
 Run `python go_nogo.py` before every real LIVE: it checks Python version, active products and prices, disclosure line, safety filter, tracked secrets and the offline simulation (PASS / FAIL), and lists the checks only a person can do (MANUAL). It exits with 1 when something fails.
 
+**Control and facts:** the header always shows who is hosting (AI / paused / you) and the product on now, with a **Pause AI** button that also cuts speech already queued. Text the AI drafts in the Products tab is saved as a draft and stays unspoken until you press **Confirm facts**. If the AI model fails on a shopping question, the host says a short true line (product, price, check the cart) instead of going silent. Starting with the safety filter off or no AI-disclosure line asks for a confirmation that is logged. See [docs/AUDIT.md](docs/AUDIT.md) for what is and is not built.
+
 ## Stories on your live
 
 Three tabs turn the host into a storyteller, which keeps viewers watching and is a second way to grow a channel. The AI is the

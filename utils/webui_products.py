@@ -251,6 +251,9 @@ def build_products_tab(config):
                 .props('accept=image/* flat bordered').classes('w-full')
             with ui.row():
                 ui.button('Save product', on_click=lambda: save_product())
+                ui.button('Confirm facts', icon='verified', on_click=lambda: confirm_facts_ui()).props('outline color=positive').tooltip(
+                    'AI-written text is not spoken until you confirm you checked it against the real product.')
+                draft_note = ui.label('').classes('text-warning')
                 ui.button('Say pitch now', on_click=lambda: pitch_now()).props('color=secondary')
                 ui.button('Draft with AI', on_click=lambda: draft_ai()).props('color=secondary outline')
                 ui.button('Check pitch length', on_click=lambda: check_pitch()).props('color=secondary outline')
@@ -276,6 +279,8 @@ def build_products_tab(config):
         f["return_policy"].value = p.get("return_policy", "")
         f["stock_note"].value = p.get("stock_note", "")
         f["faq"].value = _faq_to_text(p.get("faq", []))
+        waiting = product_catalog.draft_fields(p)
+        draft_note.text = ('Not spoken yet (AI draft): ' + ', '.join(waiting) + '. Check them, then press Confirm facts.') if waiting else ''
         gallery.refresh()
         
     def clear_form():
@@ -317,10 +322,29 @@ def build_products_tab(config):
             "faq": _text_to_faq(f["faq"].value),
         })
         p.pop("auto_imported", None)  # edited by a human now
+        if state.get("draft_fields"):   # AI-written text stays unspoken until the seller confirms it
+            product_catalog.mark_draft(p, state.pop("draft_fields"))
+            ui.notify("AI-written text is saved but NOT spoken until you press Confirm facts.", type="warning")
         persist()
         gallery.refresh()
         ui.notify('Deleted', type='info')
         ui.notify('Saved', type='positive')
+
+    def confirm_facts_ui():
+        p = selected_product()
+        if p is None:
+            ui.notify('Select a product first', type='warning')
+            return
+        done = product_catalog.confirm_facts(p)
+        if state.get("draft_fields"):
+            product_catalog.mark_draft(p, state.pop("draft_fields"))
+            done = product_catalog.confirm_facts(p) or done
+        if done:
+            persist()
+            draft_note.text = ''
+            ui.notify('Confirmed: ' + ', '.join(done) + '. The host may speak them now.', type='positive')
+        else:
+            ui.notify('Nothing waiting for confirmation.', type='info')
 
     def persist():
         cat = state["catalog"]
@@ -447,6 +471,7 @@ def build_products_tab(config):
                     f["intro"].value = prop["intro"]
                     f["description"].value = prop["description"]
                     f["highlights"].value = "\n".join(prop["highlights"])
+                    state.setdefault("draft_fields", set()).update(("intro", "description", "highlights"))
                     dlg.close()
                     ui.notify("Applied to the form. Press Save product to keep it.", type="positive")
                 ui.button("Apply to form", on_click=apply)
@@ -496,6 +521,7 @@ def build_products_tab(config):
                        "description": f["description"].value or "",
                        "highlights": _lines(f["highlights"].value)}
                 catalog_enrich.apply_draft(tmp, draft)
+                state.setdefault("draft_fields", set()).update(("description", "highlights"))
                 f["aliases"].value = ", ".join(tmp["aliases"])
                 f["description"].value = tmp["description"]
                 f["highlights"].value = "\n".join(tmp["highlights"])

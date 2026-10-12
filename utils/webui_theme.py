@@ -279,7 +279,22 @@ def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark
                 "bridge": _pill("Not live"),
                 "voice": _pill("Voice: edge-tts"),
                 "ai": _pill("AI idle"),
+                "host": _pill("AI hosting"),
+                "product": _pill("Now: -"),
             }
+        # Command centre: always visible, works without the LLM or TTS (it only writes data/host_control.json)
+        pause_btn = ui.button("Pause AI", icon="pause").props("unelevated no-caps dense color=negative").classes("lv-pause").tooltip(
+            "Stops the AI at once, including speech already queued or playing. Press again to resume.")
+
+        def toggle_pause():
+            try:
+                from . import host_control
+                now = host_control.load()["state"]
+                host_control.set_state("live" if now != "live" else "paused")
+            except Exception:
+                pass
+            refresh()
+        pause_btn.on_click(toggle_pause)
         theme_switch(dark)
 
     last = {}
@@ -288,6 +303,9 @@ def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark
         if not status_fn:
             return
         st = status_fn()
+        host = (st.get("host") or ("AI hosting", True))[0]
+        pause_btn.text = "Resume AI" if host != "AI hosting" else "Pause AI"
+        pause_btn.props(("icon=play_arrow color=positive" if host != "AI hosting" else "icon=pause color=negative"))
         for key, (el, lbl) in pills.items():
             info = st.get(key)
             if not info:
