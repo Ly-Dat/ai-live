@@ -34,7 +34,7 @@ def run(f: Dict) -> List[Dict]:
     gaps = f.get("catalog_gaps") or []
     if f.get("mode") != "creator" and gaps:
         worst = max(gaps, key=lambda g: len(g["missing"]))
-        add("catalog_gaps", None, f"{len(gaps)} product{'s' if len(gaps) != 1 else ''} missing facts (e.g. {worst['name'][:28]}: {', '.join(worst['missing'][:3])})",
+        add("catalog_gaps", None, f"{len(gaps)} product{'s' if len(gaps) != 1 else ''} missing facts (e.g. {worst['name'][:28].rstrip(' :,-')} - missing {', '.join(worst['missing'][:2])})",
             "For anything missing the host says it cannot confirm it. Fill the fields in Products to let it answer.", "Products")
     if f.get("host_state") in ("paused", "takeover"):
         add("host", None, "The AI host is paused" if f["host_state"] == "paused" else "You are hosting (the AI is silent)",

@@ -132,15 +132,17 @@ def build_home_tab(config, go):
                 with box:
                     ui.label(preflight.summary(rows)).style("font-weight:600")
                     for r in rows:
-                        with ui.row().style("gap:8px;align-items:center;flex-wrap:nowrap"):
+                        # icon | text (grows, left aligned) | Fix (always the right-hand column), so every row lines up
+                        with ui.row().classes("w-full").style("gap:10px;align-items:flex-start;flex-wrap:nowrap;padding:6px 0"):
                             icon, color = {True: ("check_circle", "#22c55e"), False: ("error", "#ef4444"), None: ("info", "#f59e0b")}[r["ok"]]
-                            ui.icon(icon).style(f"color:{color};font-size:20px")
-                            with ui.column().style("gap:0;min-width:0"):
-                                ui.label(r["label"]).style("font-size:14px")
+                            ui.icon(icon).style(f"color:{color};font-size:20px;flex:0 0 20px;margin-top:1px")
+                            with ui.column().style("gap:2px;min-width:0;flex:1 1 auto;align-items:flex-start"):
+                                ui.label(r["label"]).style("font-size:14px;text-align:left;line-height:1.35")
                                 if r["fix"]:
-                                    ui.label(r["fix"]).classes("lv-sub").style("margin:0;font-size:12px")
-                            if r["go"]:
-                                ui.button("Fix", on_click=lambda g=r["go"]: go(g)).props("flat dense no-caps color=primary")
+                                    ui.label(r["fix"]).classes("lv-sub").style("margin:0;font-size:12px;text-align:left;line-height:1.35")
+                            with ui.element("div").style("flex:0 0 48px;display:flex;justify-content:flex-end"):
+                                if r["go"]:
+                                    ui.button("Fix", on_click=lambda g=r["go"]: go(g)).props("flat dense no-caps color=primary")
             ui.button("Check now", icon="fact_check", on_click=check).props("unelevated no-caps")
             check()
             ui.timer(10.0, check)
