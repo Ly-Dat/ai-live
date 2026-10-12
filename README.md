@@ -85,6 +85,8 @@ Free AI-drawn seller characters on the overlay (local Stable Diffusion WebUI or 
 
 Before a real stream, read [docs/AUDIT.md](docs/AUDIT.md): a feature-to-code map with honest statuses, the test matrix, known issues and a go / no-go checklist. Highlights: Pause / Take over now also cuts speech that is queued or playing and keeps tour pitches quiet; Start is refused when there are no active products; `python simulate_live.py --offline` now shows triage skips (`skipped`) and honest "cannot confirm" answers (`cannot_confirm`) next to `quick`, `buy_cta`, `blocked` and `llm`; the app's local browser profile (`data/chrome_profile/`) is git-ignored because it holds cookies.
 
+Run `python go_nogo.py` before every real LIVE: it checks Python version, active products and prices, disclosure line, safety filter, tracked secrets and the offline simulation (PASS / FAIL), and lists the checks only a person can do (MANUAL). It exits with 1 when something fails.
+
 ## Stories on your live
 
 Three tabs turn the host into a storyteller, which keeps viewers watching and is a second way to grow a channel. The AI is the

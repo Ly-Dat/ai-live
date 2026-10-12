@@ -48,6 +48,8 @@ Baseline: `python -m pytest tests/unit` = 306 passed, 1 failed (`test_setup_pers
 
 ## Go / no-go before a real stream
 
+`python go_nogo.py` runs the computer-checkable items below and lists the rest as MANUAL.
+
 - [ ] Unit tests pass or the failure above is accepted.
 - [ ] `python simulate_live.py --offline` meets all expectations.
 - [ ] No keys, cookies or personal data in Git (items 1 and 4).

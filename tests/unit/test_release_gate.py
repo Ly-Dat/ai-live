@@ -67,3 +67,12 @@ def test_streamed_replies_feed_the_breaker():
     assert llm_guard.stream_allowed("chatgpt", cfg, now=200)            # breaker closes after the cooldown
     llm_guard.note("chatgpt", True, settings=cfg, now=200)
     llm_guard.reset()
+
+
+def test_go_nogo_runs_and_reports():
+    import go_nogo
+    rows = go_nogo.checks()
+    assert any(r[0] == go_nogo.MANUAL for r in rows)                  # person-only checks are listed, never faked as PASS
+    labels = {r[1]: r[0] for r in rows}
+    assert labels["No browser profile / cookies tracked by git"] == go_nogo.PASS
+    assert labels["Offline simulation meets its expectations"] == go_nogo.PASS
