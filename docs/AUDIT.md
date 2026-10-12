@@ -39,8 +39,8 @@ Baseline: `python -m pytest tests/unit` = 306 passed, 1 failed (`test_setup_pers
 1. **Fixed:** a Chromium profile (`data/chrome_profile`, 1,249 files incl. a cookies database) was tracked in git. It is now untracked and ignored. It is **still in Git history**: anyone with the repo can read it. If it ever held a real login, sign out and rotate that session; to purge history use `git filter-repo --path data/chrome_profile --invert-paths` and force-push (coordinate with Dat first).
 2. **Fixed:** Pause / Take over only silenced new replies; queued and playing speech continued, and tour pitches kept being spoken. Both are now stopped.
 3. **Fixed:** Start went ahead with zero active products.
-4. **Open (high):** `config.json` is tracked and holds sample `api_key` values copied from upstream (AnythingLLM, Dify, a placeholder OpenAI key). They look like upstream demo keys, not yours, but check, and keep real keys in an ignored local file or environment variables.
-5. **Open (medium):** the streamed-reply path is not covered by the timeout / fallback guard.
+4. **Fixed:** `config.json` is tracked and held two sample `api_key` values copied from upstream (AnythingLLM, Dify). They are blanked. The same sample keys still sit in the `__main__` demo blocks of a few upstream provider files and in `tests/` (not used by the app). Keep your real keys in environment variables or an ignored local file, never in `config.json`.
+5. **Partly fixed:** streamed replies now report success or failure to the circuit breaker, and once the breaker is open the reply goes the guarded, non-streamed way (timeout plus fallback). A stream that hangs before its first word is still not interrupted.
 6. **Open (medium):** TikTok Shop Partner API sync is unverified against a real shop.
 7. **Open (medium):** bridge reconnect and pinned-product events are untested without a real stream.
 8. **Open (low):** the one failing voice test.

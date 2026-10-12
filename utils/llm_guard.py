@@ -132,3 +132,21 @@ def call(primary: str, run: Callable[[str], Optional[str]], settings: Optional[D
         _bad(name, cfg, now())
         say(f"AI provider '{name}' gave no answer ({err or 'empty reply'}).")
     return None
+
+
+def note(provider: str, ok: bool, ms: float = 0.0, settings: Optional[Dict] = None, now: Optional[float] = None) -> None:
+    """Record the outcome of a call this module did not run itself (the streamed path), so the breaker and stats see it."""
+    cfg = settings or load()
+    engine_stats.record("llm", ms, ok=ok, fallback=False, timeout=False, error="" if ok else "empty streamed reply")
+    if ok:
+        _ok(provider)
+    else:
+        _bad(provider, cfg, time.time() if now is None else now)
+
+
+def stream_allowed(provider: str, settings: Optional[Dict] = None, now: Optional[float] = None) -> bool:
+    """False while the provider's breaker is open: then the reply goes the guarded, non-streamed way (timeout + fallback)."""
+    cfg = settings or load()
+    if provider in SKIP or cfg.get("breaker_fails", 0) <= 0:
+        return True
+    return not is_open(provider, now)

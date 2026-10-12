@@ -488,14 +488,14 @@
   },
   "anythingllm": {
     "api_ip_port": "http://127.0.0.1:3001",
-    "api_key": "S1PPG9B-YP2M8NX-Q64ZBF1-Y4K5DCS",
+    "api_key": "",
     "mode": "chat",
     "workspace_slug": "test"
   },
   "dify": {
     "api_ip_port": "http://172.26.189.21",
     "type": "Chat assistant",
-    "api_key": "app-64xu0vQjP2kxN4DKR8Ch7ZGY",
+    "api_key": "",
     "history_enable": true,
     "stream": true,
     "custom_params": "{\n\"prompt\": \"{{comment}}\"\n}"

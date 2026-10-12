@@ -3585,10 +3585,11 @@ class My_handle(metaclass=SingletonMeta):
                 logger.debug(f"data_json={data_json}")
                 
                 # Whether the currently selected LLM type supports stream and it is enabledstream
-                if "stream" in self.config.get(chat_type) and self.config.get(chat_type, "stream"):
+                if "stream" in self.config.get(chat_type) and self.config.get(chat_type, "stream") and llm_guard.stream_allowed(chat_type):
                     logger.warning("Use streaming inferenceLLM")
                     t0 = time.time()
                     resp_content = self.llm_stream_handle_and_audio_synthesis(chat_type, data_json)
+                    llm_guard.note(chat_type, bool(isinstance(resp_content, str) and resp_content.strip()), (time.time() - t0) * 1000)
                     analytics.record("latency", ms=int((time.time() - t0) * 1000), source="llm")
                     if not lang_guard.needs_retry(resp_content):
                         self._note_unsure(data["content"], matched_product, resp_content)
@@ -4553,9 +4554,11 @@ class My_handle(metaclass=SingletonMeta):
                 logger.debug(f"data_json={data_json}")
                 
                 # Whether the currently selected LLM type supports stream and it is enabledstream
-                if "stream" in self.config.get(chat_type) and self.config.get(chat_type, "stream"):
+                if "stream" in self.config.get(chat_type) and self.config.get(chat_type, "stream") and llm_guard.stream_allowed(chat_type):
                     logger.warning("Use streaming inferenceLLM")
+                    t0 = time.time()
                     resp_content = self.llm_stream_handle_and_audio_synthesis(chat_type, data_json)
+                    llm_guard.note(chat_type, bool(isinstance(resp_content, str) and resp_content.strip()), (time.time() - t0) * 1000)
                     return resp_content
                 else:
                     resp_content = self.llm_handle(chat_type, data_json)

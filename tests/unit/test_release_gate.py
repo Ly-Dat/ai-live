@@ -54,3 +54,16 @@ def test_simulator_verdicts(tmp_path):
     assert v("chốt đơn áo thun 1 cái", "c", 300) == "buy_cta"
     assert v("add zalo 0909123456 mình chuyển khoản", "d", 400) == "blocked"
     assert v("aaaaaaaaaaaaaaaaaaa", "e", 500) == "skipped"
+
+
+def test_streamed_replies_feed_the_breaker():
+    from utils import llm_guard
+    llm_guard.reset()
+    cfg = dict(llm_guard.load(), breaker_fails=2, cooldown_s=60)
+    assert llm_guard.stream_allowed("chatgpt", cfg, now=100)
+    llm_guard.note("chatgpt", False, settings=cfg, now=100)
+    llm_guard.note("chatgpt", False, settings=cfg, now=101)
+    assert not llm_guard.stream_allowed("chatgpt", cfg, now=102)        # two empty streams: use the guarded path with fallback
+    assert llm_guard.stream_allowed("chatgpt", cfg, now=200)            # breaker closes after the cooldown
+    llm_guard.note("chatgpt", True, settings=cfg, now=200)
+    llm_guard.reset()
