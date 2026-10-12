@@ -337,6 +337,11 @@ def build_avatar_tab(config):
                     nametag = ui.switch("Name tag", value=stg["nametag"])
                     badge = ui.switch("Show level and streak to viewers", value=stg["badge"])
                     caption = ui.switch("Live caption of what she says", value=stg.get("caption", True))
+                with ui.row().style("gap:18px;align-items:center"):
+                    cap_size = ui.select({"normal": "Caption size: normal", "large": "Caption size: large", "xlarge": "Caption size: extra large"},
+                                         value=stg.get("cap_size", "normal"), label="Caption size").style("min-width:220px")
+                    cap_contrast = ui.switch("High-contrast caption (white on black)", value=stg.get("cap_contrast", False))
+                    still = ui.switch("Reduce motion (no bobbing or sparkles)", value=stg.get("still", False))
                 tips = ui.textarea("Hint bubbles, one per line (rotate under the avatar), e.g. Ask me about sizes!", value="\n".join(stg["tips"])).props("outlined dense").style("width:100%")
                 ui.label("Short invitations make viewers type a question. Up to 6.").classes("lv-sub")
 
@@ -345,6 +350,7 @@ def build_avatar_tab(config):
                     s["enabled"] = bool(enable.value)
                     s["stage"].update({"side": side.value, "motion": motion.value, "frame": frame.value, "height_vh": int(height.value),
                                        "nametag": bool(nametag.value), "badge": bool(badge.value), "caption": bool(caption.value),
+                                       "cap_size": cap_size.value, "cap_contrast": bool(cap_contrast.value), "still": bool(still.value),
                                        "tips": [t.strip() for t in (tips.value or "").splitlines() if t.strip()][:6]})
                     avatar.save_settings(s)
                     ui.notify("Saved.")

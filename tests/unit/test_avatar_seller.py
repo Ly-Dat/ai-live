@@ -275,3 +275,18 @@ def test_catchphrase_only_sometimes_and_never_on_long_replies():
     assert sum(o.endswith("nè") for o in out) == 2
     assert seller_brain.add_catchphrase("x" * 300, ["nè"], every=1) == "x" * 300
     assert seller_brain.add_catchphrase("hi", []) == "hi"
+
+
+def test_accessibility_settings_reach_the_overlay(tmp_path, monkeypatch):
+    root, s = _stage_char(tmp_path)
+    o = avatar.overlay_avatar(s, [], 1000.0, root=root)
+    assert o["a11y"] == {"cap_px": 16, "contrast": False, "still": False}        # defaults change nothing
+    s["stage"].update(cap_size="xlarge", cap_contrast=True, still=True)
+    o = avatar.overlay_avatar(s, [], 1000.0, root=root)
+    assert o["a11y"] == {"cap_px": 30, "contrast": True, "still": True}
+    p = tmp_path / "a.json"
+    avatar.save_settings(dict(s, stage=dict(s["stage"], cap_size="huge")), str(p))      # unknown value falls back
+    assert avatar.load_settings(str(p))["stage"]["cap_size"] == "normal"
+    from utils import overlay_page
+    html = overlay_page.OVERLAY_HTML if hasattr(overlay_page, "OVERLAY_HTML") else ""
+    assert "a11y" in html and ".still" in html

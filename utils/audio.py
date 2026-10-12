@@ -1573,10 +1573,15 @@ class Audio:
 
     def _silence_watch(self):
         from utils import host_control
+        from utils import speech_queue
         silent = host_control.is_silent()
+        tick = 0
         while True:
             try:
                 time.sleep(0.4)
+                tick += 1
+                if tick % 5 == 0:   # tell the control panel how many lines wait (header "Queue: n")
+                    speech_queue.write_state(len(Audio.message_queue) + len(Audio.voice_tmp_path_queue))
                 silent, just = host_control.edge(silent)
                 if just:
                     logger.warning("Host paused / taken over: stopping queued and playing speech")

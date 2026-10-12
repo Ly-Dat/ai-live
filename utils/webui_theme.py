@@ -281,6 +281,7 @@ def build_shell(tabs, nav: List[Tuple[str, List[Tuple[str, str, object]]]], dark
                 "ai": _pill("AI idle"),
                 "host": _pill("AI hosting"),
                 "product": _pill("Now: -"),
+                "queue": _pill("Queue: -"),
             }
         # Command centre: always visible, works without the LLM or TTS (it only writes data/host_control.json)
         pause_btn = ui.button("Pause AI", icon="pause").props("unelevated no-caps dense color=negative").classes("lv-pause").tooltip(

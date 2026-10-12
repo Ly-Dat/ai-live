@@ -19,9 +19,11 @@ URL_PREFIX = "/lv_avatar/characters/"
 SPEAK_SECONDS = 6.0
 SLEEP_AFTER = 180.0
 SIDES = ("right", "left", "center")
+CAP_SIZES = {"normal": 16, "large": 22, "xlarge": 30}   # caption font size in px on the overlay
 DEFAULTS = {"enabled": False, "active": "", "gen": {},
             "stage": {"side": "right", "height_vh": 62, "motion": "bob", "frame": "none", "nametag": True, "badge": True,
-                      "tips": [], "tip_seconds": 9, "caption": True}}
+                      "tips": [], "tip_seconds": 9, "caption": True,
+                      "cap_size": "normal", "cap_contrast": False, "still": False}}
 
 _LOVE = re.compile(r"(yeu|thuong|tym|<3|love|❤|😍)")
 _COMPLIMENT = re.compile(r"(xinh|de thuong|cute|kawaii|dep qua|dep ghe|duyen)")
@@ -55,6 +57,8 @@ def load_settings(path: str = SETTINGS_PATH) -> Dict:
         s["frame"] = str(st.get("frame") or s["frame"])
         s["nametag"], s["badge"] = bool(st.get("nametag", True)), bool(st.get("badge", True))
         s["caption"] = bool(st.get("caption", True))
+        s["cap_size"] = st.get("cap_size") if st.get("cap_size") in CAP_SIZES else "normal"
+        s["cap_contrast"], s["still"] = bool(st.get("cap_contrast", False)), bool(st.get("still", False))
         s["tips"] = [str(x).strip()[:90] for x in (st.get("tips") or []) if str(x).strip()][:6]
     except (OSError, ValueError, TypeError):
         pass
@@ -168,4 +172,5 @@ def overlay_avatar(settings: Dict, events: List[Dict], now: float, host_state: s
     return {"name": char["name"] if st["nametag"] else "", "badge": badge, "images": images, "mood": mood,
             "talking": bool(pick["talking"] and "talking" in files), "height": st["height_vh"], "side": st["side"],
             "frame": frame, "motion": motion, "tips": st["tips"], "tip_seconds": st["tip_seconds"], "paused": paused,
-            "caption": caption}
+            "caption": caption,
+            "a11y": {"cap_px": CAP_SIZES[st["cap_size"]], "contrast": st["cap_contrast"], "still": st["still"]}}

@@ -166,3 +166,18 @@ def test_start_override_is_logged(tmp_path):
     setup_wizard.log_override(why, str(log), now=123)
     row = json.loads(log.read_text().strip())
     assert row == {"ts": 123, "overrode": why}
+
+
+def test_followup_resolves_to_current_product_and_expires(tmp_path):
+    from utils.convo import Convo
+    prods = [dict(P1), dict(P2)]
+    c = Convo(ttl_s=100)
+    assert c.resolve("còn size nhỏ hơn không", prods, now=10) is None                 # nothing discussed yet
+    assert c.resolve("còn size nhỏ hơn không", prods, current_id="b", now=10)["id"] == "b"   # the tour's active product
+    c.remember("a", now=20)
+    assert c.resolve("giá bao nhiêu vậy", prods, current_id="b", now=60)["id"] == "a"        # recent topic wins
+    assert c.resolve("giá bao nhiêu vậy", prods, current_id="b", now=500)["id"] == "b"       # topic expired -> tour product
+    assert c.resolve("hôm nay trời đẹp quá bạn ơi", prods, now=60) is None                   # not a shopping follow-up
+    assert c.resolve("cái này có ship tỉnh không vậy shop ơi mình ở xa lắm luôn", prods, now=60) is None   # too long: not a short follow-up
+    c.forget()
+    assert c.resolve("giá sao", prods, now=60) is None

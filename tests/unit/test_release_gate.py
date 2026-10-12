@@ -84,3 +84,12 @@ def test_queue_drops_identical_waiting_lines():
     assert speech_queue.is_duplicate(q, {"content": "  giá 100K   nha "})
     assert not speech_queue.is_duplicate(q, {"content": "Giá 200k nha"})
     assert not speech_queue.is_duplicate(q, {"content": ""})
+
+
+def test_queue_state_file_roundtrip_and_staleness(tmp_path):
+    from utils import speech_queue
+    p = str(tmp_path / "q.json")
+    assert speech_queue.read_state(p) == -1                      # unknown, never faked as 0
+    speech_queue.write_state(3, p, now=100)
+    assert speech_queue.read_state(p, now=105) == 3
+    assert speech_queue.read_state(p, now=200) == -1             # stale: the app stopped writing

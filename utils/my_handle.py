@@ -3482,6 +3482,18 @@ class My_handle(metaclass=SingletonMeta):
             if catalog is not None:
                 found = catalog.find_relevant(data["content"], 1)
                 matched_product = found[0] if found else None
+                try:   # follow-ups without a product name ("còn size khác không?") mean the product just discussed
+                    from utils import convo as _convo, live_state as _lstate
+                    if getattr(self, "_convo", None) is None:
+                        self._convo = _convo.Convo()
+                    if matched_product is None:
+                        matched_product = self._convo.resolve(data["content"], catalog.all_products(), _lstate._current_id() or "")
+                        if matched_product is not None:
+                            data["content"] = f"{matched_product['name']}: {data['content']}"   # so the catalog answers see the product
+                            logger.info(f"Follow-up resolved to: {matched_product['name']}")
+                    self._convo.remember(matched_product["id"] if matched_product else None)
+                except Exception as e:
+                    logger.debug(f"conversation memory: {e}")
             # Answers the seller taught in the "Teach" tab win over everything else (they are the seller's own words)
             taught_reply = None
             try:

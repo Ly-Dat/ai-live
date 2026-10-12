@@ -64,7 +64,7 @@ Baseline: `python -m pytest tests/unit` = 306 passed, 1 failed (`test_setup_pers
 
 | Item | Status | Where |
 |---|---|---|
-| P0 Seller command center | built (header) | Pause/Resume button, "AI hosting / PAUSED / You are hosting" pill and "Now: product" pill, always visible; the button only writes `data/host_control.json`, so it works when the LLM or TTS is slow. Queue length and reconnect state are not in the header yet |
+| P0 Seller command center | built (header) | Pause/Resume button, "AI hosting / PAUSED / You are hosting" pill and "Now: product" pill, always visible; the button only writes `data/host_control.json`, so it works when the LLM or TTS is slow. The header also shows the speech queue length and a truthful bridge state (LIVE / connecting / down) |
 | P0 Fact confidence and approval | built | `fact_status` per field; AI-drafted description/highlights/intro are saved as `draft` and are blanked for the pitch, quick answers, comparisons and LLM context until the seller presses **Confirm facts** (timestamp `facts_confirmed_at`). "Imported" vs "seller-typed" is not distinguished |
 | P0 Pre-live checklist | built | Home pre-live check, `go_nogo.py`; Start now refuses without products and asks for a **logged override** (`data/start_overrides.jsonl`) when the safety filter is off or the AI-disclosure line is missing |
 | P0 Resilient speech queue | partial | identical queued lines are dropped (`utils/speech_queue.py`); Pause cuts queued and playing speech. Not done: cancelling stale pitches, TTS-failure recovery beyond the existing engine fallback. Note: tour pitches use priority 30 and comment replies 20 in `filter.priority_mapping`; the tour already waits for quiet chat, but the numbers are worth a look |
@@ -72,5 +72,7 @@ Baseline: `python -m pytest tests/unit` = 306 passed, 1 failed (`test_setup_pers
 | P1 Review inbox | exists | Teach tab (questions the host was unsure about; the answer you type is spoken next time) |
 | P1 Comparison with unknowns | exists | compare/cheaper only use known fields; unknown is never inferred |
 | P1 Intent / FAQ insights | exists | report "What viewers wanted" and "Product interest" |
-| P1 Conversation memory, adaptive pitch scheduler, multilingual policy | not built | would need design and real chat data |
-| P2 (gestures, product card overlay sync, campaign playbooks, replay timeline, accessibility) | not built | `data/speaking.json` and the overlay already follow the active product only loosely |
+| P1 Conversation memory | built | `utils/convo.py`: a short follow-up with no product name ("còn size nhỏ hơn không?") resolves to the product just discussed, else the tour's current product; memory-only, 150 s, no viewer names, never overrides a comment that names a product |
+| P1 Adaptive pitch scheduler, multilingual policy | not built | would need design and real chat data |
+| P2 Accessibility | built (overlay) | Avatar studio > Stage: caption size (normal / large / extra large), high-contrast caption, reduce motion; saved with the stage settings, no effect on safety |
+| P2 (gestures, product card overlay sync, campaign playbooks, replay timeline) | not built | `data/speaking.json` and the overlay already follow the active product only loosely |

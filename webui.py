@@ -3595,9 +3595,25 @@ def goto_func_page():
             prod = (f"Now: {_name}" if _name else "Now: -", bool(_name))
         except Exception:
             host, prod = ("AI hosting", True), ("Now: -", False)
+        bridge_txt = ("LIVE" if bridge else "Not live", bridge)
+        try:   # truthful connection state in the header: LIVE only while the bridge really delivers
+            from utils import bridge_health as _bh2
+            _a = _bh2.assess(_bh2.read())
+            if bridge and _a["level"] == "down":
+                bridge_txt = ("Bridge down", False)
+            elif bridge and _a["level"] == "warn":
+                bridge_txt = ("LIVE (no chat?)" if "no chat" in _a["message"] else "Bridge connecting", True)
+        except Exception:
+            pass
+        try:
+            from utils import speech_queue as _sq2
+            _n = _sq2.read_state()
+            queue = (f"Queue: {_n}" if _n >= 0 else "Queue: -", 0 <= _n < 5)
+        except Exception:
+            queue = ("Queue: -", False)
         return {"app": ("Streamer online" if api_ok else "Streamer offline", api_ok),
-                "bridge": ("LIVE" if bridge else "Not live", bridge),
-                "voice": (voice_txt, True), "ai": ai, "host": host, "product": prod}
+                "bridge": bridge_txt,
+                "voice": (voice_txt, True), "ai": ai, "host": host, "product": prod, "queue": queue}
 
     select_page = build_shell(tabs, [
         ("Studio", [("Home", "home", home_page), ("Setup", "rocket_launch", setup_page), ("Dashboard", "insights", dashboard_page),
