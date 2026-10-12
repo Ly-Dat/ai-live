@@ -7,7 +7,7 @@ automatic TikTok LIVE seller:
 - **Replies to viewer comments** with an LLM, grounded in your product catalog.
 - **TikTok-safe**: every viewer comment and every sentence the AI is about to say passes a Vietnamese-aware policy
   filter (`utils/tiktok_safety.py`) - off-platform contacts/payments, profanity, scams, medical/absolute claims, and so on.
-- **Quick answers**: simple price/size/colour/shipping/returns/usage/FAQ questions are answered straight from the catalog (no LLM, nothing invented); anything else goes to the LLM with product context.
+- **Quick answers**: simple price/size/colour/shipping/returns/usage/FAQ questions are answered straight from the catalog (no LLM, nothing invented); anything else goes to the LLM with product context. If the catalog cannot settle a question (a size that is not listed, a shipping time nobody filled in) the host says it cannot confirm it instead of guessing.
 - **Vietnamese locale pack**: `python apply_locale.py data/locale_vi.json` switches every spoken template and trigger word in `config.json` to Vietnamese (code and UI stay English).
 - Tour extras: AI disclosure line, follow/ask/cart reminders between products, `"active": false` to skip sold-out items.
 - Speaks Vietnamese (edge-tts `vi-VN-HoaiMyNeural`) and drives a Live2D avatar; the codebase and UI are English.
@@ -23,6 +23,7 @@ automatic TikTok LIVE seller:
 - **Starts in minutes**: one launcher, a setup wizard, and a simulator so you can try it before going live.
 - **Shows what worked**: Dashboard tab and `python report_session.py` list what viewers asked, which products drew interest and what the filter caught.
 - **Cheap to run**: quick answers skip the LLM entirely.
+- **Calm under a busy chat**: comment triage (below) keeps the host from answering spam, repeats and every greeting.
 
 ## Architecture
 
@@ -66,11 +67,19 @@ Manual route for developers: `python main.py`, then `python webui.py`, then in t
 - **Welcome back** (opt-in): recognises returning viewers by a salted hash only; "Forget all viewers" erases it.
 - **Personas** (`data/personas.json`): friendly girl, cheerful host, calm expert. Each sets voice, speed, speaking style and avatar while keeping the compliance rules.
 
+## Comment triage and honest answers
+
+Every viewer comment is classified (`utils/triage.py`): purchase, question, repeated question, greeting, feedback, spam, unrelated. Buying signals and product questions come first. The host stays silent for spam and links, for a question that was just answered for someone else (90 s), for a viewer repeating themselves or posting faster than every 4 s, and for greetings from the same viewer more than once per 10 min. When chat is busy (more than 8 comments in 10 s) only questions and buying signals are answered, and low-value chat gets at most one reply per 15 s. Skips are counted in the report; turn the whole thing off with `triage.enable: false` in `config.json`. Voice lines never overlap: they go through the existing priority queue.
+
+Answers stay inside the catalog (`utils/product_catalog.py`, `utils/seller_brain.py`): "Does this come in XL?" is checked against the product's sizes; "which is cheaper?" compares the known prices; a missing size, shipping or returns fact gets an honest "I cannot confirm that" and is left for you to add. The pre-live check lists products that miss facts viewers ask about. As a last line of defence, every line is run through the output safety filter again right before it is turned into speech (`utils/speech_gate.py`).
+
 ## Avatar studio and seller brain
 
-Free AI-drawn seller characters on the overlay (local Stable Diffusion + Animagine XL 3.1, or your own pictures): 8 ready-made originals or your own, outfits, 14 expressions that follow the live, stage options, a level / streak / achievements journey, a Pause / Take-over switch, and catalog-only answers for compare, budget and price/trust doubts. Details and limits: [docs/AVATAR.md](docs/AVATAR.md).
+Free AI-drawn seller characters on the overlay (local Stable Diffusion WebUI or ComfyUI + Animagine XL 3.1, or your own pictures): 8 ready-made originals or your own, outfits, 15 expressions that follow the live, stage options, a level / streak / achievements journey, a Pause / Take-over switch, and catalog-only answers for compare, budget and price/trust doubts. Details and limits: [docs/AVATAR.md](docs/AVATAR.md).
 
 **AI engine** (sidebar tab): the AI reply gets a timeout, an optional fallback provider and a breaker, so one slow provider cannot stall the stream; repeated voice lines come from a cache; reply and voice speed are shown, and the pre-live check warns when replies are slow. Providers are loaded only when used, so the panel starts faster. The avatar blinks, pops and sparkles when its mood changes, and shows a live caption in time with the voice. The panel mascot can be chosen (cat, fox, bunny, panda), reacts when you go live, and the layout works better on phones.
+
+**Concept art with ComfyUI (optional):** in Avatar studio > Draw it with a free AI pick *Local ComfyUI*. Start ComfyUI (default `127.0.0.1:8188`) with the Animagine XL 3.1 file in `ComfyUI/models/checkpoints`; the checkpoint is picked automatically (a name containing "animagine") or typed in. A saved ComfyUI API-format workflow can replace the built-in one (`gen.workflow`, with `{{prompt}} {{negative}} {{seed}} {{checkpoint}} {{width}} {{height}} {{steps}} {{cfg}}` placeholders). Pictures are saved in the character's own folder and never replace your avatar files by themselves; a PNG is not a rigged Live2D model, which needs separate tools. If ComfyUI is off, you get setup help and everything else keeps working. Nothing is downloaded for you; read the model licence before commercial use.
 
 ## Stories on your live
 
@@ -123,7 +132,7 @@ product data, and once chat has been quiet for 2 seconds it continues the produc
 
 ## Control panel
 
-The web UI opens on **Home**: a readiness checklist with one-click fixes, a LIVE badge in the header when the TikTok bridge runs, last-session stats, and sidebar search across all settings. After a live, Home shows a recap with concrete "do this next live" tips, a streak and lives-this-week count. Dark and light themes. Tabs: Home, Setup, Dashboard, Teach, Schedule, Live tools, Novel reader, Novel writer, Story studio, Products, then Voice, AI model, TTS, avatar and the other settings.
+The web UI opens on **Home**: a readiness checklist with one-click fixes (including catalog gaps), a LIVE badge in the header when the TikTok bridge runs, last-session stats, and sidebar search across all settings. After a live, Home shows a recap with concrete "do this next live" tips, a streak and lives-this-week count. Dark and light themes. Tabs: Home, Setup, Dashboard, Teach, Schedule, Live tools, Novel reader, Novel writer, Story studio, Products, then Voice, AI model, TTS, avatar and the other settings.
 
 **Language:** the panel is written in English. The **EN / VI** button next to the dark/light toggle switches it to Vietnamese (remembered in the browser). Translation is done in the page from `utils/i18n/vi.json`; text without an entry stays English, so some places can be mixed. To fix or add a Vietnamese string, edit that file (`exact` = English -> Vietnamese, `re` = templates with `$1`). The panel opens in your browser once via `start.bat`; run `python webui.py` by hand and open the address yourself.
 
@@ -155,7 +164,7 @@ Not used: VietTTS / viXTTS (non-commercial licenses).
 
 ## Tests
 
-`python -m pytest tests/unit` (about 240 offline tests: safety filter, catalog, stories, novel reader and writer, voices, analytics ...; the AI parts use scripted fake models).
+`python -m pytest tests/unit` (about 300 offline tests: safety filter, catalog, stories, novel reader and writer, voices, analytics ...; the AI parts use scripted fake models).
 `tests/` also holds per-backend API experiments inherited from upstream.
 
 ## Catalog tools
@@ -170,7 +179,7 @@ Only `talk`, `tiktok`, `youtube` and `twitch` remain; the Chinese-platform liste
 ## Live analytics
 
 Every comment, answer, blocked message and pitch is logged to `log/analytics/session-*.jsonl` (viewer names are salted hashes).
-View it in the web UI **Dashboard** tab, or run `python report_session.py [--out report.md]` after the live.
+View it in the web UI **Dashboard** tab, or run `python report_session.py [--out report.md]` after the live. The report has a "Which numbers are real" table: comments, intents, answers, compliance blocks and reply speed are counted by the app; audience size, watch time, cart clicks and orders are marked **not available** (read them in TikTok LIVE Center / Seller Center) and no sale is ever attributed to the AI. It also lists the comments the host chose not to speak and the questions kept for you while you hosted.
 Toggle with `config.json -> analytics.enable`.
 
 ## Credits

@@ -227,13 +227,13 @@ def build_avatar_tab(config):
 
                 with _card():
                     _h("Draw it with a free AI")
-                    ui.label("Best: a Stable Diffusion WebUI (AUTOMATIC1111 or Forge) on this PC, started with --api, with Animagine XL 3.1 loaded. Free and offline; "
+                    ui.label("Best: a Stable Diffusion WebUI (AUTOMATIC1111 or Forge, started with --api) or ComfyUI (port 8188) on this PC, with Animagine XL 3.1 loaded. Free and offline; "
                              "needs a GPU with about 8 GB of memory; the model licence allows commercial use of the images (read the model card yourself). "
                              "No GPU? Upload your own pictures, or try the web option.").classes("lv-sub")
                     with ui.row().style("gap:14px;flex-wrap:wrap;width:100%"):
-                        engine = ui.select({"local": "Local Stable Diffusion (recommended)", "pollinations": "Free web service (untested, no GPU)"},
+                        engine = ui.select({"local": "Local Stable Diffusion WebUI (recommended)", "comfy": "Local ComfyUI (free)", "pollinations": "Free web service (untested, no GPU)"},
                                            value=gen["engine"], label="Engine").style("min-width:300px")
-                        ghost = ui.input("WebUI address", value=gen["host"]).style("min-width:160px")
+                        ghost = ui.input("Engine address", value=gen["host"]).style("min-width:160px")
                         gport = ui.number("Port", value=gen["port"], format="%.0f").style("min-width:100px")
                         ckpt = ui.input("Checkpoint (blank = loaded one)", value=gen["checkpoint"]).style("min-width:300px")
                     info = ui.label().classes("lv-sub")

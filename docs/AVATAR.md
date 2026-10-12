@@ -3,7 +3,7 @@
 ## Free AI avatar
 **Avatar studio** (tab) draws original anime-style sellers with a free image model and shows them on the overlay. Five sub-tabs: Characters, Draw, Stage, Journey, Control.
 
-- **Engine (recommended):** a Stable Diffusion WebUI (AUTOMATIC1111 or Forge) on your own PC, started with `--api`, with **Animagine XL 3.1** loaded. Free, offline, no quota. Needs a GPU with about 8 GB of VRAM. The model is released under the CreativeML OpenRAIL++-M licence, which allows commercial use of its output; read the model card yourself before relying on that.
+- **Engine (recommended):** a Stable Diffusion WebUI (AUTOMATIC1111 or Forge) on your own PC, started with `--api`, with **Animagine XL 3.1** loaded. Free, offline, no quota. Needs a GPU with about 8 GB of VRAM. ComfyUI works too (pick *Local ComfyUI*; default port 8188, no `--api` flag needed). The model is released under the CreativeML OpenRAIL++-M licence, which allows commercial use of its output; read the model card yourself before relying on that.
 - **No GPU?** Upload your own pictures per expression, or try the "free web service" engine (Pollinations). That engine is **untested** and its terms are not verified.
 - Use an original design, not an existing character or a real person.
 - It is a PNGTuber-style sprite set, **not Live2D**: a Live2D rig cannot be made from one picture.

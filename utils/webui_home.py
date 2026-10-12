@@ -106,9 +106,12 @@ def build_home_tab(config, go):
                 facts, _shop, count, engine = _facts(config)
                 setup = setup_wizard.load_setup()
                 nop = 0
+                gaps = []
                 try:
                     data = json.load(open(config.get("products", "path") or "data/products.json", encoding="utf-8"))
                     nop = sum(1 for p in data.get("products", []) if p.get("active", True) and not p.get("price"))
+                    from .product_catalog import audit_products
+                    gaps = audit_products(data.get("products", []))
                 except Exception:
                     pass
                 extra = {}
@@ -123,7 +126,8 @@ def build_home_tab(config, go):
                 except Exception:
                     pass
                 rows = preflight.run(dict(facts, engine=engine, no_price=nop, own_voice=setup.get("own_voice"),
-                                          bridge_health=bridge_health.assess(bridge_health.read()), **extra))
+                                          bridge_health=bridge_health.assess(bridge_health.read()),
+                                          catalog_gaps=gaps, **extra))
                 box.clear()
                 with box:
                     ui.label(preflight.summary(rows)).style("font-weight:600")

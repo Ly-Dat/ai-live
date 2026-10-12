@@ -298,6 +298,21 @@ class Audio:
                     message = Audio.message_queue.pop(0)
                 logger.debug(message)
 
+                # Last line of defence: every spoken line passes the output safety filter right before TTS
+                try:
+                    if isinstance(message, dict) and message.get("content"):
+                        from utils import speech_gate, tiktok_safety
+                        if self.config.get("filter", "tiktok_safety", "enable"):
+                            _sf = tiktok_safety.get_default(self.config.get("filter", "tiktok_safety", "terms_path"),
+                                                            self.config.get("filter", "badwords", "replace") or "*")
+                            _clean = speech_gate.gate(message["content"], lambda t: _sf.sanitize(t, "output"))
+                            if _clean is None:
+                                logger.warning(f"Speech gate dropped a line before TTS: {message['content']!r}")
+                                continue
+                            message["content"] = _clean
+                except Exception as e:
+                    logger.error(f"Speech gate error: {e}")
+
                 # The message data here is the data waiting for audio synthesis; it was queued by priority and taken out in this thread, and is about to be synthesized into audio.
                 # Some integrated projects have built-in audio playback, so to keep the related mechanism while integrating, source code for this type of integration should be written here
                 if self.config.get("visual_body") == "metahuman_stream":

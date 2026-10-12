@@ -3499,6 +3499,11 @@ class My_handle(metaclass=SingletonMeta):
                         quick_reply = seller_brain.answer(catalog, data["content"])
                     except Exception as e:
                         logger.debug(f"seller brain: {e}")
+                if not quick_reply:   # a question the catalog cannot settle: say so honestly instead of guessing
+                    try:
+                        quick_reply = catalog.unknown_answer(data["content"])
+                    except Exception as e:
+                        logger.debug(f"unknown answer: {e}")
                 if not quick_reply and intent == "buy" and matched_product:
                     quick_reply = catalog.buy_reply(matched_product)
                 if quick_reply:
@@ -3527,6 +3532,18 @@ class My_handle(metaclass=SingletonMeta):
             if self.coverage_human():   # the seller is hosting: keep the question for them, say nothing
                 analytics.record("handoff", user=username, text=data["content"], intent=intent)
                 return None
+            try:   # triage: skip spam, repeats, over-frequent greetings; stay quiet about low-value chat when chat is busy
+                if My_handle.config.get("triage", "enable") is not False:
+                    if getattr(self, "_triage", None) is None:
+                        from utils import triage as _triage_mod
+                        self._triage = _triage_mod.Triage()
+                    verdict = self._triage.decide(username, data["content"])
+                    if verdict["action"] == "skip" and not taught_reply:
+                        analytics.record("triage_skip", user=username, reason=verdict["reason"], category=verdict["category"])
+                        logger.info(f"Triage skipped ({verdict['reason']}): {data['content']}")
+                        return None
+            except Exception as e:
+                logger.debug(f"triage: {e}")
             analytics.record("answer", source="taught" if taught_reply else ("cache" if cache_hit else ("quick" if quick_reply else "llm")),
                              product_id=matched_product["id"] if matched_product else None)
             if matched_product and intent in live_analytics.SALES_INTENTS:

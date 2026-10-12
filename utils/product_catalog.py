@@ -210,6 +210,44 @@ class ProductCatalog:
         ("stock_note", "answer_stock", ["con hang", "het hang", "con khong", "con size"]),
     ]
 
+    _SIZE_RE = re.compile(r"(?<![a-z0-9])(xxxl|xxl|xl|xs|2xl|3xl|s|m|l|\d{2})(?![a-z0-9])")
+
+    def unknown_answer(self, text: str) -> Optional[str]:
+        """Honest answer when a question is about ONE product but the catalog cannot settle it.
+
+        Covers (a) a requested size that is / is not in `sizes_colors`, and (b) a fact the seller never filled in
+        (options, shipping, returns, stock). Returns None when nothing applies so the normal path continues.
+        """
+        found = self.find_relevant(text, 2)
+        if not found or (len(found) > 1 and _scoring_tie(self, text, found)):
+            return None
+        p = found[0]
+        folded = _fold(text)
+        en = self.templates.get("lang") == "en"
+        opts = (p.get("sizes_colors") or "").strip()
+        asks_size = "size" in folded or "kich co" in folded or bool(re.search(r"(?<![a-z0-9])(xxl|xl|xxxl|xs)(?![a-z0-9])", folded))
+        if asks_size:
+            wanted = [m for m in self._SIZE_RE.findall(folded) if not m.isdigit() or "size" in folded]
+            if opts and wanted:
+                have = set(self._SIZE_RE.findall(_fold(opts)))
+                miss = [w for w in wanted if w not in have]
+                if not miss:
+                    return (f"Yes, {p['name']} comes in {', '.join(w.upper() for w in wanted)}. Options: {opts}" if en
+                            else f"Có {', '.join(w.upper() for w in wanted)} nha. {p['name']}: {opts}")
+                return (f"I don't see {', '.join(m.upper() for m in miss)} in the list I have ({opts}). I can't confirm it; please check the cart or wait for the seller."
+                        if en else f"Trong danh sách mình có ({opts}) chưa thấy {', '.join(m.upper() for m in miss)}. Mình chưa xác nhận được, bạn xem giỏ hàng hoặc chờ chủ shop kiểm tra nha.")
+        for field, key, words in self._INTENTS:
+            if field == "price" or not any(re.search(r"(?<![a-z0-9])" + re.escape(w) + r"(?![a-z0-9])", folded) for w in words):
+                continue
+            if not p.get(field):
+                return ("I don't have confirmed information about that for this product, so I can't promise anything. The seller can check and add it."
+                        if en else "Phần này trong dữ liệu sản phẩm mình chưa có thông tin chắc chắn nên chưa dám xác nhận. Chủ shop sẽ kiểm tra lại giúp bạn nha.")
+        return None
+
+    def audit(self) -> List[Dict]:
+        """Catalog health: which products are missing the facts viewers ask about. Pure read, nothing is changed."""
+        return audit_products(self.all_products())
+
     def buy_reply(self, product: Dict) -> str:
         """Call-to-action for a buying signal: point at the cart (never at off-platform contact)."""
         tpl = self.templates.get("answer_buy", "To order {name}, tap cart item {number} and check out in TikTok.")
@@ -250,6 +288,22 @@ def _scoring_tie(catalog: "ProductCatalog", text: str, found: List[Dict]) -> boo
     toks = set(_tokens(text))
     a, b = (len(toks & catalog._keywords(x)) for x in found[:2])
     return a == b
+
+
+_NEED = [("price", "price"), ("sizes_colors", "sizes / colours"), ("shipping", "shipping"), ("return_policy", "returns"),
+         ("highlights", "verified benefits"), ("stock_note", "stock")]
+
+
+def audit_products(products: List[Dict]) -> List[Dict]:
+    """Active products and the facts they lack (the AI says 'I cannot confirm' for these instead of guessing)."""
+    rows = []
+    for p in products:
+        if p.get("active", True) is False:
+            continue
+        miss = [label for key, label in _NEED if not p.get(key)]
+        if miss:
+            rows.append({"id": p.get("id"), "name": p.get("name", ""), "missing": miss})
+    return rows
 
 
 def merge_records(products: List[Dict], records: List[Dict]):

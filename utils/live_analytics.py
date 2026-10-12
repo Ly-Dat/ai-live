@@ -161,6 +161,8 @@ def summarize(events: Iterable[Dict], hot_window_sec: int = 300) -> Dict:
         "blocked_output": sum(1 for e in blocked if e.get("scope") == "output"),
         "pitches": len(pitches),
         "products_pitched": len({e.get("product_id") for e in pitches if e.get("product_id")}),
+        "handoffs": sum(1 for e in events if e["kind"] == "handoff"),
+        "triage_skips": dict(Counter(e.get("reason", "?") for e in events if e["kind"] == "triage_skip").most_common()),
         "gifts": sum(1 for e in events if e["kind"] == "gift"),
         "entrances": sum(1 for e in events if e["kind"] == "entrance"),
         "product_interest": {pid: dict(c) for pid, c in sorted(by_product.items(), key=lambda kv: -sum(kv[1].values()))},
@@ -200,6 +202,18 @@ def report_markdown(summary: Dict, names: Optional[Dict[str, str]] = None, shop_
     if s["blocked_by_category"]:
         lines += ["", "## Compliance log (by category)", "", "| Category | Hits |", "|---|---|"]
         lines += [f"| {k} | {v} |" for k, v in s["blocked_by_category"].items()]
+    lines += ["", "## Which numbers are real", "",
+              "| Metric | Status |", "|---|---|",
+              f"| Comments, intents, answers, compliance blocks | Verified: counted from events this app saw |",
+              f"| Viewers who commented | Verified ({s['unique_viewers']}); this is NOT your audience size |",
+              "| Audience size, watch time | Not available: the comment bridge does not report them. Read them in TikTok LIVE Center |",
+              "| Cart clicks, orders, revenue | Not available: no order data is connected. Read them in TikTok Shop Seller Center; nothing is attributed to the AI |",
+              f"| Reply speed | " + (f"Verified: median model time {s['llm_median_ms'] / 1000:.1f}s" if s.get("llm_median_ms") else "Not measured this session") + " |"]
+    if s.get("triage_skips"):
+        lines += ["", "## Comments the AI chose not to speak", "", "| Reason | Count |", "|---|---|"]
+        lines += [f"| {k.replace('_', ' ')} | {v} |" for k, v in s["triage_skips"].items()]
+    if s.get("handoffs"):
+        lines += ["", f"**{s['handoffs']}** question(s) came while you were hosting yourself: the AI kept them for you instead of answering."]
     lines += ["", "## Suggested follow-ups", ""]
     base = len(lines)
     top = next(iter(s["product_interest"]), None)

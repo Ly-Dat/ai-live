@@ -11,6 +11,7 @@ from utils.product_catalog import _fold
 
 _COMPARE = ["so sanh", "khac gi", "khac nhau", "cai nao tot hon", "nen chon cai nao", "hon nhau", "nen lay cai nao"]
 _RECOMMEND = ["goi y", "tu van", "nen mua gi", "mua gi", "hop voi", "co gi dep", "co gi hay"]
+_CHEAPER = ["re hon", "cai nao re", "re nhat", "dat hon", "cheaper", "cheapest", "which is cheaper"]
 _OBJ = [
     ("price", ["dat qua", "mac qua", "gia cao", "hoi mac", "hoi dat", "mac vay", "dat vay", "giam them"]),
     ("trust", ["co that khong", "hang that", "chinh hang", "lua dao", "co uy tin", "hang fake", "hang gia"]),
@@ -86,6 +87,20 @@ def answer(catalog, text: str) -> Optional[str]:
     t = _T["en" if catalog.templates.get("lang") == "en" else "vi"]
     f = _fold(text)
     prods = [p for p in catalog.all_products() if p.get("price")]
+    if _has(f, _CHEAPER):
+        found = [p for p in catalog.find_relevant(text, 2) if money(p.get("price"))]
+        pool = found if len(found) == 2 else prods
+        if len(pool) < 2:
+            return None
+        pool = sorted(pool, key=lambda p: money(p["price"]))
+        lo, hi = pool[0], pool[-1] if len(found) == 2 else pool[1]
+        en = t is _T["en"]
+        if money(lo["price"]) == money(hi["price"]):
+            return (f"{_short(lo['name'])} and {_short(hi['name'])} cost the same, {lo['price']}." if en
+                    else f"{_short(lo['name'])} và {_short(hi['name'])} cùng giá {lo['price']} nha.")
+        scope = "" if len(found) == 2 else (" Among the products in this live," if en else " Trong các sản phẩm của phiên live,")
+        return (f"{scope} {_short(lo['name'])} is cheaper at {lo['price']}; {_short(hi['name'])} is {hi['price']}.".strip() if en
+                else f"{scope} {_short(lo['name'])} rẻ hơn, giá {lo['price']}; {_short(hi['name'])} giá {hi['price']}.".strip())
     if _has(f, _COMPARE):
         found = catalog.find_relevant(text, 2)
         if len(found) == 2 and found[0].get("price") and found[1].get("price"):
