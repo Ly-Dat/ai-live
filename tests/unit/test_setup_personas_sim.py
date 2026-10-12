@@ -69,6 +69,9 @@ def test_demo_scenario_expectations():
     checked = 0
     for s in steps:
         if s["type"] == "comment" and s.get("expect"):
-            assert simulator.evaluate_comment(s["data"]["content"], safety, cat)["verdict"] == s["expect"], s
+            v = simulator.evaluate_comment(s["data"]["content"], safety, cat)["verdict"]
+            assert v in s["expect"].split("|"), s
+            if "|" in s["expect"]:   # these two depend on the shop's catalog; with the demo fixture the answer is still instant
+                assert v == "quick", s
             checked += 1
     assert checked >= 6

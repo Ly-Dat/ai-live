@@ -27,16 +27,20 @@ def load_scenario(path):
 def run_offline(steps, products, templates, terms):
     safety = tiktok_safety.TikTokSafety(terms)
     catalog = product_catalog.ProductCatalog(products, templates)
-    bad = 0
+    from utils.triage import Triage
+    triage, clock, bad = Triage(), 1000.0, 0
     for s in steps:
         if s["type"] != "comment":
             print(f"  [{s['type']:<8}] {json.dumps(s['data'], ensure_ascii=False)}")
             continue
-        r = simulator.evaluate_comment(s["data"]["content"], safety, catalog)
+        clock += float(s.get("after", 2))
+        r = simulator.evaluate_comment(s["data"]["content"], safety, catalog, triage, s["data"].get("username", "viewer"), clock)
         flag = ""
-        if s.get("expect") and s["expect"] != r["verdict"]:
+        if s.get("expect") and r["verdict"] not in s["expect"].split("|"):
             flag, bad = f"   <-- expected {s['expect']}", bad + 1
         extra = f" {r['categories']}" if r["categories"] else ""
+        if r.get("reason"):
+            extra += f" (silent: {r['reason']})"
         print(f"  [{r['verdict']:<8}] ({r['intent']}) {r['text']}{extra}{flag}")
         if r["reply"]:
             print(f"             -> {r['reply']}")

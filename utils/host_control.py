@@ -39,3 +39,10 @@ def set_state(state: str, path: str = PATH, now: float = 0.0) -> Dict:
 
 def is_silent(path: str = PATH) -> bool:
     return load(path)["state"] != "live"
+
+
+def edge(was_silent: bool, path: str = PATH):
+    """Returns (silent_now, just_silenced). The audio side calls this a few times a second: the moment the seller
+    presses Pause / Take over, speech that is queued or playing must stop, not only new replies."""
+    now = is_silent(path)
+    return now, (now and not was_silent)

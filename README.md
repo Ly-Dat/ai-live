@@ -81,6 +81,10 @@ Free AI-drawn seller characters on the overlay (local Stable Diffusion WebUI or 
 
 **Concept art with ComfyUI (optional):** in Avatar studio > Draw it with a free AI pick *Local ComfyUI*. Start ComfyUI (default `127.0.0.1:8188`) with the Animagine XL 3.1 file in `ComfyUI/models/checkpoints`; the checkpoint is picked automatically (a name containing "animagine") or typed in. A saved ComfyUI API-format workflow can replace the built-in one (`gen.workflow`, with `{{prompt}} {{negative}} {{seed}} {{checkpoint}} {{width}} {{height}} {{steps}} {{cfg}}` placeholders). Pictures are saved in the character's own folder and never replace your avatar files by themselves; a PNG is not a rigged Live2D model, which needs separate tools. If ComfyUI is off, you get setup help and everything else keeps working. Nothing is downloaded for you; read the model licence before commercial use.
 
+## Release readiness
+
+Before a real stream, read [docs/AUDIT.md](docs/AUDIT.md): a feature-to-code map with honest statuses, the test matrix, known issues and a go / no-go checklist. Highlights: Pause / Take over now also cuts speech that is queued or playing and keeps tour pitches quiet; Start is refused when there are no active products; `python simulate_live.py --offline` now shows triage skips (`skipped`) and honest "cannot confirm" answers (`cannot_confirm`) next to `quick`, `buy_cta`, `blocked` and `llm`; the app's local browser profile (`data/chrome_profile/`) is git-ignored because it holds cookies.
+
 ## Stories on your live
 
 Three tabs turn the host into a storyteller, which keeps viewers watching and is a second way to grow a channel. The AI is the
@@ -164,7 +168,7 @@ Not used: VietTTS / viXTTS (non-commercial licenses).
 
 ## Tests
 
-`python -m pytest tests/unit` (about 300 offline tests: safety filter, catalog, stories, novel reader and writer, voices, analytics ...; the AI parts use scripted fake models).
+`python -m pytest tests/unit` (about 310 offline tests: safety filter, catalog, stories, novel reader and writer, voices, analytics ...; the AI parts use scripted fake models).
 `tests/` also holds per-backend API experiments inherited from upstream.
 
 ## Catalog tools

@@ -265,6 +265,16 @@ def goto_func_page():
         """
         global config
 
+        try:   # never go live with nothing to sell
+            from utils import setup_wizard as _sw
+            _why = _sw.start_blockers(_sw.load_setup(), config.get("products", "path") or "data/products.json")
+            if _why:
+                ui.notify(_why[0], type="warning")
+                logger.warning(_why[0])
+                return
+        except Exception as _e:
+            logger.debug(f"start check: {_e}")
+
         for program in config.get("coordination_program"):
             if not program["enable"]:
                 continue

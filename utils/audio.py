@@ -1,4 +1,5 @@
 import re
+import time
 import threading
 import asyncio
 from copy import deepcopy
@@ -95,6 +96,9 @@ class Audio:
 
         # Audio synthesis is queued for playback in its own separate thread
         threading.Thread(target=lambda: asyncio.run(self.only_play_audio())).start()
+
+        # Pause / Take over (Avatar studio): stop queued and playing speech at once, not only new replies
+        threading.Thread(target=self._silence_watch, daemon=True).start()
         # self.only_play_audio_thread = threading.Thread(target=self.only_play_audio)
         # self.only_play_audio_thread.start()
 
@@ -297,6 +301,15 @@ class Audio:
                         Audio.message_queue_not_empty.wait()  # Block until the list is non-empty
                     message = Audio.message_queue.pop(0)
                 logger.debug(message)
+
+                # Paused / taken over: nothing is synthesised, tour pitches and announcements included
+                try:
+                    from utils import host_control
+                    if host_control.is_silent():
+                        logger.info("Host is paused / taken over: line not spoken")
+                        continue
+                except Exception:
+                    pass
 
                 # Last line of defence: every spoken line passes the output safety filter right before TTS
                 try:
@@ -1539,6 +1552,32 @@ class Audio:
         except Exception as e:
             logger.error(traceback.format_exc())
 
+
+    def halt_speech(self):
+        """Drop everything waiting to be synthesised or played and cut the current line."""
+        self.clear_queue("message_queue")
+        self.clear_queue("voice_tmp_path_queue")
+        try:
+            self.stop_current_audio()
+        except Exception:
+            logger.debug(traceback.format_exc())
+        try:
+            self.stop_audio(type="pygame")
+        except Exception:
+            pass
+
+    def _silence_watch(self):
+        from utils import host_control
+        silent = host_control.is_silent()
+        while True:
+            try:
+                time.sleep(0.4)
+                silent, just = host_control.edge(silent)
+                if just:
+                    logger.warning("Host paused / taken over: stopping queued and playing speech")
+                    self.halt_speech()
+            except Exception:
+                logger.debug(traceback.format_exc())
 
     # Stop the currently playing audio
     def stop_current_audio(self):

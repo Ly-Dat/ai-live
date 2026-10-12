@@ -220,6 +220,10 @@ def build_setup_tab(config):
             async def start():
                 save_tour_settings()
                 answers = setup_wizard.load_setup()
+                blockers = setup_wizard.start_blockers(answers, config.get("products", "path") or "data/products.json")
+                if blockers:
+                    ui.notify(blockers[0], type="warning")
+                    return
                 if "start" in RUN_HOOKS:          # same as the bottom 'Start Run' button
                     who = setup_wizard.clean_username(config.get("room_display_id") or answers.get("tiktok_username") or "")
                     if not who:

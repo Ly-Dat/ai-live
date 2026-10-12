@@ -291,3 +291,6 @@ data/*.tmp
 
 # generated avatar pictures and progress
 data/avatar/
+
+# Local browser profile created by the cart fetcher: holds cookies and logins, never commit
+data/chrome_profile/

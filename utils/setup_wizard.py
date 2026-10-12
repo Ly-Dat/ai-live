@@ -65,6 +65,20 @@ def validate(answers: Dict) -> List[str]:
     return problems
 
 
+def start_blockers(answers: Dict, products_path: str = "data/products.json") -> List[str]:
+    """Why pressing Start would go live with nothing to sell. Empty list = fine. Creator mode needs no products."""
+    if answers.get("mode") == "creator":
+        return []
+    try:
+        with open(products_path, "r", encoding="utf-8") as f:
+            items = json.load(f).get("products", [])
+    except (OSError, ValueError, AttributeError):
+        items = []
+    if not any(p.get("active", True) for p in items):
+        return ["There are no active products. Add or re-activate at least one in the Products tab, or switch to Creator mode."]
+    return []
+
+
 def apply_setup(config_path: str, products_path: str, personas_path: str, answers: Dict) -> List[str]:
     """Write the wizard answers into config.json and products.json. Returns what changed."""
     changes = []
