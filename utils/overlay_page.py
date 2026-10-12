@@ -46,6 +46,9 @@ html,body{margin:0;background:transparent;font-family:"Segoe UI",system-ui,sans-
 #av.f-gold img{filter:drop-shadow(0 0 10px #fbbf24) drop-shadow(0 0 22px #f59e0b)}
 #avn{margin-top:6px;display:inline-block;background:rgba(20,16,36,.82);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:4px 12px;font-size:14px;font-weight:700}
 #avb{font-size:11px;opacity:.8;font-weight:600;margin-left:8px}
+/*pp2*/#pp{display:none;margin:8px auto 0;width:16vh;pointer-events:none}
+#pp img{width:16vh;height:16vh;object-fit:cover;display:block;border-radius:12px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+body.pp #av #avi{max-height:48vh;width:auto}
 #avt{display:none;margin:6px auto 0;max-width:260px;background:rgba(255,255,255,.93);color:#1d1b2b;border-radius:12px;padding:6px 12px;font-size:13px}
 #avc{display:none;margin:0 auto 10px;max-width:300px;background:rgba(255,255,255,.95);color:#1d1b2b;border-radius:16px;padding:8px 14px;font-size:16px;font-weight:600;line-height:1.35;box-shadow:0 6px 18px rgba(0,0,0,.3);position:relative}
 #avc:after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-8px;border:8px solid transparent;border-bottom:0;border-top-color:rgba(255,255,255,.95)}
@@ -58,7 +61,7 @@ html,body{margin:0;background:transparent;font-family:"Segoe UI",system-ui,sans-
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
 @keyframes sway{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
 @keyframes float{0%,100%{transform:translateY(0)}25%{transform:translateY(-10px)}75%{transform:translateY(4px)}}
-</style></head><body><div id="wrap"></div><div id="nv"><div class="nt" id="nvt"></div><div class="nprev" id="nvp"></div><div class="ncur" id="nvc"></div><div class="nnext" id="nvn"></div><div class="ncr" id="nvr"></div></div><div id="sp"><img id="spi" alt=""><div class="spc" id="spc"></div><div class="spt" id="spt"></div></div><div id="np"><div id="npt"></div><div id="cr"></div></div><div id="av"><div id="avc"></div><img id="avi" alt=""><div id="avnw"><span id="avn"></span><span id="avb"></span></div><div id="avt"></div></div><audio id="bgm"></audio><script>
+</style></head><body><div id="wrap"></div><div id="nv"><div class="nt" id="nvt"></div><div class="nprev" id="nvp"></div><div class="ncur" id="nvc"></div><div class="nnext" id="nvn"></div><div class="ncr" id="nvr"></div></div><div id="sp"><img id="spi" alt=""><div class="spc" id="spc"></div><div class="spt" id="spt"></div></div><div id="np"><div id="npt"></div><div id="cr"></div></div><div id="av"><div id="avc"></div><img id="avi" alt=""><div id="avnw"><span id="avn"></span><span id="avb"></span></div><div id="pp"><img id="ppi" alt=""></div><div id="avt"></div></div><audio id="bgm"></audio><script>
 var items=[],at=Date.now();
 function mmss(s){s=Math.max(0,s);return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2)}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
@@ -133,6 +136,14 @@ function tipTick(){var a=avState,t=document.getElementById("avt");
  if(!a||!a.tips||!a.tips.length||a.paused){t.style.display="none";return}
  t.style.display="block";t.textContent=a.tips[Math.floor(Date.now()/(a.tip_seconds*1000))%a.tips.length]}
 setInterval(tipTick,1000);
+var ppU="",ppI=0,ppL=[],PT="http://127.0.0.1:8091";
+function ppHide(){document.getElementById("pp").style.display="none";document.body.classList.remove("pp")}
+function setProd(){fetch(PT+"/current").then(function(r){return r.json()}).then(function(d){var p=document.getElementById("pp"),im=document.getElementById("ppi");
+ if(!avState||!d.name||!d.images||!d.images.length){ppHide();return}
+ var k=d.name+"|"+d.images.join(",");if(k!==ppU){ppU=k;ppL=d.images;ppI=0}
+ p.style.display="block";document.body.classList.add("pp");
+ var u=PT+"/img/"+encodeURIComponent(ppL[ppI%ppL.length]);if(im.getAttribute("data-u")!==u){im.setAttribute("data-u",u);im.src=u}}).catch(ppHide)}
+setInterval(setProd,3000);setInterval(function(){ppI++},6000);setProd();
 (function flap(){if(avState&&avState.talking){avTick++;showAv(avTick%2===0&&Math.random()>0.15)}setTimeout(flap,110+Math.random()*120)})();
 function setMusic(m){if(!m||!m.enabled||!m.tracks||!m.tracks.length){bgm.pause();mkey="";mt=[];
   document.getElementById("npt").textContent="";document.getElementById("cr").textContent="";return}
