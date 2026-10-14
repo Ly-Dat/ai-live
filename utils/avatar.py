@@ -135,6 +135,27 @@ def pick_expression(events: List[Dict], now: float) -> Dict:
     return {"mood": "sleepy" if now - last > SLEEP_AFTER else "idle", "talking": False}
 
 
+_OPAQUE: Dict = {}
+
+
+def is_opaque(path: str) -> bool:
+    """True when the picture has no transparent corner, i.e. the plain background was not cut out (cached by file time)."""
+    try:
+        mt = os.path.getmtime(path)
+        key = _OPAQUE.get(path)
+        if key and key[0] == mt:
+            return key[1]
+        from PIL import Image
+        with Image.open(path) as im:
+            im = im.convert("RGBA")
+            w, h = im.size
+            op = all(im.getpixel(pt)[3] > 250 for pt in ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)))
+        _OPAQUE[path] = (mt, op)
+        return op
+    except Exception:
+        return False
+
+
 def overlay_avatar(settings: Dict, events: List[Dict], now: float, host_state: str = "live", cache: Optional[Dict] = None,
                    root: str = avatar_roster.ROOT, preview: Optional[str] = None, speaking_state: Optional[Dict] = None) -> Optional[Dict]:
     if not settings.get("enabled"):
@@ -159,6 +180,7 @@ def overlay_avatar(settings: Dict, events: List[Dict], now: float, host_state: s
         pick = {"mood": pick["mood"], "talking": bool(sp.get("active"))}
         if settings["stage"].get("caption", True) and sp.get("active") and sp.get("text"):
             caption = {"text": sp["text"], "elapsed": round(float(sp.get("elapsed") or 0), 2), "dur": round(float(sp.get("dur") or 0), 2)}
+    opaque = is_opaque(os.path.join(avatar_roster.look_dir(char["id"], char["look"], root), "idle.png"))
     base = f"{URL_PREFIX}{char['id']}/looks/{char['look']}/"
     images = {ex: f"{base}{ex}.png?v={int(mt)}" for ex, mt in files.items()}
     mood = avatar_gen.resolve(pick["mood"], files)
@@ -172,5 +194,5 @@ def overlay_avatar(settings: Dict, events: List[Dict], now: float, host_state: s
     return {"name": char["name"] if st["nametag"] else "", "badge": badge, "images": images, "mood": mood,
             "talking": bool(pick["talking"] and "talking" in files), "height": st["height_vh"], "side": st["side"],
             "frame": frame, "motion": motion, "tips": st["tips"], "tip_seconds": st["tip_seconds"], "paused": paused,
-            "caption": caption,
+            "caption": caption, "opaque": opaque,
             "a11y": {"cap_px": CAP_SIZES[st["cap_size"]], "contrast": st["cap_contrast"], "still": st["still"]}}

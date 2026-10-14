@@ -7,6 +7,7 @@ import json
 import os
 import re
 import time
+import unicodedata
 import wave
 from typing import Dict, Optional
 
@@ -32,9 +33,26 @@ def duration(audio_path: Optional[str], text: str) -> float:
     return max(MIN_S, min(MAX_S, secs))
 
 
+def clean_caption(text: str) -> str:
+    """Caption-safe text: fancy 'styled' usernames (math-bold letters etc.) are folded to plain letters, emoji, symbols and stray
+    combining marks (they show as empty boxes in the overlay font) are dropped."""
+    t = unicodedata.normalize("NFKC", text or "")
+    t = unicodedata.normalize("NFC", t)
+    out = []
+    for ch in t:
+        cat = unicodedata.category(ch)
+        if cat[0] in "LNPZ" or ch in "+-=%&@#$~":
+            out.append(ch)
+        elif cat == "Mn" and out:
+            out.append(ch)          # Vietnamese tones when text was decomposed
+    t = "".join(out)
+    t = re.sub(r"[\u200b-\u200f\u2028-\u202f\u2060\ufeff]", "", t)
+    return re.sub(r"\s+", " ", t).strip()
+
+
 def say(text: str, audio_path: Optional[str] = None, now: Optional[float] = None, path: str = PATH) -> Dict:
     now = time.time() if now is None else now
-    text = re.sub(r"\s+", " ", text or "").strip()
+    text = clean_caption(text)
     d = {"text": text[:400], "at": now, "dur": round(duration(audio_path, text), 2)}
     try:
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)

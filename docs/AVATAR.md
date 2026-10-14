@@ -38,3 +38,9 @@ Smart chat modes (auto-switch between explaining and entertaining), quizzes and 
 - **Pop and sparkles** when the mood changes (love, happy, surprised ...). They are skipped when the system asks for reduced motion.
 - **Same face on later draws**: the first picture is kept (`_base.png`) while the seed and settings stay the same, so "draw the missing ones" no longer changes the face.
 - **Regulars** (opt-in "returning viewers" in Setup): the host can add "last time you asked about X" to the welcome-back line. Only the hashed name and a product id are stored.
+
+## Polish (clunky look)
+- `remove_flat_background` feathers the cut edge and removes the background colour from fringe pixels; `clean_pack` re-cuts a look (originals in `_original/`).
+- The overlay payload has `opaque` (corners not transparent): the page then applies a soft radial mask instead of a hard rectangle.
+- Sparkles appear only at the left/right edges; mood swaps use a 0.18 s ghost crossfade (off with *Still avatar*).
+- Captions go through `speaking.clean_caption` (NFKC fold, emoji/symbols dropped).

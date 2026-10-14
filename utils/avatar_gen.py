@@ -269,23 +269,76 @@ def _reach(close, seed):
     return cur
 
 
-def remove_flat_background(png: bytes, tolerance: int = 28) -> bytes:
-    """Make the plain background transparent: the pixels close to the corner colour that connect to the picture edge."""
+def _dilate(mask, n: int = 2):
+    """Grow a boolean mask by n pixels (square neighbourhood) without scipy."""
+    import numpy as np
+    out = mask.copy()
+    for _ in range(n):
+        g = out.copy()
+        g[1:, :] |= out[:-1, :]
+        g[:-1, :] |= out[1:, :]
+        g[:, 1:] |= out[:, :-1]
+        g[:, :-1] |= out[:, 1:]
+        out = g
+    return out
+
+
+def remove_flat_background(png: bytes, tolerance: int = 34, feather: bool = True) -> bytes:
+    """Make the plain background transparent: the pixels close to the border colour that connect to the picture edge.
+
+    The pixels right at the cut get a soft alpha and have the background colour taken out of them, so the character has no
+    hard jagged edge and no pale halo of the old background (the 'sticker' look)."""
     from PIL import Image
     import numpy as np
     im = Image.open(io.BytesIO(png)).convert("RGBA")
     a = np.array(im)
     rgb = a[:, :, :3].astype(int)
-    corners = np.array([rgb[0, 0], rgb[0, -1], rgb[-1, 0], rgb[-1, -1]])
-    ref = np.median(corners, axis=0)
-    close = np.abs(rgb - ref).max(axis=2) <= tolerance
+    border = np.concatenate([rgb[0, :], rgb[-1, :], rgb[:, 0], rgb[:, -1]])
+    ref = np.median(border, axis=0)
+    dist = np.abs(rgb - ref).max(axis=2)
+    close = dist <= tolerance
     edge = np.zeros_like(close)
     edge[0, :], edge[-1, :], edge[:, 0], edge[:, -1] = True, True, True, True
-    bg = _reach(close, edge)    # background = close-to-corner pixels that connect to the picture edge
+    bg = _reach(close, edge)    # background = close-to-border pixels that connect to the picture edge
+    if feather and bg.any():
+        ring = _dilate(bg, 2) & ~bg
+        alpha = np.clip((dist - tolerance) / (tolerance * 1.4), 0.0, 1.0)
+        al = np.where(ring, alpha, 1.0)
+        al_safe = np.maximum(al, 0.25)[:, :, None]
+        un = (rgb - ref * (1 - al_safe)) / al_safe          # take the background colour out of the edge pixels
+        a[:, :, :3] = np.where(ring[:, :, None], np.clip(un, 0, 255), rgb).astype(np.uint8)
+        a[:, :, 3] = np.where(ring, (al * 255).astype(np.uint8), a[:, :, 3])
     a[bg, 3] = 0
     out = io.BytesIO()
     Image.fromarray(a).save(out, "PNG")
     return out.getvalue()
+
+
+def clean_pack(look_dir: str) -> Dict:
+    """Re-cut the background of every picture already drawn in a look. Originals are kept in _original/ (never overwritten)."""
+    done, failed = 0, 0
+    if not os.path.isdir(look_dir):
+        return {"done": 0, "failed": 0}
+    keep = os.path.join(look_dir, "_original")
+    for fn in sorted(os.listdir(look_dir)):
+        if not fn.lower().endswith(".png") or fn.startswith("_"):
+            continue
+        p = os.path.join(look_dir, fn)
+        try:
+            with open(p, "rb") as f:
+                raw = f.read()
+            os.makedirs(keep, exist_ok=True)
+            bk = os.path.join(keep, fn)
+            if not os.path.exists(bk):
+                with open(bk, "wb") as f:
+                    f.write(raw)
+            src = open(bk, "rb").read()
+            with open(p, "wb") as f:
+                f.write(remove_flat_background(src))
+            done += 1
+        except Exception:
+            failed += 1
+    return {"done": done, "failed": failed}
 
 
 def safe_name(name: str) -> str:

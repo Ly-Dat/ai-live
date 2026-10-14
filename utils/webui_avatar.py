@@ -301,12 +301,18 @@ def build_avatar_tab(config):
                         cur["seed"] = (cur["seed"] * 1103515245 + 12345) % 2_000_000_000
                         avatar_roster.save(cur)
                         ui.notify("The next draw will have a new face.")
+                    def clean_bg():
+                        r = avatar_gen.clean_pack(avatar_roster.look_dir(c["id"], c["look"]))
+                        ui.notify(f"Re-cut the background of {r['done']} picture(s)" + (f", {r['failed']} failed" if r["failed"] else "")
+                                  + ". Originals are kept in the _original folder. Reload the overlay (Ctrl+F5).")
+                        roster.refresh()
                     with ui.row().style("gap:10px;flex-wrap:wrap"):
                         ui.button("Save", icon="save", on_click=save_all)
                         ui.button("Draw the 6 core", icon="brush", on_click=lambda: start("core")).props("color=primary")
                         ui.button(f"Draw all {len(avatar_gen.EXPRESSIONS)}", icon="auto_awesome", on_click=lambda: start("all")).props("color=primary")
                         ui.button("Draw missing", icon="add_photo_alternate", on_click=lambda: start("missing")).props("flat")
                         ui.button("New face", icon="shuffle", on_click=new_seed).props("flat")
+                        ui.button("Clean backgrounds", icon="auto_fix_high", on_click=clean_bg).props("flat")
                     ui.label("The first picture takes a minute; all of them take several minutes on a mid-range card. Expressions are redrawn from the first picture so the "
                              "face stays the same. Results vary: redraw, or replace any picture by hand. A look with only the 6 core pictures still works.").classes("lv-sub")
                     ui.timer(1.0, lambda: info.set_text(st["msg"]))
