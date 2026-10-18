@@ -3593,6 +3593,11 @@ class My_handle(metaclass=SingletonMeta):
                         data_json["content"] += (My_handle.config.get("products", "context_prefix") or "") + product_context + "\n"
 
                 data_json["content"] += content + My_handle.config.get("after_prompt")
+                try:   # answer English comments in English; any other language gets a Vietnamese answer
+                    from utils import lang_policy, playbooks
+                    data_json["content"] += lang_policy.note(data["content"], lang_policy.settings()["english"] and playbooks.active()["english"])
+                except Exception as e:
+                    logger.debug(f"lang_policy: {e}")
 
                 logger.debug(f"data_json={data_json}")
                 

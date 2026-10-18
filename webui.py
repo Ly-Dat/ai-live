@@ -1105,6 +1105,24 @@ def goto_func_page():
                                                _bd.load_cache(), preview=_av.read_preview(now_), speaking_state=_sp_.state(now_))
         except Exception:
             out["avatar"] = None
+        try:   # gestures (wave / cheer / nod / lean) for the avatar
+            from utils import avatar_gestures as _ag, music as _m3, live_analytics as _la3
+            if out.get("avatar"):
+                out["avatar"]["gesture"] = _ag.pick(_m3.tail_events(_la3.latest_session_file()), time.time())
+        except Exception:
+            pass
+        try:   # "Now showing" card: the product the tour is presenting, while the host is really speaking
+            from utils import host_control as _hc3, live_state as _ls3, product_catalog as _pc3, speaking as _sp3, tiktok_safety as _ts3
+            _pid = _ls3._current_id()
+            if _pid and _hc3.load()["state"] == "live" and time.time() - _sp3.read()["at"] < 90:
+                _pd = json.load(open(config.get("products", "path") or "data/products.json", encoding="utf-8"))
+                _pr = next((x for x in _pd.get("products", []) if str(x.get("id")) == _pid), None)
+                _sf = _ts3.TikTokSafety(config.get("filter", "tiktok_safety", "terms_path") or "data/tiktok_policy_terms.json")
+                _card = _ov.product_card(_pc3.spoken_view(_pr), lambda t: not _sf.check(t, "output")) if _pr else None
+                if _card:
+                    out.setdefault("items", []).insert(0, _card)
+        except Exception:
+            pass
         return JSONResponse(out, headers={"Cache-Control": "no-store"})
 
 

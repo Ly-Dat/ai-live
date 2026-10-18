@@ -79,3 +79,6 @@ Baseline: `python -m pytest tests/unit` = 306 passed, 1 failed (`test_setup_pers
 
 ## Added: stale-line cancellation and TTS recovery
 `utils/voice_health.py` (`is_stale`, `record`, `level`, `backup_type`); hooks in `audio.py` (`message_queue_thread`, `only_play_audio`, `_tts_recover`); header pill in `webui.studio_status`. Tests: `tests/unit/test_voice_health.py`. Not verified with real audio.
+
+## Added: pacing, languages, gestures, product card, playbooks, replay
+Tests: `tests/unit/test_live_extras.py`. Not verified on a real stream. Known limits: voice stays Vietnamese for English answers; the "lean" gesture needs a logged `pitch` event (comment-triggered spotlights), tour sentences do not log one; the Now-showing card needs a recent voice line (`speaking.json`, 90 s); adaptive pacing reads the analytics log of the newest session.

@@ -364,8 +364,38 @@ def build_segments(catalog, product, cycle: int, safety):
     return clean
 
 
+def _room_signals(product) -> dict:
+    """Chat activity from the analytics log (empty on any problem, which means 'no change')."""
+    try:
+        from utils import live_analytics, pitch_pacing
+        path = live_analytics.latest_session_file()
+        evs = live_analytics.load_events(path)[-600:] if path else []
+        return pitch_pacing.signals(evs, time.time(), str(product.get("id", "")))
+    except Exception:
+        return {}
+
+
 def present_product(args, catalog, safety, product, round_no: int) -> None:
-    minutes = product.get("duration_min") or random.uniform(args.min_minutes, args.max_minutes)
+    lo, hi, adaptive = args.min_minutes, args.max_minutes, True
+    try:   # the active campaign playbook sets the pace unless --min/--max-minutes were given on the command line
+        from utils import playbooks
+        pb = playbooks.active()
+        adaptive = bool(pb["adaptive"])
+        if (lo, hi) == (5.0, 10.0):
+            lo, hi = pb["min_minutes"], pb["max_minutes"]
+    except Exception:
+        pass
+    manual = bool(product.get("duration_min"))
+    minutes = product.get("duration_min") or random.uniform(lo, hi)
+    if adaptive:
+        try:
+            from utils import pitch_pacing
+            adj = pitch_pacing.adjust_minutes(float(minutes), _room_signals(product), manual)
+            if adj != float(minutes):
+                print(f"[tour] pace adapted to the room: {float(minutes):.1f} -> {adj:.1f} min", flush=True)
+            minutes = adj
+        except Exception:
+            pass
     deadline = time.time() + float(minutes) * 60
     CURRENT.update(name=product.get("name", ""),
         images=[os.path.basename(x) for x in (product.get("images") or [])])
@@ -385,6 +415,12 @@ def present_product(args, catalog, safety, product, round_no: int) -> None:
             break
         # 2) continue with the next unspoken sentence (resume where we stopped)
         say(args, pending.pop(0))
+        if adaptive:
+            try:
+                from utils import pitch_pacing
+                time.sleep(pitch_pacing.extra_gap(_room_signals(product)))   # busy chat: leave room for replies
+            except Exception:
+                pass
 
 
 # ------------------------------------------------------------------ main loop

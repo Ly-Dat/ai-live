@@ -177,6 +177,51 @@ def _sales_card():
         ui.button("Save", on_click=save).props("unelevated no-caps")
 
 
+def _playbook_card():
+    from . import lang_policy, playbooks
+    cur = playbooks.active()
+    with ui.card().classes("lv-card w-full").style("padding:20px"):
+        ui.label("Campaign playbook").style("font-weight:700;font-size:16px")
+        ui.label("One choice that sets the pace of the product tour. Takes effect from the next product. "
+                 "Adaptive playbooks stay longer when viewers ask to buy and move on when the chat is quiet.").classes("lv-sub")
+        opts = {k: v["label"] for k, v in playbooks.PLAYBOOKS.items()}
+        sel = ui.select(opts, value=cur["key"], label="Playbook").classes("w-72")
+        about = ui.label(cur["about"]).classes("lv-chip")
+        sel.on_value_change(lambda e: setattr(about, "text", playbooks.get(e.value)["about"]))
+        eng = ui.switch("Answer English comments in English", value=lang_policy.settings()["english"])
+
+        def apply():
+            pb = playbooks.activate(sel.value)
+            lang_policy.save(bool(eng.value))
+            ui.notify(f"Playbook: {pb['label']}. English answers: {'on' if eng.value and pb['english'] else 'off'}.")
+        ui.button("Apply", on_click=apply).props("unelevated no-caps")
+
+
+def _replay_card():
+    from . import live_analytics, replay
+    with ui.card().classes("lv-card w-full").style("padding:20px"):
+        ui.label("Replay timeline").style("font-weight:700;font-size:16px")
+        ui.label("Minute by minute from the last live's log: where chat took off and where it went quiet. No viewer names.").classes("lv-sub")
+        box = ui.column().classes("w-full")
+
+        def show():
+            box.clear()
+            path = live_analytics.latest_session_file()
+            tl = replay.build(live_analytics.load_events(path)) if path else {"rows": []}
+            with box:
+                if not tl["rows"]:
+                    ui.label("No live has been logged yet.").classes("lv-chip")
+                    return
+                if tl["peak"]:
+                    ui.label(f"Busiest minute: {tl['peak']['min']:g} ({tl['peak']['comments']} comments, {tl['peak']['gifts']} gifts)").classes("lv-chip")
+                for q in tl["quiet"]:
+                    ui.label(f"Quiet stretch: minute {q['from']:g} to {q['to']:g}").classes("lv-chip")
+                cols = [{"name": k, "label": k.capitalize(), "field": k, "align": "left"}
+                        for k in ("min", "comments", "questions", "gifts", "joins", "answers", "handoffs")]
+                ui.table(columns=cols, rows=tl["rows"][-120:], row_key="i").classes("w-full").props("dense flat")
+        ui.button("Load last live", on_click=show).props("unelevated no-caps")
+
+
 def _fallback_card(config):
     import asyncio, json, urllib.request
     from . import bridge_health
@@ -245,5 +290,9 @@ def build_tools_tab(config):
     with ui.column().classes("w-full").style("margin-top:16px"):
         from .webui_music import music_card
         music_card(config)
+    with ui.column().classes("w-full").style("margin-top:16px"):
+        _playbook_card()
+    with ui.column().classes("w-full").style("margin-top:16px"):
+        _replay_card()
     with ui.column().classes("w-full").style("margin-top:16px"):
         _fallback_card(config)

@@ -52,6 +52,12 @@ html,body{margin:0;background:transparent;font-family:"Segoe UI",system-ui,sans-
 #avc{display:none;margin:0 auto 10px;max-width:300px;background:rgba(255,255,255,.95);color:#1d1b2b;border-radius:16px;padding:8px 14px;font-size:16px;font-weight:600;line-height:1.35;box-shadow:0 6px 18px rgba(0,0,0,.3);position:relative}
 #avc:after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-8px;border:8px solid transparent;border-bottom:0;border-top-color:rgba(255,255,255,.95)}
 #av.pop{animation:pop .5s ease-out;transform-origin:50% 100%}
+@keyframes g-wave{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+@keyframes g-cheer{0%,100%{transform:translateY(0)}30%{transform:translateY(-3vh)}60%{transform:translateY(0)}80%{transform:translateY(-1.2vh)}}
+@keyframes g-nod{0%,100%{transform:translateY(0)}40%{transform:translateY(1.2vh)}}
+@keyframes g-lean{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+#av.g-wave{animation:g-wave .9s ease-in-out;transform-origin:50% 100%}#av.g-cheer{animation:g-cheer .9s ease-out}
+#av.g-nod{animation:g-nod .7s ease-in-out}#av.g-lean{animation:g-lean .9s ease-in-out;transform-origin:50% 100%}
 .pt{position:absolute;bottom:55%;font-size:26px;pointer-events:none;animation:rise 1.6s ease-out forwards}
 @keyframes pop{0%{transform:scale(1)}28%{transform:scale(1.06,.95)}58%{transform:scale(.98,1.04)}100%{transform:scale(1)}}
 @keyframes rise{0%{opacity:0;transform:translateY(0) scale(.6)}15%{opacity:1}100%{opacity:0;transform:translateY(-120px) scale(1.15)}}
@@ -75,6 +81,9 @@ function render(){var w=document.getElementById("wrap");w.textContent="";var dt=
    if(it.drawn){c.appendChild(el("div","big",it.entries+" entered"));
     if(it.winners&&it.winners.length)c.appendChild(el("div","big hot","Winner: "+it.winners.join(", ")))}
    else{var k=el("div","big");k.appendChild(document.createTextNode("Comment "));k.appendChild(el("span","hot",'"'+it.keyword+'"'));k.appendChild(document.createTextNode(" to enter - "+it.entries+" in so far"));c.appendChild(k)}}
+  else if(it.kind==="product"){head(c,"Now showing","");c.appendChild(el("div","t",it.name));
+   var pm=[];if(it.price)pm.push(it.price);if(it.was)pm.push("was "+it.was);if(pm.length)c.appendChild(el("div","big hot",pm.join(" - ")));
+   if(it.note)c.appendChild(el("div","big",it.note))}
   else{head(c,"Flash sale",mmss(left));c.appendChild(el("div","t",it.product||"Flash sale"));
    var m=[];if(it.price)m.push(it.price);if(it.stock)m.push(it.stock+" left");if(m.length)c.appendChild(el("div","big hot",m.join(" - ")))}
   w.appendChild(c)})}
@@ -121,10 +130,13 @@ setInterval(capTick,250);
  nextBlink()},2400+Math.random()*3600)})();
 function showAv(open){var a=avState;if(!a)return;var k=(blinkOn&&a.images.blink&&!a.talking)?"blink":((open&&a.images.talking)?"talking":a.mood);var u=a.images[k]||a.images.idle;
  var im=document.getElementById("avi");if(im.getAttribute("data-u")!==u){if(fadeNext&&im.src&&im.getAttribute("data-u")&&!(avState&&avState.a11y&&avState.a11y.still)){fadeNext=false;var r=im.getBoundingClientRect(),g=el("img","ghost"+(document.getElementById("av").classList.contains("soft")?" gsoft":""));g.src=im.src;g.style.left=r.left+"px";g.style.top=r.top+"px";g.style.width=r.width+"px";g.style.height=r.height+"px";document.body.appendChild(g);setTimeout(function(){g.style.opacity="0"},20);setTimeout(function(){if(g.parentNode)g.parentNode.removeChild(g)},260)}fadeNext=false;im.setAttribute("data-u",u);im.src=u}}
+var gId=0,gName="",gAt=0;
+function gest(a,b){var g=a.gesture;if(g&&g.name&&g.id!==gId){gId=g.id;if(!(a.a11y&&a.a11y.still)&&!a.paused&&!matchMedia("(prefers-reduced-motion: reduce)").matches){gName=g.name;gAt=Date.now()}}
+ if(gName&&Date.now()-gAt<900)b.classList.add("g-"+gName)}
 function setAvatar(a){var b=document.getElementById("av");
  if(!a){b.style.display="none";avState=null;return}
  b.style.display="block";b.className=a.side+" m-"+a.motion+" f-"+a.frame+(a.paused?" rest":"")+(a.opaque?" soft":"")+((a.a11y&&a.a11y.still)?" still":"");
- document.getElementById("avi").style.height=a.height+"vh";avState=a;
+ document.getElementById("avi").style.height=a.height+"vh";avState=a;gest(a,b);
  document.getElementById("avn").textContent=a.name||"";document.getElementById("avn").style.display=a.name?"inline-block":"none";
  document.getElementById("avb").textContent=a.badge||"";
  Object.keys(a.images).forEach(function(k){if(avImgs[k]!==a.images[k]){avImgs[k]=a.images[k];(new Image()).src=a.images[k]}});

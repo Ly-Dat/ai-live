@@ -39,3 +39,23 @@ def build(engage: Dict, flash: Optional[Dict], product_name: str = "", now: floa
         items.append({"kind": "flash", "product": product_name, "price": flash.get("sale_price") or "",
                       "stock": flash.get("stock_left"), "left": _left(flash["ends_at"], now)})
     return {"items": items}
+
+
+def _num(v) -> float:
+    digits = "".join(ch for ch in str(v or "") if ch.isdigit())
+    return float(digits) if digits else 0.0
+
+
+def product_card(p: Optional[Dict], safe: Callable[[str], bool] = lambda s: True) -> Optional[Dict]:
+    """The "Now showing" card for the product the host is presenting. Only the seller's own catalog fields; drafts are blanked by
+    the caller (spoken_view). `was` is shown only when the original price really is higher than the price."""
+    if not p or not p.get("name") or not safe(str(p["name"])):
+        return None
+    price, orig = str(p.get("price") or ""), str(p.get("original_price") or "")
+    note = ""
+    for h in (p.get("highlights") or []):
+        if isinstance(h, str) and h.strip() and safe(h):
+            note = h.strip()[:80]
+            break
+    return {"kind": "product", "name": str(p["name"])[:70], "price": price,
+            "was": orig if _num(orig) > _num(price) > 0 else "", "note": note, "left": 0}
