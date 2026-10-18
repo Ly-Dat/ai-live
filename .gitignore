@@ -294,3 +294,11 @@ data/avatar/
 
 # Local browser profile created by the cart fetcher: holds cookies and logins, never commit
 data/chrome_profile/
+
+# runtime / generated
+data/tts_cache/
+*.bak_*
+data/engine_stats.json
+data/queue_state.json
+data/voice_state.json
+data/active_playbook.json
