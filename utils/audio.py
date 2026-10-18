@@ -311,6 +311,16 @@ class Audio:
                 except Exception:
                     pass
 
+                # A line that waited too long is no longer worth saying
+                try:
+                    from utils import voice_health
+                    if isinstance(message, dict) and voice_health.is_stale(message.get("type"), message.get("queued_at")):
+                        logger.info(f"Stale line dropped before TTS ({message.get('type')}): {str(message.get('content'))[:60]!r}")
+                        voice_health.record_stale()
+                        continue
+                except Exception:
+                    pass
+
                 # Last line of defence: every spoken line passes the output safety filter right before TTS
                 try:
                     if isinstance(message, dict) and message.get("content"):
@@ -600,6 +610,8 @@ class Audio:
         """
         logger.debug(f"message_queue: {Audio.message_queue}")
         logger.debug(f"data_json: {data_json}")
+        if isinstance(data_json, dict) and "queued_at" not in data_json:
+            data_json["queued_at"] = time.time()
 
         # Define the mapping from type to priority; the same priority maps to the same value, larger value means higher priority
         priority_mapping = self.config.get("filter", "priority_mapping")
@@ -1239,6 +1251,27 @@ class Audio:
                 pass
         threading.Thread(target=run, daemon=True).start()
 
+    async def _tts_recover(self, message):
+        """The voice failed for this line: try the same voice once more, then the free Edge voice. Returns (audio_path|None, used_backup)."""
+        try:
+            await asyncio.sleep(0.6)
+            r = await self.tts_handle(message)
+            if r["result"]["code"] == 200 and r["result"]["audio_path"]:
+                logger.warning(f"[{message['tts_type']}] recovered on retry")
+                return r["result"]["audio_path"], False
+            from utils import voice_health
+            alt = voice_health.backup_type(message.get("tts_type"))
+            if alt and self.config.get("edge-tts") is not None:
+                m2 = dict(message)
+                m2["tts_type"], m2["data"] = alt, self.config.get("edge-tts")
+                r = await self.tts_handle(m2)
+                if r["result"]["code"] == 200 and r["result"]["audio_path"]:
+                    logger.warning(f"[{message['tts_type']}] failed twice; this line was spoken with the backup voice ({alt})")
+                    return r["result"]["audio_path"], True
+        except Exception:
+            logger.error(traceback.format_exc())
+        return None, False
+
     async def my_play_voice(self, message):
         """Synthesize audio and insert it into the to-play queue
 
@@ -1280,7 +1313,8 @@ class Audio:
             data_json = {
                 "type": message['type'],
                 "voice_path": voice_tmp_path,
-                "content": message["content"]
+                "content": message["content"],
+                "queued_at": message.get("queued_at")
             }
 
             if "insert_index" in message:
@@ -1316,6 +1350,15 @@ class Audio:
             voice_tmp_path = resp_json["result"]["audio_path"]
         else:
             voice_tmp_path = None
+
+        used_backup = False
+        if voice_tmp_path is None:
+            voice_tmp_path, used_backup = await self._tts_recover(message)
+        try:
+            from utils import voice_health
+            voice_health.record(voice_tmp_path is not None, used_backup)
+        except Exception:
+            pass
         
         if voice_tmp_path is None:
             logger.error(f"{message['tts_type']}Synthesis failed, please check whether the server is started and working, and check config, network and other issues. If everything checks out, it may be a compatibility problem caused by an API change; you can submit an issue to the official repository, link: https://github.com/Ikaros-521/AI-Vtuber/issues\nIf it is a GSV 400 error, please confirm the reference audio and reference text are correct, or try replacing the reference audio")
@@ -1412,6 +1455,15 @@ class Audio:
                             Audio.voice_tmp_path_queue_not_empty.wait()  # Block until the list is non-empty
                         data_json = Audio.voice_tmp_path_queue.pop(0)
                     
+                    try:
+                        from utils import voice_health
+                        if voice_health.is_stale(data_json.get("type"), data_json.get("queued_at")):
+                            logger.info(f"Stale audio dropped before playback ({data_json.get('type')})")
+                            voice_health.record_stale()
+                            continue
+                    except Exception:
+                        pass
+
                     logger.debug(f"Normal audio playback queue, about to play audio data_json={data_json}")
 
                     voice_tmp_path = data_json["voice_path"]

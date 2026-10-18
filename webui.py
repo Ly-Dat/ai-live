@@ -3611,9 +3611,20 @@ def goto_func_page():
             queue = (f"Queue: {_n}" if _n >= 0 else "Queue: -", 0 <= _n < 5)
         except Exception:
             queue = ("Queue: -", False)
+        try:   # truthful voice state: backup voice in use, or the voice is down
+            from utils import voice_health as _vh
+            _v = _vh.level()
+            if _v["level"] == "down":
+                voice_txt, _vok = "Voice DOWN", False
+            elif _v["level"] == "backup":
+                voice_txt, _vok = "Voice: backup (Edge)", True
+            else:
+                _vok = True
+        except Exception:
+            _vok = True
         return {"app": ("Streamer online" if api_ok else "Streamer offline", api_ok),
                 "bridge": bridge_txt,
-                "voice": (voice_txt, True), "ai": ai, "host": host, "product": prod, "queue": queue}
+                "voice": (voice_txt, _vok), "ai": ai, "host": host, "product": prod, "queue": queue}
 
     select_page = build_shell(tabs, [
         ("Studio", [("Home", "home", home_page), ("Setup", "rocket_launch", setup_page), ("Dashboard", "insights", dashboard_page),

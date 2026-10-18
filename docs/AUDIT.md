@@ -76,3 +76,6 @@ Baseline: `python -m pytest tests/unit` = 306 passed, 1 failed (`test_setup_pers
 | P1 Adaptive pitch scheduler, multilingual policy | not built | would need design and real chat data |
 | P2 Accessibility | built (overlay) | Avatar studio > Stage: caption size (normal / large / extra large), high-contrast caption, reduce motion; saved with the stage settings, no effect on safety |
 | P2 (gestures, product card overlay sync, campaign playbooks, replay timeline) | not built | `data/speaking.json` and the overlay already follow the active product only loosely |
+
+## Added: stale-line cancellation and TTS recovery
+`utils/voice_health.py` (`is_stale`, `record`, `level`, `backup_type`); hooks in `audio.py` (`message_queue_thread`, `only_play_audio`, `_tts_recover`); header pill in `webui.studio_status`. Tests: `tests/unit/test_voice_health.py`. Not verified with real audio.
