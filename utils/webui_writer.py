@@ -28,7 +28,7 @@ def build_writer_tab(config):
     ui.add_css(_CSS)
     page_title("Novel writer", "Write a whole novel with the AI: it plans, remembers the story, checks itself, and you stay in control "
                                "(approve, revise with a diff, steer, restore). Finished chapters can be read aloud on your live.")
-    st = {"p": None, "rev": None, "choices": [], "audit": [], "review": {}}
+    st = {"p": None, "rev": None, "choices": [], "audit": [], "review": {}, "desc": {}, "desc_par": None, "vars": [], "ideas": []}
 
     def llm(kind="draft"):
         if str(config.get("chat_type")) != "chatgpt":
@@ -177,7 +177,7 @@ def build_writer_tab(config):
         ui.separator().style("margin:14px 0")
         ui.label("Revise with a diff").classes("nw-h")
         with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
-            rev_mode = ui.select({k: k for k in nw.REVISE_MODES}, label="What to improve", value="tension").classes("w-56")
+            rev_mode = ui.select(list(nw.REVISE_MODES), label="What to improve (or type your own instruction)", value="tension", with_input=True, new_value_mode="add-unique").classes("w-96")
             rev_par = ui.select({-1: "Whole chapter"}, label="Which part", value=-1).classes("w-80")
             rev_btn = ui.button("Suggest an edit", icon="auto_fix_high").props("outline no-caps")
 
@@ -195,6 +195,47 @@ def build_writer_tab(config):
                 ui.button("Accept", icon="check", on_click=lambda: accept(True)).props("color=positive no-caps unelevated")
                 ui.button("Reject", icon="close", on_click=lambda: accept(False)).props("outline no-caps")
         diff_view()
+
+        ui.separator().style("margin:14px 0")
+        ui.label("Write with beats and tools").classes("nw-h")
+        ui.label("Beat = one moment of a scene (who does what, where, what changes). The AI writes just that moment and adds it to the chapter; short, specific beats "
+                 "give better prose than one long vague request. Describe, versions and brainstorm use the story bible.").classes("lv-sub")
+        beat_box = ui.textarea("Beat: one moment of the scene").props("autogrow outlined").classes("w-full")
+        with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
+            beat_mood = ui.select(nw.BEAT_MOODS, label="Mood", value="neutral").classes("w-40")
+            beat_words = ui.number("Words", value=220, min=80, max=600).classes("w-28")
+            beat_btn = ui.button("Write this beat", icon="playlist_add").props("color=primary no-caps unelevated")
+            mem_btn = ui.button("Update story memory", icon="psychology").props("outline no-caps")
+        with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
+            cont_box = ui.input("What happens next? (optional)").classes("w-96")
+            cont_btn = ui.button("Continue the chapter", icon="arrow_forward").props("outline no-caps")
+        with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
+            desc_btn = ui.button("Describe the part chosen above", icon="visibility").props("outline no-caps")
+            var_btn = ui.button("3 versions of the edit above", icon="content_copy").props("outline no-caps")
+        with ui.row().classes("items-end").style("gap:12px;flex-wrap:wrap"):
+            bs_kind = ui.select(list(nw.BRAINSTORM_KINDS), label="Brainstorm", value="twists").classes("w-40")
+            bs_topic = ui.input("Focus (optional)").classes("w-72")
+            bs_btn = ui.button("Brainstorm ideas", icon="lightbulb").props("outline no-caps")
+
+        @ui.refreshable
+        def tools_view():
+            for label in nw.SENSES:
+                opts = st["desc"].get(label) or []
+                if opts:
+                    ui.label(label.capitalize()).classes("lv-sub")
+                    for o in opts:
+                        with ui.row().style("gap:8px;align-items:center"):
+                            ui.label(o).style("max-width:640px")
+                            ui.button("Weave in", on_click=lambda o=o: do_weave(o)).props("flat dense no-caps")
+            for i, v in enumerate(st["vars"]):
+                ui.label(f"Version {i + 1}").classes("lv-sub")
+                ui.label(v["new"]).style("white-space:pre-wrap")
+                ui.button("Use this (see the diff)", on_click=lambda v=v: (st.update(rev=v), diff_view.refresh())).props("flat dense no-caps")
+            if st["ideas"]:
+                ui.label("Ideas").classes("lv-sub")
+                for t in st["ideas"]:
+                    ui.label("- " + t)
+        tools_view()
 
         ui.separator().style("margin:14px 0")
         ui.label("Versions and steering").classes("nw-h")
@@ -375,7 +416,9 @@ def build_writer_tab(config):
         rev_par.set_options({-1: "Whole chapter", **{i: f'Paragraph {i + 1}: {t[:50]}...' for i, t in enumerate(paras)}}, value=-1)
         ver_sel.set_options({i: f'{time.strftime("%d/%m %H:%M", time.localtime(v["t"]))} - {v["label"]}' for i, v in enumerate(ch["versions"])} if ch else {}, value=None)
         st["rev"], st["audit"], st["review"] = None, [], {}
+        st["desc"], st["vars"] = {}, []
         diff_view.refresh()
+        tools_view.refresh()
         report_view.refresh()
     ch_sel.on_value_change(show_chapter)
 
@@ -446,6 +489,68 @@ def build_writer_tab(config):
         await job(rev_btn, nw.revise, p, cur_n(), rev_mode.value, llm("revise"), None if par in (-1, None) else int(par),
                   done=lambda r: (st.update(rev=r), diff_view.refresh()))
     rev_btn.on_click(do_revise)
+
+    def _passage():
+        """(paragraph index, text) of the part chosen above; with 'Whole chapter' the last paragraph."""
+        ch = nw.get_chapter(project(), cur_n())
+        if not ch or not ch["text"].strip():
+            raise RuntimeError("Write the chapter first.")
+        paras = ch["text"].split("\n\n")
+        par = rev_par.value
+        i = int(par) if par not in (-1, None) and int(par) < len(paras) else len(paras) - 1
+        return i, paras[i]
+
+    def _after_write(_=None):
+        show_chapter()
+        resume_card.refresh()
+        control_room.refresh()
+
+    async def do_beat():
+        p = project()
+        await job(beat_btn, nw.write_beat, p, cur_n(), beat_box.value or "", llm("beat"), beat_mood.value, int(beat_words.value or 220),
+                  done=lambda r: (beat_box.set_value(""), _after_write()))
+    beat_btn.on_click(do_beat)
+
+    async def do_memory():
+        p = project()
+        if not nw.get_chapter(p, cur_n()):
+            ui.notify("Write the chapter first.", type="warning")
+            return
+        await job(mem_btn, nw.remember, p, cur_n(), llm("memory"), done=lambda r: (control_room.refresh(), ui.notify("Story memory updated.")))
+    mem_btn.on_click(do_memory)
+
+    async def do_continue():
+        p = project()
+        await job(cont_btn, nw.continue_chapter, p, cur_n(), llm("continue"), cont_box.value or "", done=lambda r: (cont_box.set_value(""), _after_write()))
+    cont_btn.on_click(do_continue)
+
+    async def do_describe():
+        p = project()
+        try:
+            i, text = _passage()
+        except Exception as ex:
+            ui.notify(str(ex), type="warning")
+            return
+        st["desc_par"] = i
+        await job(desc_btn, nw.describe, p, cur_n(), text, llm("describe"), done=lambda r: (st.update(desc=r), tools_view.refresh()))
+    desc_btn.on_click(do_describe)
+
+    async def do_weave(detail):
+        p = project()
+        i = st.get("desc_par")
+        await job(None, nw.revise, p, cur_n(), nw.weave_instruction(detail), llm("revise"), i, done=lambda r: (st.update(rev=r), diff_view.refresh()))
+
+    async def do_variants():
+        p = project()
+        par = rev_par.value
+        await job(var_btn, nw.variants, p, cur_n(), rev_mode.value, llm("revise"), None if par in (-1, None) else int(par), 3,
+                  done=lambda r: (st.update(vars=r), tools_view.refresh()))
+    var_btn.on_click(do_variants)
+
+    async def do_brainstorm():
+        p = project()
+        await job(bs_btn, nw.brainstorm, p, bs_kind.value, llm("brainstorm"), bs_topic.value or "", 8, done=lambda r: (st.update(ideas=r), tools_view.refresh()))
+    bs_btn.on_click(do_brainstorm)
 
     def accept(yes):
         p = project()

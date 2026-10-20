@@ -12,6 +12,10 @@ What the research briefs say makes people finish a story and come back to it, bu
   * STEERING: three consequential directions at the end of a chapter (or your own words) that shape the next chapter
   * READER-ENGAGEMENT REVIEW (diagnosis separate from fixes), STYLE profile from your own sample, "where we left off" resume card,
     daily word goal, Markdown export and publish into the Novel reader (it can then be read aloud on the live)
+Borrowed from the popular writing apps (researched Oct 2026; ideas only, no code or text copied): SCENE BEATS written one at a time with a
+  mood and hard boundaries (Novelcrafter), DESCRIBE sensory options and weave one in (Sudowrite), CONTINUE / guided continue, several VARIANTS
+  of one passage to kit-bash from, a BRAINSTORM that reads the story bible (names, twists, obstacles, settings), and an AUTHOR'S NOTE placed
+  last in the prompt so it outweighs everything else (NovelAI).
 Every AI call takes an injected `llm_fn(prompt) -> str`, so it is unit tested offline. Projects live in data/novel_projects/*.json.
 """
 import difflib
@@ -26,7 +30,8 @@ from .novel_companion import fold
 
 PROJECTS_DIR = os.path.join("data", "novel_projects")
 LLM = Callable[[str], str]
-TEMP = {"premise": 1.0, "bible": 0.8, "outline": 0.7, "draft": 0.85, "memory": 0.1, "audit": 0.2, "revise": 0.7, "choices": 1.0, "review": 0.3}
+TEMP = {"premise": 1.0, "bible": 0.8, "outline": 0.7, "draft": 0.85, "memory": 0.1, "audit": 0.2, "revise": 0.7, "choices": 1.0, "review": 0.3,
+        "beat": 0.85, "describe": 0.9, "brainstorm": 1.0, "continue": 0.85}
 
 HOOK_TYPES = {
     "question": "end on a meaningful unanswered question",
@@ -45,6 +50,9 @@ REVISE_MODES = {
     "senses": "Add concrete sensory detail (sound, smell, texture, light) in a few well-chosen places. Do not pile up adjectives.",
     "hook": "Strengthen the ending so the reader must continue, using the planned hook type. Change only the last paragraph or two.",
     "shorten": "Shorten by about 25% and preserve the voice. Cut, do not summarise.",
+    "show": "Show, do not tell: turn statements of feeling or fact into action, gesture, dialogue and concrete detail. Keep the events and length.",
+    "expand": "Expand this sparse passage so its density matches the surrounding prose: add the missing action, interiority and setting. Do not add new plot.",
+    "tone": "Shift the register to be warmer and more intimate without changing the events.",
     "cliches": "Replace stock phrases and cliches with specific images. Keep the meaning and the voice.",
 }
 STEER_LANG = {"vi": "Vietnamese", "en": "English"}
@@ -370,7 +378,9 @@ def draft_prompt(p: Dict, n: int, words: int = 0, extra: str = "") -> str:
             "Characters may only act on what they know (see WHO KNOWS WHAT). Obey the RULES. "
             f"Hook: {HOOK_TYPES.get(o.get('hook', 'question'), HOOK_TYPES['question'])}. Do not resolve the open threads early. "
             f"Content limits: romance {c.get('romance')}/3, violence {c.get('violence')}/3; avoid {c.get('forbidden') or 'nothing special'}. "
-            f"Only original characters and events.{(' ' + extra) if extra else ''}\nOutput only the chapter text.")
+            f"Only original characters and events.{(' ' + extra) if extra else ''}"
+            + (f"\nAUTHOR'S NOTE (highest priority, follow it above all other guidance): {o['steer']}" if o.get("steer") else "")
+            + "\nOutput only the chapter text.")
 
 
 def clean_chapter(text: str, title: str = "") -> str:
@@ -782,3 +792,135 @@ def publish_to_reader(p: Dict, only_approved: bool = False, root: str = novel.NO
     meta = novel.add_book(p["title"], author or "me", "own", "written with the Novel writer", text, root)
     p["reader_id"] = meta["id"]
     return meta
+
+
+# ------------------------------------------------------------------ 11. tools borrowed from the popular writing apps
+BEAT_MOODS = ["neutral", "tense", "cozy", "sad", "joyful", "eerie", "romantic", "angry", "hopeful", "funny"]
+
+
+def beat_prompt(p: Dict, n: int, beat: str, mood: str = "neutral", words: int = 220) -> str:
+    """Prose for ONE beat (one moment), continuing the chapter so far. Specific beats and a stated mood give better prose than a whole-chapter request."""
+    ch = get_chapter(p, n)
+    so_far = (ch["text"][-1800:] if ch and ch.get("text") else "")
+    return (chapter_context(p, n) + "\n\n"
+            + (f"CHAPTER SO FAR (the last part; continue seamlessly from its final line, never repeat it):\n{so_far}\n\n" if so_far else "This beat opens the chapter.\n\n")
+            + f"TASK: write ONLY this beat, in {_lang(p)}, about {words} words of finished prose:\nBEAT: {beat.strip()}\n"
+            f"MOOD: {mood if mood in BEAT_MOODS else 'neutral'} (let it show in rhythm and detail, do not name the feeling).\n"
+            "RULES: cover exactly this moment or short sequence and stop; do not summarise, do not jump ahead, do not resolve what the beat does not resolve; "
+            "no new named characters unless the beat names them; keep the same point of view and tense; "
+            "characters may only act on what they know. Output only the prose.")
+
+
+def write_beat(p: Dict, n: int, beat: str, llm_fn: LLM, mood: str = "neutral", words: int = 220) -> str:
+    """Write one beat and append it to chapter n (the old text becomes a version). Returns the new passage."""
+    if not (beat or "").strip():
+        raise RuntimeError("Write the beat first: who does what, where, and what changes.")
+    ch = get_chapter(p, n)
+    if ch and ch["status"] == "approved":
+        raise RuntimeError("This chapter is approved (locked). Unlock it first.")
+    new = clean_chapter(llm_fn(beat_prompt(p, n, beat, mood, words)))
+    if not new:
+        raise RuntimeError("The AI answered with nothing. Try again, or split the beat in two.")
+    old = ch["text"] if ch and ch.get("text") else ""
+    ch = set_chapter_text(p, n, (old + "\n\n" + new).strip(), "beat")
+    ch.setdefault("beats", []).append({"beat": beat.strip()[:300], "mood": mood, "t": int(time.time())})
+    return new
+
+
+def continue_prompt(p: Dict, n: int, instruction: str = "", words: int = 250) -> str:
+    ch = get_chapter(p, n)
+    return (chapter_context(p, n) + "\n\n"
+            f"CHAPTER SO FAR (last part):\n{(ch['text'][-2500:] if ch else '')}\n\n"
+            f"TASK: continue the chapter from exactly where it stops, in {_lang(p)}, about {words} words. Do not repeat anything. "
+            + (f"What happens next (the author's instruction): {instruction.strip()}. " if instruction.strip() else "Choose the most natural next moment for the plan above. ")
+            + "Same voice, point of view and tense. Output only the new prose.")
+
+
+def continue_chapter(p: Dict, n: int, llm_fn: LLM, instruction: str = "", words: int = 250) -> str:
+    ch = get_chapter(p, n)
+    if not ch or not ch.get("text"):
+        raise RuntimeError("Write or draft the start of the chapter first.")
+    if ch["status"] == "approved":
+        raise RuntimeError("This chapter is approved (locked). Unlock it first.")
+    new = clean_chapter(llm_fn(continue_prompt(p, n, instruction, words)))
+    if not new:
+        raise RuntimeError("The AI answered with nothing. Try again.")
+    set_chapter_text(p, n, (ch["text"] + "\n\n" + new).strip(), "continue")
+    return new
+
+
+SENSES = ["sight", "sound", "touch", "smell", "taste", "metaphor"]
+
+
+def describe_prompt(p: Dict, n: int, passage: str) -> str:
+    return (f"You help a novelist with the moment below from \"{p['title']}\" ({p['genre']}, {p['tone']}), written in {_lang(p)}.\n"
+            "Offer sensory options for it that fit the world and the mood. Each option is one short sentence of 8-25 words, concrete, not clichéd, "
+            "usable inside the passage as it is. Format, exactly one line per label, options separated by ' | ':\n"
+            "SIGHT: three options\nSOUND: three options\nTOUCH: three options\nSMELL: three options\nTASTE: two options (skip with '-' if it does not fit)\n"
+            f"METAPHOR: three fresh comparisons\n\nWORLD: {p['bible']['world']}\nSTYLE:\n{style_rules(p)}\n\nMOMENT:\n{passage[:1500]}")
+
+
+def parse_describe(text: str) -> Dict[str, List[str]]:
+    out: Dict[str, List[str]] = {k: [] for k in SENSES}
+    for raw in re.sub(r"[*_`]+", "", text or "").split("\n"):
+        m = re.match(r"^\s*[-•]*\s*(SIGHT|SOUND|TOUCH|SMELL|TASTE|METAPHOR)\s*[:：]\s*(.+)$", raw, re.I)
+        if m:
+            opts = [o.strip(" -•\t\"") for o in m.group(2).split("|")]
+            out[m.group(1).lower()] = [o for o in opts if len(o) > 3]
+    return out
+
+
+def describe(p: Dict, n: int, passage: str, llm_fn: LLM) -> Dict[str, List[str]]:
+    if not (passage or "").strip():
+        raise RuntimeError("Pick a paragraph to describe.")
+    res = parse_describe(llm_fn(describe_prompt(p, n, passage)))
+    if not any(res.values()):
+        raise RuntimeError("The AI did not follow the format. Try again.")
+    return res
+
+
+def weave_instruction(detail: str) -> str:
+    """A revise() instruction that works one chosen detail into the passage."""
+    return f"Work this detail into the passage naturally, in the author's voice, changing as little else as possible: {detail.strip()}"
+
+
+def variants(p: Dict, n: int, mode: str, llm_fn: LLM, paragraph: Optional[int] = None, k: int = 3) -> List[Dict]:
+    """k different proposals for the same edit, to pick from or combine (kit-bashing). Identical answers are dropped."""
+    out: List[Dict] = []
+    seen = set()
+    for _ in range(max(1, min(5, k))):
+        r = revise(p, n, mode, llm_fn, paragraph)
+        key = re.sub(r"\W+", " ", r["new"]).strip().lower()
+        if key and key not in seen:
+            seen.add(key)
+            out.append(r)
+    return out
+
+
+BRAINSTORM_KINDS = {
+    "names": "character, place and object names that fit this world and its naming style",
+    "twists": "plot twists that follow from the existing characters, secrets and open threads",
+    "obstacles": "obstacles and complications for the hero in the coming chapters",
+    "settings": "specific locations in this world, each with one striking detail",
+    "conflicts": "conflicts between the existing characters, each rooted in their goals, fears or flaws",
+    "dialogue": "short lines of dialogue that reveal motive, in the voices of the characters in play",
+}
+
+
+def brainstorm_prompt(p: Dict, kind: str, topic: str = "", n: int = 8) -> str:
+    what = BRAINSTORM_KINDS.get(kind, kind)
+    return (f"Brainstorm {n} {what} for the novel \"{p['title']}\" ({p['genre']}, {p['tone']}), in {_lang(p)}. "
+            "Unlike a generic generator, use the story canon below, so every idea fits and nothing contradicts it. "
+            "One idea per line, numbered, each a single sentence of at most 30 words, all clearly different from each other."
+            + (f"\nFocus: {topic.strip()}" if topic.strip() else "") + "\n\n" + canon_text(p))
+
+
+def brainstorm(p: Dict, kind: str, llm_fn: LLM, topic: str = "", n: int = 8) -> List[str]:
+    lines = []
+    for raw in (llm_fn(brainstorm_prompt(p, kind, topic, n)) or "").split("\n"):
+        t = re.sub(r"^\s*(?:\d+[.)]|[-•*])\s*", "", re.sub(r"[*_`]+", "", raw)).strip()
+        if len(t) > 3:
+            lines.append(t)
+    if not lines:
+        raise RuntimeError("The AI gave no ideas. Try again.")
+    return lines[:n]

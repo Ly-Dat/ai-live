@@ -79,7 +79,7 @@ Answers stay inside the catalog (`utils/product_catalog.py`, `utils/seller_brain
 
 Free AI-drawn seller characters on the overlay (local Stable Diffusion WebUI or ComfyUI + Animagine XL 3.1, or your own pictures): 8 ready-made originals or your own, outfits, 15 expressions that follow the live, stage options, a level / streak / achievements journey, a Pause / Take-over switch, and catalog-only answers for compare, budget and price/trust doubts. Details and limits: [docs/AVATAR.md](docs/AVATAR.md).
 
-**AI engine** (sidebar tab): the AI reply gets a timeout, an optional fallback provider and a breaker, so one slow provider cannot stall the stream; repeated voice lines come from a cache; reply and voice speed are shown, and the pre-live check warns when replies are slow. Providers are loaded only when used, so the panel starts faster. The avatar blinks, pops and sparkles when its mood changes, and shows a live caption in time with the voice. The panel mascot can be chosen (cat, fox, bunny, panda), reacts when you go live, and the layout works better on phones.
+**AI engine** (sidebar tab): the AI reply gets a timeout, an optional fallback provider and a breaker, so one slow provider cannot stall the stream; repeated voice lines come from a cache; reply and voice speed are shown, and the pre-live check warns when replies are slow. Providers are loaded only when used, so the panel starts faster. The avatar blinks, pops and sparkles when its mood changes, and shows a live caption in time with the voice. The panel mascot can be chosen (cat, fox, bunny, panda), reacts when you go live, and the layout works better on phones. A streamed reply that never opens, or stalls for longer than the timeout between chunks, is cut off and what was already received is spoken.
 
 **Less clunky avatar:** the plain background is now cut with soft, de-fringed edges (no pale halo); if an old picture still has a solid background, press *Clean backgrounds* in Avatar studio (originals are kept in `_original/`) and the overlay fades its edges softly on its own. Reaction sparkles stay at the sides instead of covering the face, mood changes crossfade instead of cutting, and fancy-Unicode usernames in captions are folded to plain letters (emoji and symbols are dropped). Reload the overlay with Ctrl+F5 after updating.
 
@@ -114,6 +114,7 @@ you may use on a live (public domain, your own, CC0 / CC BY, or written permissi
   editable outline, chapter-by-chapter drafting with narrative memory, a thread / foreshadowing tracker, local checks and an AI continuity audit,
   revise-with-a-diff, version history, approve / lock, steering the next chapter, a "where we left off" card, Markdown export, and
   **Publish to the Novel reader**. Projects are private files in `data/novel_projects/`.
+  - **Beats and tools** (ideas taken from popular writing apps): write a chapter **one scene beat at a time** with a mood (the AI writes only that moment and appends it, then *Update story memory*); **Continue** the chapter, optionally with what happens next; **Describe** a paragraph (sight, sound, touch, smell, taste, metaphors) and *Weave in* one detail through the diff; **3 versions** of any edit to pick from; **Brainstorm** names, twists, obstacles, settings, conflicts or dialogue that fit *your* story bible; type **your own instruction** in the revise box; and the per-chapter direction is now placed last in the prompt as an **Author's note** so it outweighs everything else. Extra revise modes: show-don't-tell, expand, warmer tone.
 - **Story studio**: write a short picture story with the AI (pitch, bible, beats, polish, continuity repair), add your own pictures, and the host
   tells it live or you export a **video** (vertical or wide, zoom / pan, fades, music, thumbnail, YouTube title / chapters / checklist).
   Step 3b turns manhua / webtoon pages into a recap script with OCR and a faithful translation. It never downloads from pirate sites.
@@ -141,7 +142,7 @@ Run the bridge with `--debug-cart cart.jsonl` once in a real live to capture the
 
 ## How the host presents products
 
-Top to bottom, each product for 5-10 minutes (set in Setup, step 5, or per product with `duration_min`). The script is the
+Top to bottom, each product for 5-10 minutes by default (set in Setup, step 5, or per product with `duration_min`; the *Campaign playbook* in Live tools changes the range and lets the time adapt to the chat, see *Live pacing* above). The script is the
 template intro, **your own intro line** (the `intro` field in the Products tab), price, facts and highlights; it repeats
 with variations until the time is up, then moves on. A viewer comment always goes first: the host answers from your
 product data, and once chat has been quiet for 2 seconds it continues the product where it stopped.
@@ -180,7 +181,7 @@ Not used: VietTTS / viXTTS (non-commercial licenses).
 
 ## Tests
 
-`python -m pytest tests/unit` (about 310 offline tests: safety filter, catalog, stories, novel reader and writer, voices, analytics ...; the AI parts use scripted fake models).
+`python -m pytest tests/unit` (about 330 offline tests: safety filter, catalog, stories, novel reader and writer, voices, analytics ...; the AI parts use scripted fake models).
 `tests/` also holds per-backend API experiments inherited from upstream.
 
 ## Catalog tools
@@ -201,5 +202,6 @@ Toggle with `config.json -> analytics.enable`.
 ## Credits
 
 - Story and novel features take ideas from popular web-novel sites, AI reading apps and the open-source editor [steven-tey/novel](https://github.com/steven-tey/novel) (Apache-2.0); no code was copied.
+- The Novel writer's beats, Describe, versions, brainstorm and Author's note follow ideas described in the public documentation of [Sudowrite](https://sudowrite.com/blog/how-sudowrite-works/), [Novelcrafter](https://www.novelcrafter.com/courses/ultimate-beginners-guide/improving-ai-output-for-scene-beats) and [NovelAI](https://docs.novelai.net/en/text/editor/storysettings); no code or text was copied and none of these products is affiliated with this project.
 
 - Home mascot: [page-mascot](https://github.com/nilbuild/page-mascot) by Kamran Ahmed (MIT), ported to plain JS in `utils/webui_mascot.py`. Sprite sheets and licence in `data/mascots/`.

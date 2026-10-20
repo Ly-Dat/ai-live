@@ -62,4 +62,14 @@ Tab **Novel writer**. Built from two product briefs on what makes an AI story wo
 5. **Revise with a diff**: pick a goal (tension, emotion, dialogue, motivation, pace, senses, hook, shorten, cliches) and a paragraph or the whole chapter, see the green / red diff, accept or reject. Every change is a version you can restore; approve a chapter to lock it. After a chapter the AI offers three consequential directions (or write your own) that the next chapter must follow.
 6. **Control room, resume card, export**: open threads / paid / overdue, everything the story remembers, a "where we left off" card with 2-4 next actions and a daily word goal. Download Markdown (optionally with the story bible) or **Publish to the Novel reader** (licence: your own work) so the host reads it on your live and the Companion answers viewers' questions without spoilers.
 
+### Beats and tools
+Added after reading how Sudowrite, Novelcrafter and NovelAI describe their features (public docs; ideas only):
+- **Beat writing** (`write_beat`): you give one moment (who does what, where, what changes) and a mood; the AI writes only that moment, continuing the chapter so far, with hard rules (stop at the beat, no new named characters, same POV and tense). Run *Update story memory* afterwards so later chapters know what happened.
+- **Continue** (`continue_chapter`): carry on from the last line, optionally with an instruction.
+- **Describe** (`describe`): sensory options and metaphors for a paragraph; *Weave in* sends the chosen detail through the normal revise diff, so nothing changes until you accept.
+- **Versions** (`variants`): up to 3 different proposals for the same edit; pick one or combine by hand. Identical answers are dropped.
+- **Brainstorm** (`brainstorm`): names, twists, obstacles, settings, conflicts, dialogue, generated from your bible, characters and open threads so ideas do not contradict the story.
+- **Author's note**: the direction you set for a chapter is also repeated at the very end of the draft prompt, where models weigh it most.
+- Revise accepts any instruction you type, and has new modes: show-don't-tell, expand, warmer tone.
+
 Projects are private files in `data/novel_projects/`. Use a 7B+ model; bigger models write the bible and outline much better. Files: `utils/novel_writer.py`, `utils/webui_writer.py`.
