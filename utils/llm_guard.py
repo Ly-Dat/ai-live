@@ -164,3 +164,40 @@ def open_stream(provider: str, fn: Callable, settings: Optional[Dict] = None):
         engine_stats.record("llm", (time.time() - t0) * 1000, ok=False, fallback=False, timeout=timed_out, error=err or "stream not opened")
         _bad(provider, cfg, time.time())
     return res
+
+
+def guard_iter(stream, provider: str, settings: Optional[Dict] = None, on_stall: Optional[Callable[[], None]] = None):
+    """Yield the items of a streamed reply, but stop (instead of waiting forever) when no new item arrives for `timeout_s`
+    seconds. What was already received is kept; the stalled request is abandoned (its thread is a daemon) and the breaker is told."""
+    cfg = settings or load()
+    limit = cfg["timeout_s"]
+    if limit <= 0 or provider in SKIP or isinstance(stream, (str, bytes)) or not hasattr(stream, "__iter__"):
+        yield from stream
+        return
+    import queue
+    q: "queue.Queue" = queue.Queue()
+    END = object()
+
+    def pump():
+        try:
+            for item in stream:
+                q.put(("i", item))
+            q.put(("e", END))
+        except Exception as e:
+            q.put(("x", e))
+
+    threading.Thread(target=pump, daemon=True).start()
+    while True:
+        try:
+            kind, val = q.get(timeout=limit)
+        except queue.Empty:
+            engine_stats.record("llm", limit * 1000.0, ok=False, fallback=False, timeout=True, error=f"stream stalled for {limit:g}s")
+            _bad(provider, cfg, time.time())
+            if on_stall:
+                on_stall()
+            return
+        if kind == "e":
+            return
+        if kind == "x":
+            raise val
+        yield val

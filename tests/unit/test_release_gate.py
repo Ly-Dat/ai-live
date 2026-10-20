@@ -105,3 +105,30 @@ def test_open_stream_times_out_and_passes_through():
     assert _t.time() - t0 < 3
     assert llm_guard.open_stream("chatgpt", lambda: "stream-object", cfg) == "stream-object"
     assert llm_guard.open_stream("reread", lambda: "x", cfg) == "x"
+
+
+def test_guard_iter_passes_through_and_stops_on_stall():
+    import time as _t
+    from utils import llm_guard
+    cfg = dict(llm_guard.DEFAULTS, timeout_s=1)
+    llm_guard.reset()
+    assert list(llm_guard.guard_iter(iter([1, 2, 3]), "chatgpt", cfg)) == [1, 2, 3]
+    assert list(llm_guard.guard_iter("abc", "chatgpt", cfg)) == ["a", "b", "c"]
+
+    def slow():
+        yield "a"
+        _t.sleep(5)
+        yield "b"
+    hit = []
+    t0 = _t.time()
+    assert list(llm_guard.guard_iter(slow(), "chatgpt", cfg, on_stall=lambda: hit.append(1))) == ["a"]
+    assert hit and _t.time() - t0 < 3
+
+    def boom():
+        yield 1
+        raise ValueError("x")
+    try:
+        list(llm_guard.guard_iter(boom(), "chatgpt", cfg))
+        assert False
+    except ValueError:
+        pass

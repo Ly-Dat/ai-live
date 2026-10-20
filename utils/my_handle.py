@@ -2136,7 +2136,7 @@ class My_handle(metaclass=SingletonMeta):
                     return tmp, cut_len
 
 
-                for chunk in resp:
+                for chunk in llm_guard.guard_iter(resp, chat_type, on_stall=lambda: logger.warning("AI stream stalled; using what was received so far")):
                     # logger.warning(chunk)
                     if chunk is None:
                         continue
