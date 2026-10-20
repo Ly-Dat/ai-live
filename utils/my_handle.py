@@ -2000,7 +2000,7 @@ class My_handle(metaclass=SingletonMeta):
                 pass
 
             # Use a dict mapping to get the response content
-            resp = chat_model_methods.get(chat_type, lambda: data["content"])()
+            resp = llm_guard.open_stream(chat_type, chat_model_methods.get(chat_type, lambda: data["content"]))   # times out instead of hanging
             
             def split_by_chinese_punctuation(s):
                 # Define the set of Chinese punctuation marks

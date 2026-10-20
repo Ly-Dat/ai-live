@@ -150,3 +150,17 @@ def stream_allowed(provider: str, settings: Optional[Dict] = None, now: Optional
     if provider in SKIP or cfg.get("breaker_fails", 0) <= 0:
         return True
     return not is_open(provider, now)
+
+
+def open_stream(provider: str, fn: Callable, settings: Optional[Dict] = None):
+    """Open a streamed reply with the same timeout as a normal call: a provider that accepts the request and then hangs before
+    the first byte no longer freezes the reply thread. Returns the stream object, or None on timeout / error (recorded for the breaker)."""
+    cfg = settings or load()
+    if provider in SKIP:
+        return fn()
+    t0 = time.time()
+    res, timed_out, err = _run_with_timeout(fn, cfg["timeout_s"])
+    if res is None:
+        engine_stats.record("llm", (time.time() - t0) * 1000, ok=False, fallback=False, timeout=timed_out, error=err or "stream not opened")
+        _bad(provider, cfg, time.time())
+    return res

@@ -93,3 +93,15 @@ def test_queue_state_file_roundtrip_and_staleness(tmp_path):
     speech_queue.write_state(3, p, now=100)
     assert speech_queue.read_state(p, now=105) == 3
     assert speech_queue.read_state(p, now=200) == -1             # stale: the app stopped writing
+
+
+def test_open_stream_times_out_and_passes_through():
+    import time as _t
+    from utils import llm_guard
+    cfg = dict(llm_guard.DEFAULTS, timeout_s=1)
+    llm_guard.reset()
+    t0 = _t.time()
+    assert llm_guard.open_stream("chatgpt", lambda: _t.sleep(5), cfg) is None
+    assert _t.time() - t0 < 3
+    assert llm_guard.open_stream("chatgpt", lambda: "stream-object", cfg) == "stream-object"
+    assert llm_guard.open_stream("reread", lambda: "x", cfg) == "x"

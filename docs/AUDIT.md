@@ -82,3 +82,6 @@ Baseline: `python -m pytest tests/unit` = 306 passed, 1 failed (`test_setup_pers
 
 ## Added: pacing, languages, gestures, product card, playbooks, replay
 Tests: `tests/unit/test_live_extras.py`. Not verified on a real stream. Known limits: voice stays Vietnamese for English answers; the "lean" gesture needs a logged `pitch` event (comment-triggered spotlights), tour sentences do not log one; the Now-showing card needs a recent voice line (`speaking.json`, 90 s); adaptive pacing reads the analytics log of the newest session.
+
+## Added: streamed-reply open timeout
+`llm_guard.open_stream` wraps the call that opens a streamed reply in `llm_stream_handle_and_audio_synthesis` with the engine timeout and breaker. Still open: a stream that opens but then stalls between tokens is not interrupted.
