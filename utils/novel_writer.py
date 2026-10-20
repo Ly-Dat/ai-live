@@ -725,9 +725,38 @@ def style_profile(sample: str) -> str:
             f"paragraphs of about {_wc(sample) // max(1, len(paras))} words; {'first-person feel' if first > 0.02 else 'third-person feel'}")
 
 
+def style_extras(sample: str) -> str:
+    """More local measurements of a sample the author supplied (own or licensed text): rhythm, vocabulary variety, favourite sentence openers, punctuation habits."""
+    sents = [s for s in re.split(r"(?<=[.!?…])\s+", sample or "") if len(s.split()) >= 2]
+    words = re.findall(r"\w+", (sample or "").lower())
+    if len(sents) < 3 or len(words) < 30:
+        return ""
+    lens = [len(s.split()) for s in sents]
+    mean = sum(lens) / len(lens)
+    spread = (sum((x - mean) ** 2 for x in lens) / len(lens)) ** 0.5
+    variety = len(set(words)) / len(words)
+    openers: Dict[str, int] = {}
+    for s_ in sents:
+        w = re.findall(r"\w+", s_.lower())
+        if w:
+            openers[w[0]] = openers.get(w[0], 0) + 1
+    fav = [w for w, c in sorted(openers.items(), key=lambda kv: -kv[1]) if c >= 2][:3]
+    dash = (sample.count("—") + sample.count(" - ")) / max(1, len(sents))
+    ell = sample.count("...") + sample.count("…")
+    bits = [f"rhythm {'varied, mixing short and long sentences' if spread > 7 else 'even'}",
+            f"vocabulary {'rich' if variety > 0.62 else 'plain and repeated' if variety < 0.42 else 'ordinary'}"]
+    if fav:
+        bits.append("often opens sentences with " + ", ".join(f'"{w}"' for w in fav))
+    if dash > 0.15:
+        bits.append("uses dashes")
+    if ell >= 2:
+        bits.append("uses ellipses for trailing off")
+    return "; ".join(bits)
+
+
 def set_style_sample(p: Dict, sample: str) -> None:
     p["style"]["sample"] = (sample or "").strip()[:1200]
-    p["style"]["profile"] = style_profile(sample)
+    p["style"]["profile"] = "; ".join(x for x in (style_profile(sample), style_extras(sample)) if x)
 
 
 # ------------------------------------------------------------------ 10. resume card, goals, export

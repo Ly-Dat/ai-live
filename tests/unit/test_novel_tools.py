@@ -83,3 +83,14 @@ def test_authors_note_comes_last_in_draft_prompt(proj):
 def test_new_revise_modes_exist():
     for m in ("show", "expand", "tone"):
         assert m in nw.REVISE_MODES
+
+
+def test_style_extras_and_profile(proj):
+    p, _, _ = proj
+    text = ("Mưa rơi. Tôi đi. Tôi không nói gì cả trong lúc con đường dài ra mãi mãi trước mặt tôi như một giấc mơ cũ. "
+            "Tôi dừng lại... Mưa rơi — rất nhẹ. Tôi nhớ mẹ và những buổi chiều ngồi bên hiên nhà nhìn mưa rơi xuống mái ngói rêu phong. " * 3)
+    ex = nw.style_extras(text)
+    assert "rhythm varied" in ex and 'opens sentences with "tôi"' in ex and "dashes" in ex
+    assert nw.style_extras("Too short.") == ""
+    nw.set_style_sample(p, text)
+    assert "sentences average" in p["style"]["profile"] and "rhythm" in p["style"]["profile"]
