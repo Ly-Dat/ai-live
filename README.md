@@ -54,6 +54,8 @@ price questions, buying signals), and `python simulate_live.py` replays them int
 Manual route for developers: `python main.py`, then `python webui.py`, then in the bridge venv
 `python tiktok_bridge.py YOUR_TIKTOK_USERNAME --gifts --joins`, then `python product_tour.py` (flags: `--gap`, `--pause`, `--rounds`, `--once`, `--cps`).
 
+Live-day checklist and troubleshooting: [docs/RUNBOOK.md](docs/RUNBOOK.md).
+
 ## More seller tools
 
 - **Flash sale** (Live tools tab): pick a product, minutes, optional sale price and stock. The AI announces the time left on a schedule and in the last minute. It only says what you entered and passes the safety filter.
